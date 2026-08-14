@@ -1,0 +1,4 @@
+interface:
+  display_name: "UI/UX Pro Max - ATEM Field"
+  short_description: "Design intelligence for the ATEM Field UI"
+  default_prompt: "Use $ui-ux-pro-max to design or review the ATEM Field interface using its project design system."

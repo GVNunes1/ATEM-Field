@@ -1,0 +1,300 @@
+{
+  "passed": true,
+  "results": {
+    "connectionStability": {
+      "service_role": [
+        {
+          "iter": 1,
+          "durationMs": 914,
+          "success": true,
+          "error": null
+        },
+        {
+          "iter": 2,
+          "durationMs": 176,
+          "success": true,
+          "error": null
+        },
+        {
+          "iter": 3,
+          "durationMs": 181,
+          "success": true,
+          "error": null
+        },
+        {
+          "iter": 4,
+          "durationMs": 175,
+          "success": true,
+          "error": null
+        },
+        {
+          "iter": 5,
+          "durationMs": 167,
+          "success": true,
+          "error": null
+        },
+        {
+          "iter": 6,
+          "durationMs": 167,
+          "success": true,
+          "error": null
+        },
+        {
+          "iter": 7,
+          "durationMs": 179,
+          "success": true,
+          "error": null
+        },
+        {
+          "iter": 8,
+          "durationMs": 438,
+          "success": true,
+          "error": null
+        },
+        {
+          "iter": 9,
+          "durationMs": 178,
+          "success": true,
+          "error": null
+        },
+        {
+          "iter": 10,
+          "durationMs": 168,
+          "success": true,
+          "error": null
+        }
+      ],
+      "anon": [
+        {
+          "iter": 1,
+          "durationMs": 539,
+          "success": true,
+          "error": null
+        },
+        {
+          "iter": 2,
+          "durationMs": 177,
+          "success": true,
+          "error": null
+        },
+        {
+          "iter": 3,
+          "durationMs": 178,
+          "success": true,
+          "error": null
+        },
+        {
+          "iter": 4,
+          "durationMs": 165,
+          "success": true,
+          "error": null
+        },
+        {
+          "iter": 5,
+          "durationMs": 177,
+          "success": true,
+          "error": null
+        },
+        {
+          "iter": 6,
+          "durationMs": 162,
+          "success": true,
+          "error": null
+        },
+        {
+          "iter": 7,
+          "durationMs": 332,
+          "success": true,
+          "error": null
+        },
+        {
+          "iter": 8,
+          "durationMs": 167,
+          "success": true,
+          "error": null
+        },
+        {
+          "iter": 9,
+          "durationMs": 176,
+          "success": true,
+          "error": null
+        },
+        {
+          "iter": 10,
+          "durationMs": 177,
+          "success": true,
+          "error": null
+        }
+      ]
+    },
+    "tableQueries": {
+      "technicians": {
+        "service_role": {
+          "success": true,
+          "count": 0,
+          "sampleSize": 0,
+          "errorCode": null,
+          "errorMessage": null
+        },
+        "anon": {
+          "success": true,
+          "count": 0,
+          "sampleSize": 0,
+          "errorCode": null,
+          "errorMessage": null
+        }
+      },
+      "appointments": {
+        "service_role": {
+          "success": true,
+          "count": 0,
+          "sampleSize": 0,
+          "errorCode": null,
+          "errorMessage": null
+        },
+        "anon": {
+          "success": true,
+          "count": 0,
+          "sampleSize": 0,
+          "errorCode": null,
+          "errorMessage": null
+        }
+      },
+      "appointment_technicians": {
+        "service_role": {
+          "success": true,
+          "count": 0,
+          "sampleSize": 0,
+          "errorCode": null,
+          "errorMessage": null
+        },
+        "anon": {
+          "success": true,
+          "count": 0,
+          "sampleSize": 0,
+          "errorCode": null,
+          "errorMessage": null
+        }
+      },
+      "equipment_categories": {
+        "service_role": {
+          "success": true,
+          "count": 0,
+          "sampleSize": 0,
+          "errorCode": null,
+          "errorMessage": null
+        },
+        "anon": {
+          "success": true,
+          "count": 0,
+          "sampleSize": 0,
+          "errorCode": null,
+          "errorMessage": null
+        }
+      },
+      "test_templates": {
+        "service_role": {
+          "success": true,
+          "count": 0,
+          "sampleSize": 0,
+          "errorCode": null,
+          "errorMessage": null
+        },
+        "anon": {
+          "success": true,
+          "count": 0,
+          "sampleSize": 0,
+          "errorCode": null,
+          "errorMessage": null
+        }
+      },
+      "analyzers": {
+        "service_role": {
+          "success": true,
+          "count": 0,
+          "sampleSize": 0,
+          "errorCode": null,
+          "errorMessage": null
+        },
+        "anon": {
+          "success": true,
+          "count": 0,
+          "sampleSize": 0,
+          "errorCode": null,
+          "errorMessage": null
+        }
+      },
+      "reservations": {
+        "service_role": {
+          "success": true,
+          "count": 0,
+          "sampleSize": 0,
+          "errorCode": null,
+          "errorMessage": null
+        },
+        "anon": {
+          "success": true,
+          "count": 0,
+          "sampleSize": 0,
+          "errorCode": null,
+          "errorMessage": null
+        }
+      },
+      "appointment_equipments": {
+        "service_role": {
+          "success": true,
+          "count": 0,
+          "sampleSize": 0,
+          "errorCode": null,
+          "errorMessage": null
+        },
+        "anon": {
+          "success": true,
+          "count": 0,
+          "sampleSize": 0,
+          "errorCode": null,
+          "errorMessage": null
+        }
+      },
+      "notification_logs": {
+        "service_role": {
+          "success": true,
+          "count": 0,
+          "sampleSize": 0,
+          "errorCode": null,
+          "errorMessage": null
+        },
+        "anon": {
+          "success": true,
+          "count": 0,
+          "sampleSize": 0,
+          "errorCode": null,
+          "errorMessage": null
+        }
+      }
+    },
+    "pgrst205Errors": 0,
+    "rlsCrudTests": [
+      {
+        "role": "service_role",
+        "catInsertSuccess": 1,
+        "catSelectSuccess": true,
+        "catUpdateSuccess": true,
+        "tplInsertSuccess": 1,
+        "techInsertSuccess": 1,
+        "catDeleteSuccess": true,
+        "allSubTestsPassed": true
+      },
+      {
+        "role": "anon",
+        "catInsertSuccess": 2,
+        "catSelectSuccess": true,
+        "catUpdateSuccess": true,
+        "tplInsertSuccess": 2,
+        "techInsertSuccess": 2,
+        "catDeleteSuccess": true,
+        "allSubTestsPassed": true
+      }
+    ]
+  }
+}

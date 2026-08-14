@@ -1,0 +1,3621 @@
+{
+  "createdAt": "2026-08-12T16:11:57.468Z",
+  "reason": "Backup anterior à mescla manual de técnicos",
+  "technicianIds": [
+    45,
+    60,
+    82
+  ],
+  "remote": {
+    "technicians": [
+      {
+        "id": 45,
+        "name": "Gabriel II",
+        "phone": "Pendente (Cadastrar via Telegram)",
+        "telegram_id": null,
+        "email": "Pendente",
+        "role": "Técnico de Campo",
+        "avatar_url": "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=250&q=80",
+        "status": "Ativo",
+        "created_at": "2026-08-11T20:13:45.404+00:00"
+      },
+      {
+        "id": 60,
+        "name": "Gabriel P.",
+        "phone": "Pendente (Cadastrar via Telegram)",
+        "telegram_id": null,
+        "email": "Pendente",
+        "role": "Técnico de Campo",
+        "avatar_url": "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=250&q=80",
+        "status": "Ativo",
+        "created_at": "2026-08-11T20:13:45.414+00:00"
+      },
+      {
+        "id": 82,
+        "name": "Gabriel Patrick",
+        "phone": "Pendente (Cadastrar via Telegram)",
+        "telegram_id": null,
+        "email": "Pendente",
+        "role": "Técnico de Campo",
+        "avatar_url": "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=250&q=80",
+        "status": "Ativo",
+        "created_at": "2026-08-11T20:13:45.424+00:00"
+      }
+    ],
+    "appointments": [
+      {
+        "id": 832,
+        "external_id": "GGCAL-_8d9lcgrfdpr6asjk64pjgdb360p68p9ic8s30d9mc8r3icb1cdhmae1h60omac9jckrg",
+        "title": "Regional de Itanhém",
+        "client_name": "Regional de Itanhém",
+        "client_address": "Regional de Itanhém",
+        "client_contact": "Sincronizado da Agenda Online",
+        "appointment_date": "2025-11-04",
+        "appointment_time": "08:00",
+        "status": "Agendado",
+        "technician_names": "Fábio, Christopher, Gabriel II, Luis",
+        "technician_id": 4,
+        "created_at": "2026-08-11T20:13:45.404+00:00"
+      },
+      {
+        "id": 837,
+        "external_id": "GGCAL-_8d9lcgrfdpr6asjk60rj8or574q3cdhj6oqj6o9lc9gm2p1g6grjccpm65h30pj36sog",
+        "title": "Regional de Itanhém",
+        "client_name": "Regional de Itanhém",
+        "client_address": "Regional de Itanhém",
+        "client_contact": "Sincronizado da Agenda Online",
+        "appointment_date": "2025-11-05",
+        "appointment_time": "08:00",
+        "status": "Agendado",
+        "technician_names": "Fábio, Christopher, Gabriel II, Luis",
+        "technician_id": 4,
+        "created_at": "2026-08-11T20:13:45.404+00:00"
+      },
+      {
+        "id": 1016,
+        "external_id": "GGCAL-j2fq7nsd495css0v7vitapdr3k",
+        "title": "Reg. registro - Ventiladores",
+        "client_name": "Reg. registro - Ventiladores",
+        "client_address": "Reg. registro - Ventiladores",
+        "client_contact": "Sincronizado da Agenda Online",
+        "appointment_date": "2026-01-13",
+        "appointment_time": "08:00",
+        "status": "Agendado",
+        "technician_names": "Edvan, Gabriel II",
+        "technician_id": 17,
+        "created_at": "2026-08-11T20:13:45.411+00:00"
+      },
+      {
+        "id": 1017,
+        "external_id": "GGCAL-cnm02k39f05jbghmoqnfcmpnq8",
+        "title": "Reg. registro - Ventiladores",
+        "client_name": "Reg. registro - Ventiladores",
+        "client_address": "Reg. registro - Ventiladores",
+        "client_contact": "Sincronizado da Agenda Online",
+        "appointment_date": "2026-01-14",
+        "appointment_time": "08:00",
+        "status": "Agendado",
+        "technician_names": "Edvan, Gabriel II",
+        "technician_id": 17,
+        "created_at": "2026-08-11T20:13:45.411+00:00"
+      },
+      {
+        "id": 1027,
+        "external_id": "GGCAL-8jeabe8f5qut7utnjoeojt78gc",
+        "title": "Hosp. Reg. De Itapetininga - ventiladores",
+        "client_name": "Hosp. Reg. De Itapetininga - ventiladores",
+        "client_address": "Hosp. Reg. De Itapetininga - ventiladores",
+        "client_contact": "Sincronizado da Agenda Online",
+        "appointment_date": "2026-01-16",
+        "appointment_time": "08:00",
+        "status": "Agendado",
+        "technician_names": "Gilberto, Gabriel II",
+        "technician_id": 27,
+        "created_at": "2026-08-11T20:13:45.411+00:00"
+      },
+      {
+        "id": 1040,
+        "external_id": "GGCAL-r34bt4g6m9me8daf6lmkv0jpek",
+        "title": "Unesp - Ventiladores",
+        "client_name": "Unesp - Ventiladores",
+        "client_address": "Unesp - Ventiladores",
+        "client_contact": "Sincronizado da Agenda Online",
+        "appointment_date": "2026-01-20",
+        "appointment_time": "08:00",
+        "status": "Agendado",
+        "technician_names": "Gilberto, Gabriel II",
+        "technician_id": 27,
+        "created_at": "2026-08-11T20:13:45.411+00:00"
+      },
+      {
+        "id": 1128,
+        "external_id": "GGCAL-4d06c4bvptj9okrg5eelfk3e1g",
+        "title": "Hosp. Regional de Itapetininga - Focos",
+        "client_name": "Hosp. Regional de Itapetininga - Focos",
+        "client_address": "Hosp. Regional de Itapetininga - Focos",
+        "client_contact": "Sincronizado da Agenda Online",
+        "appointment_date": "2026-02-19",
+        "appointment_time": "08:00",
+        "status": "Agendado",
+        "technician_names": "Ricardo, Patrick, Mateus, Gabriel II",
+        "technician_id": 24,
+        "created_at": "2026-08-11T20:13:45.412+00:00"
+      },
+      {
+        "id": 1142,
+        "external_id": "GGCAL-27jjqh22ein5u7tms31lbd5ssc",
+        "title": "Reg. Itanhaem - Dixtal/Philips",
+        "client_name": "Reg. Itanhaem - Dixtal/Philips",
+        "client_address": "Reg. Itanhaem - Dixtal/Philips",
+        "client_contact": "Sincronizado da Agenda Online",
+        "appointment_date": "2026-02-24",
+        "appointment_time": "08:00",
+        "status": "Agendado",
+        "technician_names": "Guilherme, Gabriel II",
+        "technician_id": 3,
+        "created_at": "2026-08-11T20:13:45.412+00:00"
+      },
+      {
+        "id": 1148,
+        "external_id": "GGCAL-rrp9sdhmcqttn967bupu75l9o8",
+        "title": "Reg. Itanhaem - Dixtal/Philips",
+        "client_name": "Reg. Itanhaem - Dixtal/Philips",
+        "client_address": "Reg. Itanhaem - Dixtal/Philips",
+        "client_contact": "Sincronizado da Agenda Online",
+        "appointment_date": "2026-02-25",
+        "appointment_time": "08:00",
+        "status": "Agendado",
+        "technician_names": "Guilherme, Gabriel II",
+        "technician_id": 3,
+        "created_at": "2026-08-11T20:13:45.412+00:00"
+      },
+      {
+        "id": 1159,
+        "external_id": "GGCAL-j3bepjq10lc9prhjqoupd9t4rk",
+        "title": "Hosp. Regional de Itapetininga - Focos",
+        "client_name": "Hosp. Regional de Itapetininga - Focos",
+        "client_address": "Hosp. Regional de Itapetininga - Focos",
+        "client_contact": "Sincronizado da Agenda Online",
+        "appointment_date": "2026-03-02",
+        "appointment_time": "08:00",
+        "status": "Agendado",
+        "technician_names": "Ricardo, Kauan, Mateus, Gabriel II",
+        "technician_id": 24,
+        "created_at": "2026-08-11T20:13:45.413+00:00"
+      },
+      {
+        "id": 1173,
+        "external_id": "GGCAL-lmpih2ileenjjbrt7cg24q52bk",
+        "title": "Inova - Corretiva de mesas",
+        "client_name": "Inova - Corretiva de mesas",
+        "client_address": "Inova - Corretiva de mesas",
+        "client_contact": "Sincronizado da Agenda Online",
+        "appointment_date": "2026-03-05",
+        "appointment_time": "08:00",
+        "status": "Agendado",
+        "technician_names": "Gabriel, Gabriel II",
+        "technician_id": 12,
+        "created_at": "2026-08-11T20:13:45.413+00:00"
+      },
+      {
+        "id": 1176,
+        "external_id": "GGCAL-ttl56uacvivn1i16je3p7bm3bo",
+        "title": "Inova - Corretiva de mesas",
+        "client_name": "Inova - Corretiva de mesas",
+        "client_address": "Inova - Corretiva de mesas",
+        "client_contact": "Sincronizado da Agenda Online",
+        "appointment_date": "2026-03-05",
+        "appointment_time": "08:00",
+        "status": "Agendado",
+        "technician_names": "Gabriel, Gabriel II",
+        "technician_id": 12,
+        "created_at": "2026-08-11T20:13:45.413+00:00"
+      },
+      {
+        "id": 1179,
+        "external_id": "GGCAL-uknp7b27qsb4mu10ssv2ntqm80",
+        "title": "Unimed Tatuí",
+        "client_name": "Unimed Tatuí",
+        "client_address": "Unimed Tatuí",
+        "client_contact": "Sincronizado da Agenda Online",
+        "appointment_date": "2026-03-06",
+        "appointment_time": "08:00",
+        "status": "Agendado",
+        "technician_names": "Mateus, Gabriel II",
+        "technician_id": 1,
+        "created_at": "2026-08-11T20:13:45.413+00:00"
+      },
+      {
+        "id": 1188,
+        "external_id": "GGCAL-2i8difsfc9o6ph29q1ak5gb0c0",
+        "title": "UNESP - Ventiladores",
+        "client_name": "UNESP - Ventiladores",
+        "client_address": "UNESP - Ventiladores",
+        "client_contact": "Sincronizado da Agenda Online",
+        "appointment_date": "2026-03-10",
+        "appointment_time": "08:00",
+        "status": "Agendado",
+        "technician_names": "Gilberto, Gabriel II",
+        "technician_id": 27,
+        "created_at": "2026-08-11T20:13:45.413+00:00"
+      },
+      {
+        "id": 1193,
+        "external_id": "GGCAL-97ucot6fhv5vmvft1nt4q69mio",
+        "title": "Unimed Botucatu - Ventiladores",
+        "client_name": "Unimed Botucatu - Ventiladores",
+        "client_address": "Unimed Botucatu - Ventiladores",
+        "client_contact": "Sincronizado da Agenda Online",
+        "appointment_date": "2026-03-11",
+        "appointment_time": "08:00",
+        "status": "Agendado",
+        "technician_names": "Gilberto, Gabriel II",
+        "technician_id": 27,
+        "created_at": "2026-08-11T20:13:45.413+00:00"
+      },
+      {
+        "id": 1215,
+        "external_id": "GGCAL-4i53bllo9o8fgbmvfl7nob4pik",
+        "title": "Treinamento Cisa",
+        "client_name": "Treinamento Cisa",
+        "client_address": "Treinamento Cisa",
+        "client_contact": "Sincronizado da Agenda Online",
+        "appointment_date": "2026-03-17",
+        "appointment_time": "08:00",
+        "status": "Agendado",
+        "technician_names": "Mateus, Mauro, Gabriel II",
+        "technician_id": 1,
+        "created_at": "2026-08-11T20:13:45.413+00:00"
+      },
+      {
+        "id": 1216,
+        "external_id": "GGCAL-hmko4lm7ndv9pr1tdpkkuq2eb4",
+        "title": "Treinamento Cisa",
+        "client_name": "Treinamento Cisa",
+        "client_address": "Treinamento Cisa",
+        "client_contact": "Sincronizado da Agenda Online",
+        "appointment_date": "2026-03-17",
+        "appointment_time": "08:00",
+        "status": "Agendado",
+        "technician_names": "Mateus, Mauro, Gabriel II",
+        "technician_id": 1,
+        "created_at": "2026-08-11T20:13:45.413+00:00"
+      },
+      {
+        "id": 1223,
+        "external_id": "GGCAL-j8jugmutnlhqi63knq79sqr59k",
+        "title": "Treinamento Cisa",
+        "client_name": "Treinamento Cisa",
+        "client_address": "Treinamento Cisa",
+        "client_contact": "Sincronizado da Agenda Online",
+        "appointment_date": "2026-03-18",
+        "appointment_time": "08:00",
+        "status": "Agendado",
+        "technician_names": "Mateus, Mauro, Gabriel II",
+        "technician_id": 1,
+        "created_at": "2026-08-11T20:13:45.413+00:00"
+      },
+      {
+        "id": 1224,
+        "external_id": "GGCAL-qtaulu25a4tcfuv5bef33tjmgo",
+        "title": "Treinamento Cisa",
+        "client_name": "Treinamento Cisa",
+        "client_address": "Treinamento Cisa",
+        "client_contact": "Sincronizado da Agenda Online",
+        "appointment_date": "2026-03-18",
+        "appointment_time": "08:00",
+        "status": "Agendado",
+        "technician_names": "Mateus, Mauro, Gabriel II",
+        "technician_id": 1,
+        "created_at": "2026-08-11T20:13:45.413+00:00"
+      },
+      {
+        "id": 1229,
+        "external_id": "GGCAL-pjtmvavnro4mhec4suaa7uhpcg",
+        "title": "Treinamento Cisa",
+        "client_name": "Treinamento Cisa",
+        "client_address": "Treinamento Cisa",
+        "client_contact": "Sincronizado da Agenda Online",
+        "appointment_date": "2026-03-19",
+        "appointment_time": "08:00",
+        "status": "Agendado",
+        "technician_names": "Mateus, Mauro, Gabriel II",
+        "technician_id": 1,
+        "created_at": "2026-08-11T20:13:45.413+00:00"
+      },
+      {
+        "id": 1230,
+        "external_id": "GGCAL-5eleio5r81mblk46ap1045m6h8",
+        "title": "Treinamento Cisa",
+        "client_name": "Treinamento Cisa",
+        "client_address": "Treinamento Cisa",
+        "client_contact": "Sincronizado da Agenda Online",
+        "appointment_date": "2026-03-20",
+        "appointment_time": "08:00",
+        "status": "Agendado",
+        "technician_names": "Mateus, Mauro, Gabriel II",
+        "technician_id": 1,
+        "created_at": "2026-08-11T20:13:45.413+00:00"
+      },
+      {
+        "id": 1233,
+        "external_id": "GGCAL-tok5ggs4g6vrq2vi0efcsq6beg",
+        "title": "Treinamento Cisa",
+        "client_name": "Treinamento Cisa",
+        "client_address": "Treinamento Cisa",
+        "client_contact": "Sincronizado da Agenda Online",
+        "appointment_date": "2026-03-20",
+        "appointment_time": "08:00",
+        "status": "Agendado",
+        "technician_names": "Mateus, Mauro, Gabriel II",
+        "technician_id": 1,
+        "created_at": "2026-08-11T20:13:45.414+00:00"
+      },
+      {
+        "id": 1235,
+        "external_id": "GGCAL-sg3ug9h4ghfk0deu7fjk06i2ec",
+        "title": "Treinamento Cisa",
+        "client_name": "Treinamento Cisa",
+        "client_address": "Treinamento Cisa",
+        "client_contact": "Sincronizado da Agenda Online",
+        "appointment_date": "2026-03-21",
+        "appointment_time": "08:00",
+        "status": "Agendado",
+        "technician_names": "Mateus, Mauro, Gabriel II",
+        "technician_id": 1,
+        "created_at": "2026-08-11T20:13:45.414+00:00"
+      },
+      {
+        "id": 1238,
+        "external_id": "GGCAL-8bpg0mvadphh0t54h0u5eld73o",
+        "title": "SC Sorocaba - (Cisa)",
+        "client_name": "SC Sorocaba - (Cisa)",
+        "client_address": "SC Sorocaba - (Cisa)",
+        "client_contact": "Sincronizado da Agenda Online",
+        "appointment_date": "2026-03-23",
+        "appointment_time": "08:00",
+        "status": "Agendado",
+        "technician_names": "Mateus, Gabriel II",
+        "technician_id": 1,
+        "created_at": "2026-08-11T20:13:45.414+00:00"
+      },
+      {
+        "id": 1261,
+        "external_id": "GGCAL-mbp9o56pbmapd98uvrg4n62rvc",
+        "title": "Inova S.J.dos Campos",
+        "client_name": "Inova S.J.dos Campos",
+        "client_address": "Inova S.J.dos Campos",
+        "client_contact": "Sincronizado da Agenda Online",
+        "appointment_date": "2026-03-26",
+        "appointment_time": "08:00",
+        "status": "Agendado",
+        "technician_names": "Gabriel II",
+        "technician_id": 45,
+        "created_at": "2026-08-11T20:13:45.414+00:00"
+      },
+      {
+        "id": 1263,
+        "external_id": "GGCAL-7v2aqrn4cq6knbv40l98l8ic5k",
+        "title": "Inova S.J.dos Campos",
+        "client_name": "Inova S.J.dos Campos",
+        "client_address": "Inova S.J.dos Campos",
+        "client_contact": "Sincronizado da Agenda Online",
+        "appointment_date": "2026-03-27",
+        "appointment_time": "08:00",
+        "status": "Agendado",
+        "technician_names": "Gabriel II",
+        "technician_id": 45,
+        "created_at": "2026-08-11T20:13:45.414+00:00"
+      },
+      {
+        "id": 1265,
+        "external_id": "GGCAL-ubjbplk480gn4f1k5u5515v7c0",
+        "title": "Inova S.J.dos Campos",
+        "client_name": "Inova S.J.dos Campos",
+        "client_address": "Inova S.J.dos Campos",
+        "client_contact": "Sincronizado da Agenda Online",
+        "appointment_date": "2026-03-27",
+        "appointment_time": "08:00",
+        "status": "Agendado",
+        "technician_names": "Gabriel II",
+        "technician_id": 45,
+        "created_at": "2026-08-11T20:13:45.414+00:00"
+      },
+      {
+        "id": 1288,
+        "external_id": "GGCAL-ljsbaia8trmgr7tm39qh681hq4",
+        "title": "Clínica Martti Antila",
+        "client_name": "Clínica Martti Antila",
+        "client_address": "Clínica Martti Antila",
+        "client_contact": "Sincronizado da Agenda Online",
+        "appointment_date": "2026-04-01",
+        "appointment_time": "13:00",
+        "status": "Agendado",
+        "technician_names": "Christopher, Gabriel P.",
+        "technician_id": 37,
+        "created_at": "2026-08-11T20:13:45.414+00:00"
+      },
+      {
+        "id": 1305,
+        "external_id": "GGCAL-v37la9rqbf0p3qng6fac95fvs4",
+        "title": "PM Porto Feliz - câmaras MP + (aplicar restr.)",
+        "client_name": "PM Porto Feliz - câmaras MP + (aplicar restr.)",
+        "client_address": "PM Porto Feliz - câmaras MP + (aplicar restr.)",
+        "client_contact": "Sincronizado da Agenda Online",
+        "appointment_date": "2026-04-07",
+        "appointment_time": "08:00",
+        "status": "Agendado",
+        "technician_names": "Christopher, Gabriel P.",
+        "technician_id": 37,
+        "created_at": "2026-08-11T20:13:45.414+00:00"
+      },
+      {
+        "id": 1308,
+        "external_id": "GGCAL-1s2ch0mcr1358v1coevbbe3avk",
+        "title": "Rede D'or Assunção - Fisher",
+        "client_name": "Rede D'or Assunção - Fisher",
+        "client_address": "Rede D'or Assunção - Fisher",
+        "client_contact": "Sincronizado da Agenda Online",
+        "appointment_date": "2026-04-09",
+        "appointment_time": "08:00",
+        "status": "Agendado",
+        "technician_names": "Hélio, Gabriel II",
+        "technician_id": 22,
+        "created_at": "2026-08-11T20:13:45.414+00:00"
+      },
+      {
+        "id": 1309,
+        "external_id": "GGCAL-5e2ghla3imcgvjt5if2quvj4r0",
+        "title": "Rede D'or Avicena - Fisher",
+        "client_name": "Rede D'or Avicena - Fisher",
+        "client_address": "Rede D'or Avicena - Fisher",
+        "client_contact": "Sincronizado da Agenda Online",
+        "appointment_date": "2026-04-09",
+        "appointment_time": "08:00",
+        "status": "Agendado",
+        "technician_names": "Hélio, Gabriel II",
+        "technician_id": 22,
+        "created_at": "2026-08-11T20:13:45.414+00:00"
+      },
+      {
+        "id": 1312,
+        "external_id": "GGCAL-cs6rvua2ckd15cmdkh0spokvhg",
+        "title": "Unimed Tatuí",
+        "client_name": "Unimed Tatuí",
+        "client_address": "Unimed Tatuí",
+        "client_contact": "Sincronizado da Agenda Online",
+        "appointment_date": "2026-04-10",
+        "appointment_time": "08:00",
+        "status": "Agendado",
+        "technician_names": "Christopher, Gabriel P.",
+        "technician_id": 37,
+        "created_at": "2026-08-11T20:13:45.414+00:00"
+      },
+      {
+        "id": 1323,
+        "external_id": "GGCAL-st17mve9ls13b3rg3gadv7q13g",
+        "title": "SC Itapeva",
+        "client_name": "SC Itapeva",
+        "client_address": "SC Itapeva",
+        "client_contact": "Sincronizado da Agenda Online",
+        "appointment_date": "2026-04-14",
+        "appointment_time": "08:00",
+        "status": "Agendado",
+        "technician_names": "Mateus, Christopher, Gabriel P.",
+        "technician_id": 1,
+        "created_at": "2026-08-11T20:13:45.414+00:00"
+      },
+      {
+        "id": 1324,
+        "external_id": "GGCAL-dsvc0ib7oaq8hcobsc14jnquek",
+        "title": "SC Itapeva",
+        "client_name": "SC Itapeva",
+        "client_address": "SC Itapeva",
+        "client_contact": "Sincronizado da Agenda Online",
+        "appointment_date": "2026-04-15",
+        "appointment_time": "08:00",
+        "status": "Agendado",
+        "technician_names": "Mateus, Christopher, Gabriel P.",
+        "technician_id": 1,
+        "created_at": "2026-08-11T20:13:45.414+00:00"
+      },
+      {
+        "id": 1325,
+        "external_id": "GGCAL-hlpbqkhgjojj8b5167t0spp4kk",
+        "title": "Itaberá - Autoclave",
+        "client_name": "Itaberá - Autoclave",
+        "client_address": "Itaberá - Autoclave",
+        "client_contact": "Sincronizado da Agenda Online",
+        "appointment_date": "2026-04-15",
+        "appointment_time": "08:00",
+        "status": "Agendado",
+        "technician_names": "Mateus, Christopher, Gabriel P.",
+        "technician_id": 1,
+        "created_at": "2026-08-11T20:13:45.414+00:00"
+      },
+      {
+        "id": 1327,
+        "external_id": "GGCAL-8iusafamvn18ablmk4f62mm8gk",
+        "title": "SC Itapeva",
+        "client_name": "SC Itapeva",
+        "client_address": "SC Itapeva",
+        "client_contact": "Sincronizado da Agenda Online",
+        "appointment_date": "2026-04-16",
+        "appointment_time": "08:00",
+        "status": "Agendado",
+        "technician_names": "Mateus, Christopher, Gabriel P.",
+        "technician_id": 1,
+        "created_at": "2026-08-11T20:13:45.414+00:00"
+      },
+      {
+        "id": 1339,
+        "external_id": "GGCAL-5b65v07po43e6cflmvufp7h8q0",
+        "title": "Hospital Oftalmológico - BOS  (multimarcas)",
+        "client_name": "Hospital Oftalmológico - BOS  (multimarcas)",
+        "client_address": "Hospital Oftalmológico - BOS  (multimarcas)",
+        "client_contact": "Sincronizado da Agenda Online",
+        "appointment_date": "2026-04-22",
+        "appointment_time": "08:00",
+        "status": "Agendado",
+        "technician_names": "Mateus, Gabriel P.",
+        "technician_id": 1,
+        "created_at": "2026-08-11T20:13:45.414+00:00"
+      },
+      {
+        "id": 1341,
+        "external_id": "GGCAL-g221ga0rh0un37dks7mn9ohbbc",
+        "title": "Clínica de Cirurgia Plástica",
+        "client_name": "Clínica de Cirurgia Plástica",
+        "client_address": "Clínica de Cirurgia Plástica",
+        "client_contact": "Sincronizado da Agenda Online",
+        "appointment_date": "2026-04-22",
+        "appointment_time": "13:00",
+        "status": "Agendado",
+        "technician_names": "Mateus, Gabriel P.",
+        "technician_id": 1,
+        "created_at": "2026-08-11T20:13:45.414+00:00"
+      },
+      {
+        "id": 1344,
+        "external_id": "GGCAL-htuqes607u3veek8735aghn1bo",
+        "title": "SC de Piedade - Representadas",
+        "client_name": "SC de Piedade - Representadas",
+        "client_address": "SC de Piedade - Representadas",
+        "client_contact": "Sincronizado da Agenda Online",
+        "appointment_date": "2026-04-23",
+        "appointment_time": "08:00",
+        "status": "Agendado",
+        "technician_names": "Mauro, Mateus, Gabriel P.",
+        "technician_id": 2,
+        "created_at": "2026-08-11T20:13:45.414+00:00"
+      },
+      {
+        "id": 1357,
+        "external_id": "GGCAL-utoa0e722f38m93dvluvgjob7g",
+        "title": "UPH Zona Leste",
+        "client_name": "UPH Zona Leste",
+        "client_address": "UPH Zona Leste",
+        "client_contact": "Sincronizado da Agenda Online",
+        "appointment_date": "2026-04-28",
+        "appointment_time": "08:00",
+        "status": "Agendado",
+        "technician_names": "Christopher, Gabriel P.",
+        "technician_id": 37,
+        "created_at": "2026-08-11T20:13:45.414+00:00"
+      },
+      {
+        "id": 1376,
+        "external_id": "GGCAL-d2hi7itbdsbl3t5rqm246nia8g",
+        "title": "Unidade Prudentiva - Tecme (Duster)",
+        "client_name": "Unidade Prudentiva - Tecme (Duster)",
+        "client_address": "Unidade Prudentiva - Tecme (Duster)",
+        "client_contact": "Sincronizado da Agenda Online",
+        "appointment_date": "2026-05-05",
+        "appointment_time": "08:00",
+        "status": "Agendado",
+        "technician_names": "Edvan, Gabriel P.",
+        "technician_id": 17,
+        "created_at": "2026-08-11T20:13:45.414+00:00"
+      },
+      {
+        "id": 1380,
+        "external_id": "GGCAL-lh187usc2c9ureep4dms4n8d5s",
+        "title": "Unidade Prudentiva - Tecme",
+        "client_name": "Unidade Prudentiva - Tecme",
+        "client_address": "Unidade Prudentiva - Tecme",
+        "client_contact": "Sincronizado da Agenda Online",
+        "appointment_date": "2026-05-06",
+        "appointment_time": "08:00",
+        "status": "Agendado",
+        "technician_names": "Edvan, Gabriel P.",
+        "technician_id": 17,
+        "created_at": "2026-08-11T20:13:45.414+00:00"
+      },
+      {
+        "id": 1384,
+        "external_id": "GGCAL-8o6gmdm7il91t0aev4cksmjc48",
+        "title": "Unidade Prudentiva - Tecme",
+        "client_name": "Unidade Prudentiva - Tecme",
+        "client_address": "Unidade Prudentiva - Tecme",
+        "client_contact": "Sincronizado da Agenda Online",
+        "appointment_date": "2026-05-07",
+        "appointment_time": "08:00",
+        "status": "Agendado",
+        "technician_names": "Edvan, Gabriel P.",
+        "technician_id": 17,
+        "created_at": "2026-08-11T20:13:45.414+00:00"
+      },
+      {
+        "id": 1388,
+        "external_id": "GGCAL-jl5il3t1d89tlrm3vikqko04t4",
+        "title": "Unimed Tatuí + Capela do Alto (restrição)",
+        "client_name": "Unimed Tatuí + Capela do Alto (restrição)",
+        "client_address": "Unimed Tatuí + Capela do Alto (restrição)",
+        "client_contact": "Sincronizado da Agenda Online",
+        "appointment_date": "2026-05-08",
+        "appointment_time": "08:00",
+        "status": "Agendado",
+        "technician_names": "Gabriel P.",
+        "technician_id": 60,
+        "created_at": "2026-08-11T20:13:45.415+00:00"
+      },
+      {
+        "id": 1416,
+        "external_id": "GGCAL-plt2q20di9anr4uccceokve31c",
+        "title": "Apamir - Registro",
+        "client_name": "Apamir - Registro",
+        "client_address": "Apamir - Registro",
+        "client_contact": "Sincronizado da Agenda Online",
+        "appointment_date": "2026-05-15",
+        "appointment_time": "08:00",
+        "status": "Agendado",
+        "technician_names": "Ricardo, Gabriel P.",
+        "technician_id": 24,
+        "created_at": "2026-08-11T20:13:45.416+00:00"
+      },
+      {
+        "id": 1427,
+        "external_id": "GGCAL-1n36b69saqh0po20a67678kh20",
+        "title": "SC de São Paulo (chamado monitor)",
+        "client_name": "SC de São Paulo (chamado monitor)",
+        "client_address": "SC de São Paulo (chamado monitor)",
+        "client_contact": "Sincronizado da Agenda Online",
+        "appointment_date": "2026-05-20",
+        "appointment_time": "08:00",
+        "status": "Agendado",
+        "technician_names": "Hélio, Gabriel P.",
+        "technician_id": 22,
+        "created_at": "2026-08-11T20:13:45.416+00:00"
+      },
+      {
+        "id": 1429,
+        "external_id": "GGCAL-k41mg7icmlro38kbb8h3qs4vq0",
+        "title": "Rede Dor Santa Isabel - 01 Airvo2",
+        "client_name": "Rede Dor Santa Isabel - 01 Airvo2",
+        "client_address": "Rede Dor Santa Isabel - 01 Airvo2",
+        "client_contact": "Sincronizado da Agenda Online",
+        "appointment_date": "2026-05-20",
+        "appointment_time": "08:00",
+        "status": "Agendado",
+        "technician_names": "Hélio, Gabriel P.",
+        "technician_id": 22,
+        "created_at": "2026-08-11T20:13:45.416+00:00"
+      },
+      {
+        "id": 1435,
+        "external_id": "GGCAL-qj01fera5h8o8o33a9hbo8sh0s",
+        "title": "HC-IC (altofluxo EQAT)",
+        "client_name": "HC-IC (altofluxo EQAT)",
+        "client_address": "HC-IC (altofluxo EQAT)",
+        "client_contact": "Sincronizado da Agenda Online",
+        "appointment_date": "2026-05-21",
+        "appointment_time": "08:00",
+        "status": "Agendado",
+        "technician_names": "Hélio, Gabriel P.",
+        "technician_id": 22,
+        "created_at": "2026-08-11T20:13:45.416+00:00"
+      },
+      {
+        "id": 1437,
+        "external_id": "GGCAL-0su257ose1c4kv3rkf2ihs2f48",
+        "title": "SC Sorocaba - Cisa",
+        "client_name": "SC Sorocaba - Cisa",
+        "client_address": "SC Sorocaba - Cisa",
+        "client_contact": "Sincronizado da Agenda Online",
+        "appointment_date": "2026-05-22",
+        "appointment_time": "08:00",
+        "status": "Agendado",
+        "technician_names": "Mateus, Gabriel P.",
+        "technician_id": 1,
+        "created_at": "2026-08-11T20:13:45.417+00:00"
+      },
+      {
+        "id": 1448,
+        "external_id": "GGCAL-vsfg0f8va8q1k1b7t45fa5kulg",
+        "title": "PM Sorocaba - MPs",
+        "client_name": "PM Sorocaba - MPs",
+        "client_address": "PM Sorocaba - MPs",
+        "client_contact": "Sincronizado da Agenda Online",
+        "appointment_date": "2026-05-25",
+        "appointment_time": "08:00",
+        "status": "Agendado",
+        "technician_names": "Christopher, Gabriel P.",
+        "technician_id": 37,
+        "created_at": "2026-08-11T20:13:45.417+00:00"
+      },
+      {
+        "id": 1449,
+        "external_id": "GGCAL-1kpekg9icci8flftjvka8in96o",
+        "title": "CCPS + BOS",
+        "client_name": "CCPS + BOS",
+        "client_address": "CCPS + BOS",
+        "client_contact": "Sincronizado da Agenda Online",
+        "appointment_date": "2026-05-26",
+        "appointment_time": "08:00",
+        "status": "Agendado",
+        "technician_names": "Mateus, Gabriel P.",
+        "technician_id": 1,
+        "created_at": "2026-08-11T20:13:45.417+00:00"
+      },
+      {
+        "id": 1464,
+        "external_id": "GGCAL-qo04b69dh1sifgt1uk7urh883g",
+        "title": "Unimed Itapetininga",
+        "client_name": "Unimed Itapetininga",
+        "client_address": "Unimed Itapetininga",
+        "client_contact": "Sincronizado da Agenda Online",
+        "appointment_date": "2026-05-28",
+        "appointment_time": "08:00",
+        "status": "Agendado",
+        "technician_names": "Mateus, Christopher, Gabriel P.",
+        "technician_id": 1,
+        "created_at": "2026-08-11T20:13:45.417+00:00"
+      },
+      {
+        "id": 1476,
+        "external_id": "GGCAL-mohcnn6u8g1pkabmm2ghn7i8rg",
+        "title": "Hospital Regional de Itanhaém - Diversos",
+        "client_name": "Hospital Regional de Itanhaém - Diversos",
+        "client_address": "Hospital Regional de Itanhaém - Diversos",
+        "client_contact": "Sincronizado da Agenda Online",
+        "appointment_date": "2026-06-01",
+        "appointment_time": "08:00",
+        "status": "Agendado",
+        "technician_names": "Gabriel P.",
+        "technician_id": 60,
+        "created_at": "2026-08-11T20:13:45.417+00:00"
+      },
+      {
+        "id": 1479,
+        "external_id": "GGCAL-fs8tlro355b9sehe0tmdtfgpf8",
+        "title": "Hospital Regional de Itanhaém - Diversos",
+        "client_name": "Hospital Regional de Itanhaém - Diversos",
+        "client_address": "Hospital Regional de Itanhaém - Diversos",
+        "client_contact": "Sincronizado da Agenda Online",
+        "appointment_date": "2026-06-02",
+        "appointment_time": "08:00",
+        "status": "Agendado",
+        "technician_names": "Gabriel P.",
+        "technician_id": 60,
+        "created_at": "2026-08-11T20:13:45.417+00:00"
+      },
+      {
+        "id": 1494,
+        "external_id": "GGCAL-75mbq7oii1hohuinc9potqeguo",
+        "title": "SC Itapeva (Duster)",
+        "client_name": "SC Itapeva (Duster)",
+        "client_address": "SC Itapeva (Duster)",
+        "client_contact": "Sincronizado da Agenda Online",
+        "appointment_date": "2026-06-09",
+        "appointment_time": "08:00",
+        "status": "Agendado",
+        "technician_names": "Christopher, Gabriel P.",
+        "technician_id": 37,
+        "created_at": "2026-08-11T20:13:45.418+00:00"
+      },
+      {
+        "id": 1500,
+        "external_id": "GGCAL-miqac87fe9e7it9jbrnh8mdjos",
+        "title": "SC Itapeva",
+        "client_name": "SC Itapeva",
+        "client_address": "SC Itapeva",
+        "client_contact": "Sincronizado da Agenda Online",
+        "appointment_date": "2026-06-10",
+        "appointment_time": "08:00",
+        "status": "Agendado",
+        "technician_names": "Christopher, Gabriel P.",
+        "technician_id": 37,
+        "created_at": "2026-08-11T20:13:45.418+00:00"
+      },
+      {
+        "id": 1501,
+        "external_id": "GGCAL-tc0lnund8ef090jaukaud9idb0",
+        "title": "CHS - Corretiva no foco",
+        "client_name": "CHS - Corretiva no foco",
+        "client_address": "CHS - Corretiva no foco",
+        "client_contact": "Sincronizado da Agenda Online",
+        "appointment_date": "2026-06-10",
+        "appointment_time": "08:00",
+        "status": "Agendado",
+        "technician_names": "Ricardo, Hélio, Gabriel P.",
+        "technician_id": 24,
+        "created_at": "2026-08-11T20:13:45.418+00:00"
+      },
+      {
+        "id": 1504,
+        "external_id": "GGCAL-u624tqgciavb33v8fnm5nlnm6g",
+        "title": "SC Itapeva",
+        "client_name": "SC Itapeva",
+        "client_address": "SC Itapeva",
+        "client_contact": "Sincronizado da Agenda Online",
+        "appointment_date": "2026-06-11",
+        "appointment_time": "08:00",
+        "status": "Agendado",
+        "technician_names": "Christopher, Gabriel P.",
+        "technician_id": 37,
+        "created_at": "2026-08-11T20:13:45.418+00:00"
+      },
+      {
+        "id": 1505,
+        "external_id": "GGCAL-ecv7u09aikj61ikmcn1h2vka8k",
+        "title": "Unimed Sorocaba - Chamados Fanem",
+        "client_name": "Unimed Sorocaba - Chamados Fanem",
+        "client_address": "Unimed Sorocaba - Chamados Fanem",
+        "client_contact": "Sincronizado da Agenda Online",
+        "appointment_date": "2026-06-12",
+        "appointment_time": "08:00",
+        "status": "Agendado",
+        "technician_names": "Kauan, Gabriel P.",
+        "technician_id": 41,
+        "created_at": "2026-08-11T20:13:45.418+00:00"
+      },
+      {
+        "id": 1512,
+        "external_id": "GGCAL-ad1b2g92rmlld166nku6h62h44",
+        "title": "H. Villa Lobos Fisher (1 blender)",
+        "client_name": "H. Villa Lobos Fisher (1 blender)",
+        "client_address": "H. Villa Lobos Fisher (1 blender)",
+        "client_contact": "Sincronizado da Agenda Online",
+        "appointment_date": "2026-06-16",
+        "appointment_time": "08:00",
+        "status": "Agendado",
+        "technician_names": "Hélio, Gabriel P.",
+        "technician_id": 22,
+        "created_at": "2026-08-11T20:13:45.418+00:00"
+      },
+      {
+        "id": 1514,
+        "external_id": "GGCAL-i38fqdm6cii8g198lf23e9emio",
+        "title": "HC-ICR (altofluxo EQAT)",
+        "client_name": "HC-ICR (altofluxo EQAT)",
+        "client_address": "HC-ICR (altofluxo EQAT)",
+        "client_contact": "Sincronizado da Agenda Online",
+        "appointment_date": "2026-06-16",
+        "appointment_time": "08:00",
+        "status": "Agendado",
+        "technician_names": "Hélio, Gabriel P.",
+        "technician_id": 22,
+        "created_at": "2026-08-11T20:13:45.418+00:00"
+      },
+      {
+        "id": 1522,
+        "external_id": "GGCAL-oice9kup41u193bqe59ddesh98",
+        "title": "PM Sorocaba - MPs",
+        "client_name": "PM Sorocaba - MPs",
+        "client_address": "PM Sorocaba - MPs",
+        "client_contact": "Sincronizado da Agenda Online",
+        "appointment_date": "2026-06-18",
+        "appointment_time": "08:00",
+        "status": "Agendado",
+        "technician_names": "Christopher, Gabriel P.",
+        "technician_id": 37,
+        "created_at": "2026-08-11T20:13:45.418+00:00"
+      },
+      {
+        "id": 1527,
+        "external_id": "GGCAL-o8mje9dmi865jpns9r56b76l1g",
+        "title": "Hospital Oftalmológico - BOS (multimarcas)",
+        "client_name": "Hospital Oftalmológico - BOS (multimarcas)",
+        "client_address": "Hospital Oftalmológico - BOS (multimarcas)",
+        "client_contact": "Sincronizado da Agenda Online",
+        "appointment_date": "2026-06-19",
+        "appointment_time": "08:00",
+        "status": "Agendado",
+        "technician_names": "Mateus, Gabriel P.",
+        "technician_id": 1,
+        "created_at": "2026-08-11T20:13:45.418+00:00"
+      },
+      {
+        "id": 1531,
+        "external_id": "GGCAL-ic23qjtuc79sqkek3btb8prsrc",
+        "title": "Rede São Luiz Osasco - Fisher (HB-20)",
+        "client_name": "Rede São Luiz Osasco - Fisher (HB-20)",
+        "client_address": "Rede São Luiz Osasco - Fisher (HB-20)",
+        "client_contact": "Sincronizado da Agenda Online",
+        "appointment_date": "2026-06-22",
+        "appointment_time": "07:00",
+        "status": "Agendado",
+        "technician_names": "Hélio, Gabriel P.",
+        "technician_id": 22,
+        "created_at": "2026-08-11T20:13:45.419+00:00"
+      },
+      {
+        "id": 1539,
+        "external_id": "GGCAL-rp5fhufbh8s7778ve7oeort8bs",
+        "title": "Inst. de Hemodiálise Sorocaba - IHS (Argo)",
+        "client_name": "Inst. de Hemodiálise Sorocaba - IHS (Argo)",
+        "client_address": "Inst. de Hemodiálise Sorocaba - IHS (Argo)",
+        "client_contact": "Sincronizado da Agenda Online",
+        "appointment_date": "2026-06-23",
+        "appointment_time": "08:00",
+        "status": "Agendado",
+        "technician_names": "Christopher, Gabriel P.",
+        "technician_id": 37,
+        "created_at": "2026-08-11T20:13:45.419+00:00"
+      },
+      {
+        "id": 1552,
+        "external_id": "GGCAL-nlv9464iepvi3spgibonoseno0",
+        "title": "Unimed Itapetininga (argo 89)",
+        "client_name": "Unimed Itapetininga (argo 89)",
+        "client_address": "Unimed Itapetininga (argo 89)",
+        "client_contact": "Sincronizado da Agenda Online",
+        "appointment_date": "2026-06-25",
+        "appointment_time": "08:00",
+        "status": "Agendado",
+        "technician_names": "Gabriel P., Mauro, Ricardo",
+        "technician_id": 60,
+        "created_at": "2026-08-11T20:13:45.419+00:00"
+      },
+      {
+        "id": 1565,
+        "external_id": "GGCAL-2q12bi86pskm22qpajdn5e6ev0",
+        "title": "PM Sorocaba - MP (Argo do léo)",
+        "client_name": "PM Sorocaba - MP (Argo do léo)",
+        "client_address": "PM Sorocaba - MP (Argo do léo)",
+        "client_contact": "Sincronizado da Agenda Online",
+        "appointment_date": "2026-06-30",
+        "appointment_time": "08:00",
+        "status": "Agendado",
+        "technician_names": "Kauan, Gabriel P.",
+        "technician_id": 41,
+        "created_at": "2026-08-11T20:13:45.419+00:00"
+      },
+      {
+        "id": 1572,
+        "external_id": "GGCAL-pm53am5h3bh55o7398eoa2tq1g",
+        "title": "Regional de Itanhaém - Tecme (Saveiro)",
+        "client_name": "Regional de Itanhaém - Tecme (Saveiro)",
+        "client_address": "Regional de Itanhaém - Tecme (Saveiro)",
+        "client_contact": "Sincronizado da Agenda Online",
+        "appointment_date": "2026-07-01",
+        "appointment_time": "08:00",
+        "status": "Agendado",
+        "technician_names": "Gabriel P.",
+        "technician_id": 60,
+        "created_at": "2026-08-11T20:13:45.419+00:00"
+      },
+      {
+        "id": 1580,
+        "external_id": "GGCAL-uss7q30anf2eikvutk315hupt4",
+        "title": "Regional de Itanhaém - Tecme",
+        "client_name": "Regional de Itanhaém - Tecme",
+        "client_address": "Regional de Itanhaém - Tecme",
+        "client_contact": "Sincronizado da Agenda Online",
+        "appointment_date": "2026-07-02",
+        "appointment_time": "08:00",
+        "status": "Agendado",
+        "technician_names": "Gabriel P.",
+        "technician_id": 60,
+        "created_at": "2026-08-11T20:13:45.42+00:00"
+      },
+      {
+        "id": 1598,
+        "external_id": "GGCAL-td8947ujppf9ine2sbh3ct2998",
+        "title": "Hospital Regional de Registro (Duster)",
+        "client_name": "Hospital Regional de Registro (Duster)",
+        "client_address": "Hospital Regional de Registro (Duster)",
+        "client_contact": "Sincronizado da Agenda Online",
+        "appointment_date": "2026-07-07",
+        "appointment_time": "08:00",
+        "status": "Agendado",
+        "technician_names": "Gabriel P.",
+        "technician_id": 60,
+        "created_at": "2026-08-11T20:13:45.42+00:00"
+      },
+      {
+        "id": 1601,
+        "external_id": "GGCAL-9bd096cevcmjihllefcrtbam6s",
+        "title": "Hospital Regional de Registro",
+        "client_name": "Hospital Regional de Registro",
+        "client_address": "Hospital Regional de Registro",
+        "client_contact": "Sincronizado da Agenda Online",
+        "appointment_date": "2026-07-08",
+        "appointment_time": "08:00",
+        "status": "Agendado",
+        "technician_names": "Gabriel P.",
+        "technician_id": 60,
+        "created_at": "2026-08-11T20:13:45.42+00:00"
+      },
+      {
+        "id": 1621,
+        "external_id": "GGCAL-rrrenohl5auvr01uerqo2ql0i4",
+        "title": "Hosp. De Carid. São Vicen. Jundiaí (Argo45)",
+        "client_name": "Hosp. De Carid. São Vicen. Jundiaí (Argo45)",
+        "client_address": "Hosp. De Carid. São Vicen. Jundiaí (Argo45)",
+        "client_contact": "Sincronizado da Agenda Online",
+        "appointment_date": "2026-07-14",
+        "appointment_time": "08:00",
+        "status": "Agendado",
+        "technician_names": "Gabriel P., Kauan",
+        "technician_id": 60,
+        "created_at": "2026-08-11T20:13:45.42+00:00"
+      },
+      {
+        "id": 1627,
+        "external_id": "GGCAL-n0gv4nhe7i6dball4c06glgojo",
+        "title": "Hosp. De Carid. São Vicen. Jundiaí (Argo45)",
+        "client_name": "Hosp. De Carid. São Vicen. Jundiaí (Argo45)",
+        "client_address": "Hosp. De Carid. São Vicen. Jundiaí (Argo45)",
+        "client_contact": "Sincronizado da Agenda Online",
+        "appointment_date": "2026-07-15",
+        "appointment_time": "08:00",
+        "status": "Agendado",
+        "technician_names": "Gabriel P.",
+        "technician_id": 60,
+        "created_at": "2026-08-11T20:13:45.42+00:00"
+      },
+      {
+        "id": 1630,
+        "external_id": "GGCAL-ocpkbl1m8uv9pptia7l5or1hfs",
+        "title": "Hosp. De Carid. São Vicen. Jundiaí (Argo45)",
+        "client_name": "Hosp. De Carid. São Vicen. Jundiaí (Argo45)",
+        "client_address": "Hosp. De Carid. São Vicen. Jundiaí (Argo45)",
+        "client_contact": "Sincronizado da Agenda Online",
+        "appointment_date": "2026-07-16",
+        "appointment_time": "08:00",
+        "status": "Agendado",
+        "technician_names": "Gabriel P., Kauan",
+        "technician_id": 60,
+        "created_at": "2026-08-11T20:13:45.42+00:00"
+      },
+      {
+        "id": 1633,
+        "external_id": "GGCAL-8eb789mraio5c7m8a9061lc3lg",
+        "title": "Hospital Oftalmológico - BOS (multimarcas)",
+        "client_name": "Hospital Oftalmológico - BOS (multimarcas)",
+        "client_address": "Hospital Oftalmológico - BOS (multimarcas)",
+        "client_contact": "Sincronizado da Agenda Online",
+        "appointment_date": "2026-07-17",
+        "appointment_time": "08:00",
+        "status": "Agendado",
+        "technician_names": "Mauro, Gabriel P., Kauan",
+        "technician_id": 2,
+        "created_at": "2026-08-11T20:13:45.421+00:00"
+      },
+      {
+        "id": 1640,
+        "external_id": "GGCAL-oqa4i7nagi7infu52nldiakifs",
+        "title": "Exame periódico",
+        "client_name": "Exame periódico",
+        "client_address": "Exame periódico",
+        "client_contact": "Sincronizado da Agenda Online",
+        "appointment_date": "2026-07-20",
+        "appointment_time": "08:00",
+        "status": "Agendado",
+        "technician_names": "Gabriel P., Gabriel S, Lucas Atyla",
+        "technician_id": 60,
+        "created_at": "2026-08-11T20:13:45.421+00:00"
+      },
+      {
+        "id": 1646,
+        "external_id": "GGCAL-s5aq3mj2lcf1q9mcs6j3fu68i8",
+        "title": "SC Itapeva",
+        "client_name": "SC Itapeva",
+        "client_address": "SC Itapeva",
+        "client_contact": "Sincronizado da Agenda Online",
+        "appointment_date": "2026-07-21",
+        "appointment_time": "08:00",
+        "status": "Agendado",
+        "technician_names": "Christopher, Gabriel P.",
+        "technician_id": 37,
+        "created_at": "2026-08-11T20:13:45.421+00:00"
+      },
+      {
+        "id": 1648,
+        "external_id": "GGCAL-c2mf0v0bqaofqldv9j8vkbpf7s",
+        "title": "SC Itapeva",
+        "client_name": "SC Itapeva",
+        "client_address": "SC Itapeva",
+        "client_contact": "Sincronizado da Agenda Online",
+        "appointment_date": "2026-07-22",
+        "appointment_time": "08:00",
+        "status": "Agendado",
+        "technician_names": "Christopher, Gabriel P.",
+        "technician_id": 37,
+        "created_at": "2026-08-11T20:13:45.421+00:00"
+      },
+      {
+        "id": 1654,
+        "external_id": "GGCAL-803le7srd9t0j3bvkk8lp5k83k",
+        "title": "SC Itapeva",
+        "client_name": "SC Itapeva",
+        "client_address": "SC Itapeva",
+        "client_contact": "Sincronizado da Agenda Online",
+        "appointment_date": "2026-07-23",
+        "appointment_time": "08:00",
+        "status": "Agendado",
+        "technician_names": "Christopher, Gabriel P.",
+        "technician_id": 37,
+        "created_at": "2026-08-11T20:13:45.421+00:00"
+      },
+      {
+        "id": 1665,
+        "external_id": "GGCAL-vmlmr2q1bqdv1puaf00k50617c",
+        "title": "Hospital Modelo - Intermédica",
+        "client_name": "Hospital Modelo - Intermédica",
+        "client_address": "Hospital Modelo - Intermédica",
+        "client_contact": "Sincronizado da Agenda Online",
+        "appointment_date": "2026-07-24",
+        "appointment_time": "08:00",
+        "status": "Agendado",
+        "technician_names": "Christopher, Gabriel P.",
+        "technician_id": 37,
+        "created_at": "2026-08-11T20:13:45.421+00:00"
+      },
+      {
+        "id": 1672,
+        "external_id": "GGCAL-nr3nfkniaa23004eljnper0ffg",
+        "title": "PM Sorocaba - MP (Argo45)",
+        "client_name": "PM Sorocaba - MP (Argo45)",
+        "client_address": "PM Sorocaba - MP (Argo45)",
+        "client_contact": "Sincronizado da Agenda Online",
+        "appointment_date": "2026-07-27",
+        "appointment_time": "08:00",
+        "status": "Agendado",
+        "technician_names": "Kauan, Gabriel P.",
+        "technician_id": 41,
+        "created_at": "2026-08-11T20:13:45.421+00:00"
+      },
+      {
+        "id": 1677,
+        "external_id": "GGCAL-puitgee5jb1c2tkvf7341gmj8k",
+        "title": "PM Sorocaba - MP",
+        "client_name": "PM Sorocaba - MP",
+        "client_address": "PM Sorocaba - MP",
+        "client_contact": "Sincronizado da Agenda Online",
+        "appointment_date": "2026-07-28",
+        "appointment_time": "08:00",
+        "status": "Agendado",
+        "technician_names": "Kauan, Gabriel P.",
+        "technician_id": 41,
+        "created_at": "2026-08-11T20:13:45.421+00:00"
+      },
+      {
+        "id": 1679,
+        "external_id": "GGCAL-1lit7j71d7oap9fmjqj7hdep7s",
+        "title": "Unimed Itapetininga / Tatuí?",
+        "client_name": "Unimed Itapetininga / Tatuí?",
+        "client_address": "Unimed Itapetininga / Tatuí?",
+        "client_contact": "Sincronizado da Agenda Online",
+        "appointment_date": "2026-07-29",
+        "appointment_time": "08:00",
+        "status": "Agendado",
+        "technician_names": "Mauro, Gabriel P., Kauan",
+        "technician_id": 2,
+        "created_at": "2026-08-11T20:13:45.421+00:00"
+      },
+      {
+        "id": 1680,
+        "external_id": "GGCAL-iojt6qjohrnaf2dam6o892oacs",
+        "title": "PM Capão Bonito - câmaras",
+        "client_name": "PM Capão Bonito - câmaras",
+        "client_address": "PM Capão Bonito - câmaras",
+        "client_contact": "Sincronizado da Agenda Online",
+        "appointment_date": "2026-07-29",
+        "appointment_time": "08:00",
+        "status": "Agendado",
+        "technician_names": "Mauro, Gabriel P., Kauan",
+        "technician_id": 2,
+        "created_at": "2026-08-11T20:13:45.421+00:00"
+      },
+      {
+        "id": 1686,
+        "external_id": "GGCAL-s11bbk64tm262abm6cb2gmtjd8",
+        "title": "SC Piedade  (membrana osmose)  (Argo45)",
+        "client_name": "SC Piedade  (membrana osmose)  (Argo45)",
+        "client_address": "SC Piedade  (membrana osmose)  (Argo45)",
+        "client_contact": "Sincronizado da Agenda Online",
+        "appointment_date": "2026-07-30",
+        "appointment_time": "08:00",
+        "status": "Agendado",
+        "technician_names": "Mauro, Kauan, Gabriel P.",
+        "technician_id": 2,
+        "created_at": "2026-08-11T20:13:45.421+00:00"
+      },
+      {
+        "id": 1690,
+        "external_id": "GGCAL-2n4d3nvuh9p2sidv0k24el794s",
+        "title": "HC-ICR (altofluxo EQAT) (Kwid)",
+        "client_name": "HC-ICR (altofluxo EQAT) (Kwid)",
+        "client_address": "HC-ICR (altofluxo EQAT) (Kwid)",
+        "client_contact": "Sincronizado da Agenda Online",
+        "appointment_date": "2026-07-31",
+        "appointment_time": "08:00",
+        "status": "Agendado",
+        "technician_names": "Hélio, Gabriel P.",
+        "technician_id": 22,
+        "created_at": "2026-08-11T20:13:45.421+00:00"
+      },
+      {
+        "id": 1698,
+        "external_id": "GGCAL-6n48r0tl7qcl750e69koeohnc4",
+        "title": "Exame médico periódico",
+        "client_name": "Exame médico periódico",
+        "client_address": "Exame médico periódico",
+        "client_contact": "Sincronizado da Agenda Online",
+        "appointment_date": "2026-08-03",
+        "appointment_time": "08:00",
+        "status": "Agendado",
+        "technician_names": "Gabriel P.",
+        "technician_id": 60,
+        "created_at": "2026-08-11T20:13:45.421+00:00"
+      },
+      {
+        "id": 1705,
+        "external_id": "GGCAL-tgkrjpbdu39lg040ugamh5odlo",
+        "title": "Hospital Regional de Registro",
+        "client_name": "Hospital Regional de Registro",
+        "client_address": "Hospital Regional de Registro",
+        "client_contact": "Sincronizado da Agenda Online",
+        "appointment_date": "2026-08-04",
+        "appointment_time": "08:00",
+        "status": "Agendado",
+        "technician_names": "Gabriel P.",
+        "technician_id": 60,
+        "created_at": "2026-08-11T20:13:45.421+00:00"
+      },
+      {
+        "id": 1707,
+        "external_id": "GGCAL-2s18b8ld8eaf6pvgp2nnpuneeo",
+        "title": "Hospital Regional de Registro",
+        "client_name": "Hospital Regional de Registro",
+        "client_address": "Hospital Regional de Registro",
+        "client_contact": "Sincronizado da Agenda Online",
+        "appointment_date": "2026-08-05",
+        "appointment_time": "08:00",
+        "status": "Agendado",
+        "technician_names": "Gabriel P.",
+        "technician_id": 60,
+        "created_at": "2026-08-11T20:13:45.421+00:00"
+      },
+      {
+        "id": 1728,
+        "external_id": "GGCAL-uka4ijmgl12gaqh3bsqsbnrsos",
+        "title": "SC Itapeva",
+        "client_name": "SC Itapeva",
+        "client_address": "SC Itapeva",
+        "client_contact": "Sincronizado da Agenda Online",
+        "appointment_date": "2026-08-11",
+        "appointment_time": "08:00",
+        "status": "Agendado",
+        "technician_names": "Christopher, Gabriel P.",
+        "technician_id": 37,
+        "created_at": "2026-08-11T20:13:45.421+00:00"
+      },
+      {
+        "id": 1731,
+        "external_id": "GGCAL-l6khedgbo6m9alua32v5en4lf4",
+        "title": "SC Itapeva",
+        "client_name": "SC Itapeva",
+        "client_address": "SC Itapeva",
+        "client_contact": "Sincronizado da Agenda Online",
+        "appointment_date": "2026-08-12",
+        "appointment_time": "08:00",
+        "status": "Agendado",
+        "technician_names": "Christopher, Gabriel P.",
+        "technician_id": 37,
+        "created_at": "2026-08-11T20:13:45.422+00:00"
+      },
+      {
+        "id": 1737,
+        "external_id": "GGCAL-9uak0rk76kjp6elfjh0hp6cc3c",
+        "title": "SC Itapeva",
+        "client_name": "SC Itapeva",
+        "client_address": "SC Itapeva",
+        "client_contact": "Sincronizado da Agenda Online",
+        "appointment_date": "2026-08-13",
+        "appointment_time": "08:00",
+        "status": "Agendado",
+        "technician_names": "Christopher, Gabriel P.",
+        "technician_id": 37,
+        "created_at": "2026-08-11T20:13:45.422+00:00"
+      },
+      {
+        "id": 1770,
+        "external_id": "GGCAL-t698a2crptds75210pr5ojr1dc",
+        "title": "SC Itapeva - ventiladores + Bombas",
+        "client_name": "SC Itapeva - ventiladores + Bombas",
+        "client_address": "SC Itapeva - ventiladores + Bombas",
+        "client_contact": "Sincronizado da Agenda Online",
+        "appointment_date": "2026-08-24",
+        "appointment_time": "08:00",
+        "status": "Agendado",
+        "technician_names": "Gabriel P.",
+        "technician_id": 60,
+        "created_at": "2026-08-11T20:13:45.422+00:00"
+      },
+      {
+        "id": 1771,
+        "external_id": "GGCAL-6gijau5ppmpr7rserbvrqd12p4",
+        "title": "SC Itapeva - ventiladores + Bombas",
+        "client_name": "SC Itapeva - ventiladores + Bombas",
+        "client_address": "SC Itapeva - ventiladores + Bombas",
+        "client_contact": "Sincronizado da Agenda Online",
+        "appointment_date": "2026-08-25",
+        "appointment_time": "08:00",
+        "status": "Agendado",
+        "technician_names": "Gabriel P.",
+        "technician_id": 60,
+        "created_at": "2026-08-11T20:13:45.422+00:00"
+      },
+      {
+        "id": 1961,
+        "external_id": "GGCAL-rd33hem65ak29o7p13i2mp7obk",
+        "title": "PM Cerquilho",
+        "client_name": "PM Cerquilho",
+        "client_address": "PM Cerquilho",
+        "client_contact": "Sincronizado da Agenda Online",
+        "appointment_date": "2027-07-02",
+        "appointment_time": "07:00",
+        "status": "Agendado",
+        "technician_names": "Christopher, Gabriel Patrick",
+        "technician_id": 37,
+        "created_at": "2026-08-11T20:13:45.424+00:00"
+      }
+    ],
+    "appointmentLinks": [
+      {
+        "appointment_id": 837,
+        "technician_id": 45,
+        "created_at": "2026-08-12T12:13:10.239729+00:00"
+      },
+      {
+        "appointment_id": 1357,
+        "technician_id": 60,
+        "created_at": "2026-08-12T12:13:10.770127+00:00"
+      },
+      {
+        "appointment_id": 1148,
+        "technician_id": 45,
+        "created_at": "2026-08-12T12:13:10.595295+00:00"
+      },
+      {
+        "appointment_id": 1159,
+        "technician_id": 45,
+        "created_at": "2026-08-12T12:13:10.595295+00:00"
+      },
+      {
+        "appointment_id": 1376,
+        "technician_id": 60,
+        "created_at": "2026-08-12T12:13:10.770127+00:00"
+      },
+      {
+        "appointment_id": 1380,
+        "technician_id": 60,
+        "created_at": "2026-08-12T12:13:10.770127+00:00"
+      },
+      {
+        "appointment_id": 1384,
+        "technician_id": 60,
+        "created_at": "2026-08-12T12:13:10.770127+00:00"
+      },
+      {
+        "appointment_id": 1494,
+        "technician_id": 60,
+        "created_at": "2026-08-12T12:13:10.954305+00:00"
+      },
+      {
+        "appointment_id": 1500,
+        "technician_id": 60,
+        "created_at": "2026-08-12T12:13:10.954305+00:00"
+      },
+      {
+        "appointment_id": 1501,
+        "technician_id": 60,
+        "created_at": "2026-08-12T12:13:10.954305+00:00"
+      },
+      {
+        "appointment_id": 1288,
+        "technician_id": 60,
+        "created_at": "2026-08-12T12:13:10.770127+00:00"
+      },
+      {
+        "appointment_id": 1305,
+        "technician_id": 60,
+        "created_at": "2026-08-12T12:13:10.770127+00:00"
+      },
+      {
+        "appointment_id": 1308,
+        "technician_id": 45,
+        "created_at": "2026-08-12T12:13:10.770127+00:00"
+      },
+      {
+        "appointment_id": 1309,
+        "technician_id": 45,
+        "created_at": "2026-08-12T12:13:10.770127+00:00"
+      },
+      {
+        "appointment_id": 1312,
+        "technician_id": 60,
+        "created_at": "2026-08-12T12:13:10.770127+00:00"
+      },
+      {
+        "appointment_id": 1323,
+        "technician_id": 60,
+        "created_at": "2026-08-12T12:13:10.770127+00:00"
+      },
+      {
+        "appointment_id": 1324,
+        "technician_id": 60,
+        "created_at": "2026-08-12T12:13:10.770127+00:00"
+      },
+      {
+        "appointment_id": 1325,
+        "technician_id": 60,
+        "created_at": "2026-08-12T12:13:10.770127+00:00"
+      },
+      {
+        "appointment_id": 1327,
+        "technician_id": 60,
+        "created_at": "2026-08-12T12:13:10.770127+00:00"
+      },
+      {
+        "appointment_id": 1504,
+        "technician_id": 60,
+        "created_at": "2026-08-12T12:13:10.954305+00:00"
+      },
+      {
+        "appointment_id": 1505,
+        "technician_id": 60,
+        "created_at": "2026-08-12T12:13:10.954305+00:00"
+      },
+      {
+        "appointment_id": 1427,
+        "technician_id": 60,
+        "created_at": "2026-08-12T12:13:10.954305+00:00"
+      },
+      {
+        "appointment_id": 1429,
+        "technician_id": 60,
+        "created_at": "2026-08-12T12:13:10.954305+00:00"
+      },
+      {
+        "appointment_id": 1435,
+        "technician_id": 60,
+        "created_at": "2026-08-12T12:13:10.954305+00:00"
+      },
+      {
+        "appointment_id": 1437,
+        "technician_id": 60,
+        "created_at": "2026-08-12T12:13:10.954305+00:00"
+      },
+      {
+        "appointment_id": 1448,
+        "technician_id": 60,
+        "created_at": "2026-08-12T12:13:10.954305+00:00"
+      },
+      {
+        "appointment_id": 1449,
+        "technician_id": 60,
+        "created_at": "2026-08-12T12:13:10.954305+00:00"
+      },
+      {
+        "appointment_id": 1627,
+        "technician_id": 60,
+        "created_at": "2026-08-12T12:13:11.141572+00:00"
+      },
+      {
+        "appointment_id": 1630,
+        "technician_id": 60,
+        "created_at": "2026-08-12T12:13:11.141572+00:00"
+      },
+      {
+        "appointment_id": 1633,
+        "technician_id": 60,
+        "created_at": "2026-08-12T12:13:11.141572+00:00"
+      },
+      {
+        "appointment_id": 1580,
+        "technician_id": 60,
+        "created_at": "2026-08-12T12:13:11.141572+00:00"
+      },
+      {
+        "appointment_id": 1737,
+        "technician_id": 60,
+        "created_at": "2026-08-12T12:13:11.320303+00:00"
+      },
+      {
+        "appointment_id": 1770,
+        "technician_id": 60,
+        "created_at": "2026-08-12T12:13:11.320303+00:00"
+      },
+      {
+        "appointment_id": 1771,
+        "technician_id": 60,
+        "created_at": "2026-08-12T12:13:11.320303+00:00"
+      },
+      {
+        "appointment_id": 1016,
+        "technician_id": 45,
+        "created_at": "2026-08-12T12:13:10.420782+00:00"
+      },
+      {
+        "appointment_id": 1017,
+        "technician_id": 45,
+        "created_at": "2026-08-12T12:13:10.420782+00:00"
+      },
+      {
+        "appointment_id": 1027,
+        "technician_id": 45,
+        "created_at": "2026-08-12T12:13:10.420782+00:00"
+      },
+      {
+        "appointment_id": 1040,
+        "technician_id": 45,
+        "created_at": "2026-08-12T12:13:10.420782+00:00"
+      },
+      {
+        "appointment_id": 1173,
+        "technician_id": 45,
+        "created_at": "2026-08-12T12:13:10.595295+00:00"
+      },
+      {
+        "appointment_id": 1176,
+        "technician_id": 45,
+        "created_at": "2026-08-12T12:13:10.595295+00:00"
+      },
+      {
+        "appointment_id": 1179,
+        "technician_id": 45,
+        "created_at": "2026-08-12T12:13:10.595295+00:00"
+      },
+      {
+        "appointment_id": 1188,
+        "technician_id": 45,
+        "created_at": "2026-08-12T12:13:10.595295+00:00"
+      },
+      {
+        "appointment_id": 1339,
+        "technician_id": 60,
+        "created_at": "2026-08-12T12:13:10.770127+00:00"
+      },
+      {
+        "appointment_id": 1341,
+        "technician_id": 60,
+        "created_at": "2026-08-12T12:13:10.770127+00:00"
+      },
+      {
+        "appointment_id": 1344,
+        "technician_id": 60,
+        "created_at": "2026-08-12T12:13:10.770127+00:00"
+      },
+      {
+        "appointment_id": 1464,
+        "technician_id": 60,
+        "created_at": "2026-08-12T12:13:10.954305+00:00"
+      },
+      {
+        "appointment_id": 1476,
+        "technician_id": 60,
+        "created_at": "2026-08-12T12:13:10.954305+00:00"
+      },
+      {
+        "appointment_id": 1479,
+        "technician_id": 60,
+        "created_at": "2026-08-12T12:13:10.954305+00:00"
+      },
+      {
+        "appointment_id": 1598,
+        "technician_id": 60,
+        "created_at": "2026-08-12T12:13:11.141572+00:00"
+      },
+      {
+        "appointment_id": 1601,
+        "technician_id": 60,
+        "created_at": "2026-08-12T12:13:11.141572+00:00"
+      },
+      {
+        "appointment_id": 1621,
+        "technician_id": 60,
+        "created_at": "2026-08-12T12:13:11.141572+00:00"
+      },
+      {
+        "appointment_id": 832,
+        "technician_id": 45,
+        "created_at": "2026-08-12T12:13:10.061492+00:00"
+      },
+      {
+        "appointment_id": 1128,
+        "technician_id": 45,
+        "created_at": "2026-08-12T12:13:10.420782+00:00"
+      },
+      {
+        "appointment_id": 1142,
+        "technician_id": 45,
+        "created_at": "2026-08-12T12:13:10.420782+00:00"
+      },
+      {
+        "appointment_id": 1193,
+        "technician_id": 45,
+        "created_at": "2026-08-12T12:13:10.595295+00:00"
+      },
+      {
+        "appointment_id": 1215,
+        "technician_id": 45,
+        "created_at": "2026-08-12T12:13:10.595295+00:00"
+      },
+      {
+        "appointment_id": 1216,
+        "technician_id": 45,
+        "created_at": "2026-08-12T12:13:10.595295+00:00"
+      },
+      {
+        "appointment_id": 1223,
+        "technician_id": 45,
+        "created_at": "2026-08-12T12:13:10.595295+00:00"
+      },
+      {
+        "appointment_id": 1224,
+        "technician_id": 45,
+        "created_at": "2026-08-12T12:13:10.595295+00:00"
+      },
+      {
+        "appointment_id": 1229,
+        "technician_id": 45,
+        "created_at": "2026-08-12T12:13:10.595295+00:00"
+      },
+      {
+        "appointment_id": 1230,
+        "technician_id": 45,
+        "created_at": "2026-08-12T12:13:10.595295+00:00"
+      },
+      {
+        "appointment_id": 1233,
+        "technician_id": 45,
+        "created_at": "2026-08-12T12:13:10.595295+00:00"
+      },
+      {
+        "appointment_id": 1235,
+        "technician_id": 45,
+        "created_at": "2026-08-12T12:13:10.595295+00:00"
+      },
+      {
+        "appointment_id": 1238,
+        "technician_id": 45,
+        "created_at": "2026-08-12T12:13:10.595295+00:00"
+      },
+      {
+        "appointment_id": 1261,
+        "technician_id": 45,
+        "created_at": "2026-08-12T12:13:10.595295+00:00"
+      },
+      {
+        "appointment_id": 1263,
+        "technician_id": 45,
+        "created_at": "2026-08-12T12:13:10.595295+00:00"
+      },
+      {
+        "appointment_id": 1265,
+        "technician_id": 45,
+        "created_at": "2026-08-12T12:13:10.595295+00:00"
+      },
+      {
+        "appointment_id": 1388,
+        "technician_id": 60,
+        "created_at": "2026-08-12T12:13:10.770127+00:00"
+      },
+      {
+        "appointment_id": 1416,
+        "technician_id": 60,
+        "created_at": "2026-08-12T12:13:10.770127+00:00"
+      },
+      {
+        "appointment_id": 1512,
+        "technician_id": 60,
+        "created_at": "2026-08-12T12:13:10.954305+00:00"
+      },
+      {
+        "appointment_id": 1514,
+        "technician_id": 60,
+        "created_at": "2026-08-12T12:13:10.954305+00:00"
+      },
+      {
+        "appointment_id": 1522,
+        "technician_id": 60,
+        "created_at": "2026-08-12T12:13:10.954305+00:00"
+      },
+      {
+        "appointment_id": 1527,
+        "technician_id": 60,
+        "created_at": "2026-08-12T12:13:10.954305+00:00"
+      },
+      {
+        "appointment_id": 1531,
+        "technician_id": 60,
+        "created_at": "2026-08-12T12:13:10.954305+00:00"
+      },
+      {
+        "appointment_id": 1539,
+        "technician_id": 60,
+        "created_at": "2026-08-12T12:13:10.954305+00:00"
+      },
+      {
+        "appointment_id": 1552,
+        "technician_id": 60,
+        "created_at": "2026-08-12T12:13:10.954305+00:00"
+      },
+      {
+        "appointment_id": 1565,
+        "technician_id": 60,
+        "created_at": "2026-08-12T12:13:10.954305+00:00"
+      },
+      {
+        "appointment_id": 1572,
+        "technician_id": 60,
+        "created_at": "2026-08-12T12:13:10.954305+00:00"
+      },
+      {
+        "appointment_id": 1640,
+        "technician_id": 60,
+        "created_at": "2026-08-12T12:13:11.141572+00:00"
+      },
+      {
+        "appointment_id": 1646,
+        "technician_id": 60,
+        "created_at": "2026-08-12T12:13:11.141572+00:00"
+      },
+      {
+        "appointment_id": 1648,
+        "technician_id": 60,
+        "created_at": "2026-08-12T12:13:11.141572+00:00"
+      },
+      {
+        "appointment_id": 1654,
+        "technician_id": 60,
+        "created_at": "2026-08-12T12:13:11.141572+00:00"
+      },
+      {
+        "appointment_id": 1665,
+        "technician_id": 60,
+        "created_at": "2026-08-12T12:13:11.141572+00:00"
+      },
+      {
+        "appointment_id": 1672,
+        "technician_id": 60,
+        "created_at": "2026-08-12T12:13:11.141572+00:00"
+      },
+      {
+        "appointment_id": 1677,
+        "technician_id": 60,
+        "created_at": "2026-08-12T12:13:11.141572+00:00"
+      },
+      {
+        "appointment_id": 1679,
+        "technician_id": 60,
+        "created_at": "2026-08-12T12:13:11.141572+00:00"
+      },
+      {
+        "appointment_id": 1680,
+        "technician_id": 60,
+        "created_at": "2026-08-12T12:13:11.141572+00:00"
+      },
+      {
+        "appointment_id": 1686,
+        "technician_id": 60,
+        "created_at": "2026-08-12T12:13:11.141572+00:00"
+      },
+      {
+        "appointment_id": 1690,
+        "technician_id": 60,
+        "created_at": "2026-08-12T12:13:11.141572+00:00"
+      },
+      {
+        "appointment_id": 1698,
+        "technician_id": 60,
+        "created_at": "2026-08-12T12:13:11.141572+00:00"
+      },
+      {
+        "appointment_id": 1705,
+        "technician_id": 60,
+        "created_at": "2026-08-12T12:13:11.141572+00:00"
+      },
+      {
+        "appointment_id": 1707,
+        "technician_id": 60,
+        "created_at": "2026-08-12T12:13:11.141572+00:00"
+      },
+      {
+        "appointment_id": 1728,
+        "technician_id": 60,
+        "created_at": "2026-08-12T12:13:11.141572+00:00"
+      },
+      {
+        "appointment_id": 1731,
+        "technician_id": 60,
+        "created_at": "2026-08-12T12:13:11.141572+00:00"
+      },
+      {
+        "appointment_id": 1961,
+        "technician_id": 82,
+        "created_at": "2026-08-12T12:13:11.320303+00:00"
+      }
+    ],
+    "reservations": [],
+    "notificationLogs": []
+  },
+  "local": {
+    "technicians": [
+      {
+        "id": 45,
+        "name": "Gabriel II",
+        "phone": "Pendente (Cadastrar via Telegram)",
+        "telegram_id": null,
+        "email": "Pendente",
+        "role": "Técnico de Campo",
+        "avatar_url": "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=250&q=80",
+        "status": "Ativo",
+        "created_at": "2026-08-11T20:13:45.404Z"
+      },
+      {
+        "id": 60,
+        "name": "Gabriel P.",
+        "phone": "Pendente (Cadastrar via Telegram)",
+        "telegram_id": null,
+        "email": "Pendente",
+        "role": "Técnico de Campo",
+        "avatar_url": "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=250&q=80",
+        "status": "Ativo",
+        "created_at": "2026-08-11T20:13:45.414Z"
+      },
+      {
+        "id": 82,
+        "name": "Gabriel Patrick",
+        "phone": "Pendente (Cadastrar via Telegram)",
+        "telegram_id": null,
+        "email": "Pendente",
+        "role": "Técnico de Campo",
+        "avatar_url": "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=250&q=80",
+        "status": "Ativo",
+        "created_at": "2026-08-11T20:13:45.424Z"
+      }
+    ],
+    "appointments": [
+      {
+        "id": 832,
+        "external_id": "GGCAL-_8d9lcgrfdpr6asjk64pjgdb360p68p9ic8s30d9mc8r3icb1cdhmae1h60omac9jckrg",
+        "title": "Regional de Itanhém",
+        "client_name": "Regional de Itanhém",
+        "client_address": "Regional de Itanhém",
+        "client_contact": "Sincronizado da Agenda Online",
+        "technician_id": 4,
+        "technician_ids": [
+          4,
+          37,
+          45,
+          46
+        ],
+        "technician_names": "Fábio, Christopher, Gabriel II, Luis",
+        "appointment_date": "2025-11-04",
+        "appointment_time": "08:00",
+        "status": "Agendado",
+        "created_at": "2026-08-11T20:13:45.404Z"
+      },
+      {
+        "id": 837,
+        "external_id": "GGCAL-_8d9lcgrfdpr6asjk60rj8or574q3cdhj6oqj6o9lc9gm2p1g6grjccpm65h30pj36sog",
+        "title": "Regional de Itanhém",
+        "client_name": "Regional de Itanhém",
+        "client_address": "Regional de Itanhém",
+        "client_contact": "Sincronizado da Agenda Online",
+        "technician_id": 4,
+        "technician_ids": [
+          4,
+          37,
+          45,
+          46
+        ],
+        "technician_names": "Fábio, Christopher, Gabriel II, Luis",
+        "appointment_date": "2025-11-05",
+        "appointment_time": "08:00",
+        "status": "Agendado",
+        "created_at": "2026-08-11T20:13:45.404Z"
+      },
+      {
+        "id": 1016,
+        "external_id": "GGCAL-j2fq7nsd495css0v7vitapdr3k",
+        "title": "Reg. registro - Ventiladores",
+        "client_name": "Reg. registro - Ventiladores",
+        "client_address": "Reg. registro - Ventiladores",
+        "client_contact": "Sincronizado da Agenda Online",
+        "technician_id": 17,
+        "technician_ids": [
+          17,
+          45
+        ],
+        "technician_names": "Edvan, Gabriel II",
+        "appointment_date": "2026-01-13",
+        "appointment_time": "08:00",
+        "status": "Agendado",
+        "created_at": "2026-08-11T20:13:45.411Z"
+      },
+      {
+        "id": 1017,
+        "external_id": "GGCAL-cnm02k39f05jbghmoqnfcmpnq8",
+        "title": "Reg. registro - Ventiladores",
+        "client_name": "Reg. registro - Ventiladores",
+        "client_address": "Reg. registro - Ventiladores",
+        "client_contact": "Sincronizado da Agenda Online",
+        "technician_id": 17,
+        "technician_ids": [
+          17,
+          45
+        ],
+        "technician_names": "Edvan, Gabriel II",
+        "appointment_date": "2026-01-14",
+        "appointment_time": "08:00",
+        "status": "Agendado",
+        "created_at": "2026-08-11T20:13:45.411Z"
+      },
+      {
+        "id": 1027,
+        "external_id": "GGCAL-8jeabe8f5qut7utnjoeojt78gc",
+        "title": "Hosp. Reg. De Itapetininga - ventiladores",
+        "client_name": "Hosp. Reg. De Itapetininga - ventiladores",
+        "client_address": "Hosp. Reg. De Itapetininga - ventiladores",
+        "client_contact": "Sincronizado da Agenda Online",
+        "technician_id": 27,
+        "technician_ids": [
+          27,
+          45
+        ],
+        "technician_names": "Gilberto, Gabriel II",
+        "appointment_date": "2026-01-16",
+        "appointment_time": "08:00",
+        "status": "Agendado",
+        "created_at": "2026-08-11T20:13:45.411Z"
+      },
+      {
+        "id": 1040,
+        "external_id": "GGCAL-r34bt4g6m9me8daf6lmkv0jpek",
+        "title": "Unesp - Ventiladores",
+        "client_name": "Unesp - Ventiladores",
+        "client_address": "Unesp - Ventiladores",
+        "client_contact": "Sincronizado da Agenda Online",
+        "technician_id": 27,
+        "technician_ids": [
+          27,
+          45
+        ],
+        "technician_names": "Gilberto, Gabriel II",
+        "appointment_date": "2026-01-20",
+        "appointment_time": "08:00",
+        "status": "Agendado",
+        "created_at": "2026-08-11T20:13:45.411Z"
+      },
+      {
+        "id": 1128,
+        "external_id": "GGCAL-4d06c4bvptj9okrg5eelfk3e1g",
+        "title": "Hosp. Regional de Itapetininga - Focos",
+        "client_name": "Hosp. Regional de Itapetininga - Focos",
+        "client_address": "Hosp. Regional de Itapetininga - Focos",
+        "client_contact": "Sincronizado da Agenda Online",
+        "technician_id": 24,
+        "technician_ids": [
+          24,
+          26,
+          1,
+          45
+        ],
+        "technician_names": "Ricardo, Patrick, Mateus, Gabriel II",
+        "appointment_date": "2026-02-19",
+        "appointment_time": "08:00",
+        "status": "Agendado",
+        "created_at": "2026-08-11T20:13:45.412Z"
+      },
+      {
+        "id": 1142,
+        "external_id": "GGCAL-27jjqh22ein5u7tms31lbd5ssc",
+        "title": "Reg. Itanhaem - Dixtal/Philips",
+        "client_name": "Reg. Itanhaem - Dixtal/Philips",
+        "client_address": "Reg. Itanhaem - Dixtal/Philips",
+        "client_contact": "Sincronizado da Agenda Online",
+        "technician_id": 3,
+        "technician_ids": [
+          3,
+          45
+        ],
+        "technician_names": "Guilherme, Gabriel II",
+        "appointment_date": "2026-02-24",
+        "appointment_time": "08:00",
+        "status": "Agendado",
+        "created_at": "2026-08-11T20:13:45.412Z"
+      },
+      {
+        "id": 1148,
+        "external_id": "GGCAL-rrp9sdhmcqttn967bupu75l9o8",
+        "title": "Reg. Itanhaem - Dixtal/Philips",
+        "client_name": "Reg. Itanhaem - Dixtal/Philips",
+        "client_address": "Reg. Itanhaem - Dixtal/Philips",
+        "client_contact": "Sincronizado da Agenda Online",
+        "technician_id": 3,
+        "technician_ids": [
+          3,
+          45
+        ],
+        "technician_names": "Guilherme, Gabriel II",
+        "appointment_date": "2026-02-25",
+        "appointment_time": "08:00",
+        "status": "Agendado",
+        "created_at": "2026-08-11T20:13:45.412Z"
+      },
+      {
+        "id": 1159,
+        "external_id": "GGCAL-j3bepjq10lc9prhjqoupd9t4rk",
+        "title": "Hosp. Regional de Itapetininga - Focos",
+        "client_name": "Hosp. Regional de Itapetininga - Focos",
+        "client_address": "Hosp. Regional de Itapetininga - Focos",
+        "client_contact": "Sincronizado da Agenda Online",
+        "technician_id": 24,
+        "technician_ids": [
+          24,
+          41,
+          1,
+          45
+        ],
+        "technician_names": "Ricardo, Kauan, Mateus, Gabriel II",
+        "appointment_date": "2026-03-02",
+        "appointment_time": "08:00",
+        "status": "Agendado",
+        "created_at": "2026-08-11T20:13:45.413Z"
+      },
+      {
+        "id": 1173,
+        "external_id": "GGCAL-lmpih2ileenjjbrt7cg24q52bk",
+        "title": "Inova - Corretiva de mesas",
+        "client_name": "Inova - Corretiva de mesas",
+        "client_address": "Inova - Corretiva de mesas",
+        "client_contact": "Sincronizado da Agenda Online",
+        "technician_id": 12,
+        "technician_ids": [
+          12,
+          45
+        ],
+        "technician_names": "Gabriel, Gabriel II",
+        "appointment_date": "2026-03-05",
+        "appointment_time": "08:00",
+        "status": "Agendado",
+        "created_at": "2026-08-11T20:13:45.413Z"
+      },
+      {
+        "id": 1176,
+        "external_id": "GGCAL-ttl56uacvivn1i16je3p7bm3bo",
+        "title": "Inova - Corretiva de mesas",
+        "client_name": "Inova - Corretiva de mesas",
+        "client_address": "Inova - Corretiva de mesas",
+        "client_contact": "Sincronizado da Agenda Online",
+        "technician_id": 12,
+        "technician_ids": [
+          12,
+          45
+        ],
+        "technician_names": "Gabriel, Gabriel II",
+        "appointment_date": "2026-03-05",
+        "appointment_time": "08:00",
+        "status": "Agendado",
+        "created_at": "2026-08-11T20:13:45.413Z"
+      },
+      {
+        "id": 1179,
+        "external_id": "GGCAL-uknp7b27qsb4mu10ssv2ntqm80",
+        "title": "Unimed Tatuí",
+        "client_name": "Unimed Tatuí",
+        "client_address": "Unimed Tatuí",
+        "client_contact": "Sincronizado da Agenda Online",
+        "technician_id": 1,
+        "technician_ids": [
+          1,
+          45
+        ],
+        "technician_names": "Mateus, Gabriel II",
+        "appointment_date": "2026-03-06",
+        "appointment_time": "08:00",
+        "status": "Agendado",
+        "created_at": "2026-08-11T20:13:45.413Z"
+      },
+      {
+        "id": 1188,
+        "external_id": "GGCAL-2i8difsfc9o6ph29q1ak5gb0c0",
+        "title": "UNESP - Ventiladores",
+        "client_name": "UNESP - Ventiladores",
+        "client_address": "UNESP - Ventiladores",
+        "client_contact": "Sincronizado da Agenda Online",
+        "technician_id": 27,
+        "technician_ids": [
+          27,
+          45
+        ],
+        "technician_names": "Gilberto, Gabriel II",
+        "appointment_date": "2026-03-10",
+        "appointment_time": "08:00",
+        "status": "Agendado",
+        "created_at": "2026-08-11T20:13:45.413Z"
+      },
+      {
+        "id": 1193,
+        "external_id": "GGCAL-97ucot6fhv5vmvft1nt4q69mio",
+        "title": "Unimed Botucatu - Ventiladores",
+        "client_name": "Unimed Botucatu - Ventiladores",
+        "client_address": "Unimed Botucatu - Ventiladores",
+        "client_contact": "Sincronizado da Agenda Online",
+        "technician_id": 27,
+        "technician_ids": [
+          27,
+          45
+        ],
+        "technician_names": "Gilberto, Gabriel II",
+        "appointment_date": "2026-03-11",
+        "appointment_time": "08:00",
+        "status": "Agendado",
+        "created_at": "2026-08-11T20:13:45.413Z"
+      },
+      {
+        "id": 1215,
+        "external_id": "GGCAL-4i53bllo9o8fgbmvfl7nob4pik",
+        "title": "Treinamento Cisa",
+        "client_name": "Treinamento Cisa",
+        "client_address": "Treinamento Cisa",
+        "client_contact": "Sincronizado da Agenda Online",
+        "technician_id": 1,
+        "technician_ids": [
+          1,
+          2,
+          45
+        ],
+        "technician_names": "Mateus, Mauro, Gabriel II",
+        "appointment_date": "2026-03-17",
+        "appointment_time": "08:00",
+        "status": "Agendado",
+        "created_at": "2026-08-11T20:13:45.413Z"
+      },
+      {
+        "id": 1216,
+        "external_id": "GGCAL-hmko4lm7ndv9pr1tdpkkuq2eb4",
+        "title": "Treinamento Cisa",
+        "client_name": "Treinamento Cisa",
+        "client_address": "Treinamento Cisa",
+        "client_contact": "Sincronizado da Agenda Online",
+        "technician_id": 1,
+        "technician_ids": [
+          1,
+          2,
+          45
+        ],
+        "technician_names": "Mateus, Mauro, Gabriel II",
+        "appointment_date": "2026-03-17",
+        "appointment_time": "08:00",
+        "status": "Agendado",
+        "created_at": "2026-08-11T20:13:45.413Z"
+      },
+      {
+        "id": 1223,
+        "external_id": "GGCAL-j8jugmutnlhqi63knq79sqr59k",
+        "title": "Treinamento Cisa",
+        "client_name": "Treinamento Cisa",
+        "client_address": "Treinamento Cisa",
+        "client_contact": "Sincronizado da Agenda Online",
+        "technician_id": 1,
+        "technician_ids": [
+          1,
+          2,
+          45
+        ],
+        "technician_names": "Mateus, Mauro, Gabriel II",
+        "appointment_date": "2026-03-18",
+        "appointment_time": "08:00",
+        "status": "Agendado",
+        "created_at": "2026-08-11T20:13:45.413Z"
+      },
+      {
+        "id": 1224,
+        "external_id": "GGCAL-qtaulu25a4tcfuv5bef33tjmgo",
+        "title": "Treinamento Cisa",
+        "client_name": "Treinamento Cisa",
+        "client_address": "Treinamento Cisa",
+        "client_contact": "Sincronizado da Agenda Online",
+        "technician_id": 1,
+        "technician_ids": [
+          1,
+          2,
+          45
+        ],
+        "technician_names": "Mateus, Mauro, Gabriel II",
+        "appointment_date": "2026-03-18",
+        "appointment_time": "08:00",
+        "status": "Agendado",
+        "created_at": "2026-08-11T20:13:45.413Z"
+      },
+      {
+        "id": 1229,
+        "external_id": "GGCAL-pjtmvavnro4mhec4suaa7uhpcg",
+        "title": "Treinamento Cisa",
+        "client_name": "Treinamento Cisa",
+        "client_address": "Treinamento Cisa",
+        "client_contact": "Sincronizado da Agenda Online",
+        "technician_id": 1,
+        "technician_ids": [
+          1,
+          2,
+          45
+        ],
+        "technician_names": "Mateus, Mauro, Gabriel II",
+        "appointment_date": "2026-03-19",
+        "appointment_time": "08:00",
+        "status": "Agendado",
+        "created_at": "2026-08-11T20:13:45.413Z"
+      },
+      {
+        "id": 1230,
+        "external_id": "GGCAL-5eleio5r81mblk46ap1045m6h8",
+        "title": "Treinamento Cisa",
+        "client_name": "Treinamento Cisa",
+        "client_address": "Treinamento Cisa",
+        "client_contact": "Sincronizado da Agenda Online",
+        "technician_id": 1,
+        "technician_ids": [
+          1,
+          2,
+          45
+        ],
+        "technician_names": "Mateus, Mauro, Gabriel II",
+        "appointment_date": "2026-03-20",
+        "appointment_time": "08:00",
+        "status": "Agendado",
+        "created_at": "2026-08-11T20:13:45.413Z"
+      },
+      {
+        "id": 1233,
+        "external_id": "GGCAL-tok5ggs4g6vrq2vi0efcsq6beg",
+        "title": "Treinamento Cisa",
+        "client_name": "Treinamento Cisa",
+        "client_address": "Treinamento Cisa",
+        "client_contact": "Sincronizado da Agenda Online",
+        "technician_id": 1,
+        "technician_ids": [
+          1,
+          2,
+          45
+        ],
+        "technician_names": "Mateus, Mauro, Gabriel II",
+        "appointment_date": "2026-03-20",
+        "appointment_time": "08:00",
+        "status": "Agendado",
+        "created_at": "2026-08-11T20:13:45.414Z"
+      },
+      {
+        "id": 1235,
+        "external_id": "GGCAL-sg3ug9h4ghfk0deu7fjk06i2ec",
+        "title": "Treinamento Cisa",
+        "client_name": "Treinamento Cisa",
+        "client_address": "Treinamento Cisa",
+        "client_contact": "Sincronizado da Agenda Online",
+        "technician_id": 1,
+        "technician_ids": [
+          1,
+          2,
+          45
+        ],
+        "technician_names": "Mateus, Mauro, Gabriel II",
+        "appointment_date": "2026-03-21",
+        "appointment_time": "08:00",
+        "status": "Agendado",
+        "created_at": "2026-08-11T20:13:45.414Z"
+      },
+      {
+        "id": 1238,
+        "external_id": "GGCAL-8bpg0mvadphh0t54h0u5eld73o",
+        "title": "SC Sorocaba - (Cisa)",
+        "client_name": "SC Sorocaba - (Cisa)",
+        "client_address": "SC Sorocaba - (Cisa)",
+        "client_contact": "Sincronizado da Agenda Online",
+        "technician_id": 1,
+        "technician_ids": [
+          1,
+          45
+        ],
+        "technician_names": "Mateus, Gabriel II",
+        "appointment_date": "2026-03-23",
+        "appointment_time": "08:00",
+        "status": "Agendado",
+        "created_at": "2026-08-11T20:13:45.414Z"
+      },
+      {
+        "id": 1261,
+        "external_id": "GGCAL-mbp9o56pbmapd98uvrg4n62rvc",
+        "title": "Inova S.J.dos Campos",
+        "client_name": "Inova S.J.dos Campos",
+        "client_address": "Inova S.J.dos Campos",
+        "client_contact": "Sincronizado da Agenda Online",
+        "technician_id": 45,
+        "technician_ids": [
+          45
+        ],
+        "technician_names": "Gabriel II",
+        "appointment_date": "2026-03-26",
+        "appointment_time": "08:00",
+        "status": "Agendado",
+        "created_at": "2026-08-11T20:13:45.414Z"
+      },
+      {
+        "id": 1263,
+        "external_id": "GGCAL-7v2aqrn4cq6knbv40l98l8ic5k",
+        "title": "Inova S.J.dos Campos",
+        "client_name": "Inova S.J.dos Campos",
+        "client_address": "Inova S.J.dos Campos",
+        "client_contact": "Sincronizado da Agenda Online",
+        "technician_id": 45,
+        "technician_ids": [
+          45
+        ],
+        "technician_names": "Gabriel II",
+        "appointment_date": "2026-03-27",
+        "appointment_time": "08:00",
+        "status": "Agendado",
+        "created_at": "2026-08-11T20:13:45.414Z"
+      },
+      {
+        "id": 1265,
+        "external_id": "GGCAL-ubjbplk480gn4f1k5u5515v7c0",
+        "title": "Inova S.J.dos Campos",
+        "client_name": "Inova S.J.dos Campos",
+        "client_address": "Inova S.J.dos Campos",
+        "client_contact": "Sincronizado da Agenda Online",
+        "technician_id": 45,
+        "technician_ids": [
+          45
+        ],
+        "technician_names": "Gabriel II",
+        "appointment_date": "2026-03-27",
+        "appointment_time": "08:00",
+        "status": "Agendado",
+        "created_at": "2026-08-11T20:13:45.414Z"
+      },
+      {
+        "id": 1288,
+        "external_id": "GGCAL-ljsbaia8trmgr7tm39qh681hq4",
+        "title": "Clínica Martti Antila",
+        "client_name": "Clínica Martti Antila",
+        "client_address": "Clínica Martti Antila",
+        "client_contact": "Sincronizado da Agenda Online",
+        "technician_id": 37,
+        "technician_ids": [
+          37,
+          60
+        ],
+        "technician_names": "Christopher, Gabriel P.",
+        "appointment_date": "2026-04-01",
+        "appointment_time": "13:00",
+        "status": "Agendado",
+        "created_at": "2026-08-11T20:13:45.414Z"
+      },
+      {
+        "id": 1305,
+        "external_id": "GGCAL-v37la9rqbf0p3qng6fac95fvs4",
+        "title": "PM Porto Feliz - câmaras MP + (aplicar restr.)",
+        "client_name": "PM Porto Feliz - câmaras MP + (aplicar restr.)",
+        "client_address": "PM Porto Feliz - câmaras MP + (aplicar restr.)",
+        "client_contact": "Sincronizado da Agenda Online",
+        "technician_id": 37,
+        "technician_ids": [
+          37,
+          60
+        ],
+        "technician_names": "Christopher, Gabriel P.",
+        "appointment_date": "2026-04-07",
+        "appointment_time": "08:00",
+        "status": "Agendado",
+        "created_at": "2026-08-11T20:13:45.414Z"
+      },
+      {
+        "id": 1308,
+        "external_id": "GGCAL-1s2ch0mcr1358v1coevbbe3avk",
+        "title": "Rede D'or Assunção - Fisher",
+        "client_name": "Rede D'or Assunção - Fisher",
+        "client_address": "Rede D'or Assunção - Fisher",
+        "client_contact": "Sincronizado da Agenda Online",
+        "technician_id": 22,
+        "technician_ids": [
+          22,
+          45
+        ],
+        "technician_names": "Hélio, Gabriel II",
+        "appointment_date": "2026-04-09",
+        "appointment_time": "08:00",
+        "status": "Agendado",
+        "created_at": "2026-08-11T20:13:45.414Z"
+      },
+      {
+        "id": 1309,
+        "external_id": "GGCAL-5e2ghla3imcgvjt5if2quvj4r0",
+        "title": "Rede D'or Avicena - Fisher",
+        "client_name": "Rede D'or Avicena - Fisher",
+        "client_address": "Rede D'or Avicena - Fisher",
+        "client_contact": "Sincronizado da Agenda Online",
+        "technician_id": 22,
+        "technician_ids": [
+          22,
+          45
+        ],
+        "technician_names": "Hélio, Gabriel II",
+        "appointment_date": "2026-04-09",
+        "appointment_time": "08:00",
+        "status": "Agendado",
+        "created_at": "2026-08-11T20:13:45.414Z"
+      },
+      {
+        "id": 1312,
+        "external_id": "GGCAL-cs6rvua2ckd15cmdkh0spokvhg",
+        "title": "Unimed Tatuí",
+        "client_name": "Unimed Tatuí",
+        "client_address": "Unimed Tatuí",
+        "client_contact": "Sincronizado da Agenda Online",
+        "technician_id": 37,
+        "technician_ids": [
+          37,
+          60
+        ],
+        "technician_names": "Christopher, Gabriel P.",
+        "appointment_date": "2026-04-10",
+        "appointment_time": "08:00",
+        "status": "Agendado",
+        "created_at": "2026-08-11T20:13:45.414Z"
+      },
+      {
+        "id": 1323,
+        "external_id": "GGCAL-st17mve9ls13b3rg3gadv7q13g",
+        "title": "SC Itapeva",
+        "client_name": "SC Itapeva",
+        "client_address": "SC Itapeva",
+        "client_contact": "Sincronizado da Agenda Online",
+        "technician_id": 1,
+        "technician_ids": [
+          1,
+          37,
+          60
+        ],
+        "technician_names": "Mateus, Christopher, Gabriel P.",
+        "appointment_date": "2026-04-14",
+        "appointment_time": "08:00",
+        "status": "Agendado",
+        "created_at": "2026-08-11T20:13:45.414Z"
+      },
+      {
+        "id": 1324,
+        "external_id": "GGCAL-dsvc0ib7oaq8hcobsc14jnquek",
+        "title": "SC Itapeva",
+        "client_name": "SC Itapeva",
+        "client_address": "SC Itapeva",
+        "client_contact": "Sincronizado da Agenda Online",
+        "technician_id": 1,
+        "technician_ids": [
+          1,
+          37,
+          60
+        ],
+        "technician_names": "Mateus, Christopher, Gabriel P.",
+        "appointment_date": "2026-04-15",
+        "appointment_time": "08:00",
+        "status": "Agendado",
+        "created_at": "2026-08-11T20:13:45.414Z"
+      },
+      {
+        "id": 1325,
+        "external_id": "GGCAL-hlpbqkhgjojj8b5167t0spp4kk",
+        "title": "Itaberá - Autoclave",
+        "client_name": "Itaberá - Autoclave",
+        "client_address": "Itaberá - Autoclave",
+        "client_contact": "Sincronizado da Agenda Online",
+        "technician_id": 1,
+        "technician_ids": [
+          1,
+          37,
+          60
+        ],
+        "technician_names": "Mateus, Christopher, Gabriel P.",
+        "appointment_date": "2026-04-15",
+        "appointment_time": "08:00",
+        "status": "Agendado",
+        "created_at": "2026-08-11T20:13:45.414Z"
+      },
+      {
+        "id": 1327,
+        "external_id": "GGCAL-8iusafamvn18ablmk4f62mm8gk",
+        "title": "SC Itapeva",
+        "client_name": "SC Itapeva",
+        "client_address": "SC Itapeva",
+        "client_contact": "Sincronizado da Agenda Online",
+        "technician_id": 1,
+        "technician_ids": [
+          1,
+          37,
+          60
+        ],
+        "technician_names": "Mateus, Christopher, Gabriel P.",
+        "appointment_date": "2026-04-16",
+        "appointment_time": "08:00",
+        "status": "Agendado",
+        "created_at": "2026-08-11T20:13:45.414Z"
+      },
+      {
+        "id": 1339,
+        "external_id": "GGCAL-5b65v07po43e6cflmvufp7h8q0",
+        "title": "Hospital Oftalmológico - BOS  (multimarcas)",
+        "client_name": "Hospital Oftalmológico - BOS  (multimarcas)",
+        "client_address": "Hospital Oftalmológico - BOS  (multimarcas)",
+        "client_contact": "Sincronizado da Agenda Online",
+        "technician_id": 1,
+        "technician_ids": [
+          1,
+          60
+        ],
+        "technician_names": "Mateus, Gabriel P.",
+        "appointment_date": "2026-04-22",
+        "appointment_time": "08:00",
+        "status": "Agendado",
+        "created_at": "2026-08-11T20:13:45.414Z"
+      },
+      {
+        "id": 1341,
+        "external_id": "GGCAL-g221ga0rh0un37dks7mn9ohbbc",
+        "title": "Clínica de Cirurgia Plástica",
+        "client_name": "Clínica de Cirurgia Plástica",
+        "client_address": "Clínica de Cirurgia Plástica",
+        "client_contact": "Sincronizado da Agenda Online",
+        "technician_id": 1,
+        "technician_ids": [
+          1,
+          60
+        ],
+        "technician_names": "Mateus, Gabriel P.",
+        "appointment_date": "2026-04-22",
+        "appointment_time": "13:00",
+        "status": "Agendado",
+        "created_at": "2026-08-11T20:13:45.414Z"
+      },
+      {
+        "id": 1344,
+        "external_id": "GGCAL-htuqes607u3veek8735aghn1bo",
+        "title": "SC de Piedade - Representadas",
+        "client_name": "SC de Piedade - Representadas",
+        "client_address": "SC de Piedade - Representadas",
+        "client_contact": "Sincronizado da Agenda Online",
+        "technician_id": 2,
+        "technician_ids": [
+          2,
+          1,
+          60
+        ],
+        "technician_names": "Mauro, Mateus, Gabriel P.",
+        "appointment_date": "2026-04-23",
+        "appointment_time": "08:00",
+        "status": "Agendado",
+        "created_at": "2026-08-11T20:13:45.414Z"
+      },
+      {
+        "id": 1357,
+        "external_id": "GGCAL-utoa0e722f38m93dvluvgjob7g",
+        "title": "UPH Zona Leste",
+        "client_name": "UPH Zona Leste",
+        "client_address": "UPH Zona Leste",
+        "client_contact": "Sincronizado da Agenda Online",
+        "technician_id": 37,
+        "technician_ids": [
+          37,
+          60
+        ],
+        "technician_names": "Christopher, Gabriel P.",
+        "appointment_date": "2026-04-28",
+        "appointment_time": "08:00",
+        "status": "Agendado",
+        "created_at": "2026-08-11T20:13:45.414Z"
+      },
+      {
+        "id": 1376,
+        "external_id": "GGCAL-d2hi7itbdsbl3t5rqm246nia8g",
+        "title": "Unidade Prudentiva - Tecme (Duster)",
+        "client_name": "Unidade Prudentiva - Tecme (Duster)",
+        "client_address": "Unidade Prudentiva - Tecme (Duster)",
+        "client_contact": "Sincronizado da Agenda Online",
+        "technician_id": 17,
+        "technician_ids": [
+          17,
+          60
+        ],
+        "technician_names": "Edvan, Gabriel P.",
+        "appointment_date": "2026-05-05",
+        "appointment_time": "08:00",
+        "status": "Agendado",
+        "created_at": "2026-08-11T20:13:45.414Z"
+      },
+      {
+        "id": 1380,
+        "external_id": "GGCAL-lh187usc2c9ureep4dms4n8d5s",
+        "title": "Unidade Prudentiva - Tecme",
+        "client_name": "Unidade Prudentiva - Tecme",
+        "client_address": "Unidade Prudentiva - Tecme",
+        "client_contact": "Sincronizado da Agenda Online",
+        "technician_id": 17,
+        "technician_ids": [
+          17,
+          60
+        ],
+        "technician_names": "Edvan, Gabriel P.",
+        "appointment_date": "2026-05-06",
+        "appointment_time": "08:00",
+        "status": "Agendado",
+        "created_at": "2026-08-11T20:13:45.414Z"
+      },
+      {
+        "id": 1384,
+        "external_id": "GGCAL-8o6gmdm7il91t0aev4cksmjc48",
+        "title": "Unidade Prudentiva - Tecme",
+        "client_name": "Unidade Prudentiva - Tecme",
+        "client_address": "Unidade Prudentiva - Tecme",
+        "client_contact": "Sincronizado da Agenda Online",
+        "technician_id": 17,
+        "technician_ids": [
+          17,
+          60
+        ],
+        "technician_names": "Edvan, Gabriel P.",
+        "appointment_date": "2026-05-07",
+        "appointment_time": "08:00",
+        "status": "Agendado",
+        "created_at": "2026-08-11T20:13:45.414Z"
+      },
+      {
+        "id": 1388,
+        "external_id": "GGCAL-jl5il3t1d89tlrm3vikqko04t4",
+        "title": "Unimed Tatuí + Capela do Alto (restrição)",
+        "client_name": "Unimed Tatuí + Capela do Alto (restrição)",
+        "client_address": "Unimed Tatuí + Capela do Alto (restrição)",
+        "client_contact": "Sincronizado da Agenda Online",
+        "technician_id": 60,
+        "technician_ids": [
+          60
+        ],
+        "technician_names": "Gabriel P.",
+        "appointment_date": "2026-05-08",
+        "appointment_time": "08:00",
+        "status": "Agendado",
+        "created_at": "2026-08-11T20:13:45.415Z"
+      },
+      {
+        "id": 1416,
+        "external_id": "GGCAL-plt2q20di9anr4uccceokve31c",
+        "title": "Apamir - Registro",
+        "client_name": "Apamir - Registro",
+        "client_address": "Apamir - Registro",
+        "client_contact": "Sincronizado da Agenda Online",
+        "technician_id": 24,
+        "technician_ids": [
+          24,
+          60
+        ],
+        "technician_names": "Ricardo, Gabriel P.",
+        "appointment_date": "2026-05-15",
+        "appointment_time": "08:00",
+        "status": "Agendado",
+        "created_at": "2026-08-11T20:13:45.416Z"
+      },
+      {
+        "id": 1427,
+        "external_id": "GGCAL-1n36b69saqh0po20a67678kh20",
+        "title": "SC de São Paulo (chamado monitor)",
+        "client_name": "SC de São Paulo (chamado monitor)",
+        "client_address": "SC de São Paulo (chamado monitor)",
+        "client_contact": "Sincronizado da Agenda Online",
+        "technician_id": 22,
+        "technician_ids": [
+          22,
+          60
+        ],
+        "technician_names": "Hélio, Gabriel P.",
+        "appointment_date": "2026-05-20",
+        "appointment_time": "08:00",
+        "status": "Agendado",
+        "created_at": "2026-08-11T20:13:45.416Z"
+      },
+      {
+        "id": 1429,
+        "external_id": "GGCAL-k41mg7icmlro38kbb8h3qs4vq0",
+        "title": "Rede Dor Santa Isabel - 01 Airvo2",
+        "client_name": "Rede Dor Santa Isabel - 01 Airvo2",
+        "client_address": "Rede Dor Santa Isabel - 01 Airvo2",
+        "client_contact": "Sincronizado da Agenda Online",
+        "technician_id": 22,
+        "technician_ids": [
+          22,
+          60
+        ],
+        "technician_names": "Hélio, Gabriel P.",
+        "appointment_date": "2026-05-20",
+        "appointment_time": "08:00",
+        "status": "Agendado",
+        "created_at": "2026-08-11T20:13:45.416Z"
+      },
+      {
+        "id": 1435,
+        "external_id": "GGCAL-qj01fera5h8o8o33a9hbo8sh0s",
+        "title": "HC-IC (altofluxo EQAT)",
+        "client_name": "HC-IC (altofluxo EQAT)",
+        "client_address": "HC-IC (altofluxo EQAT)",
+        "client_contact": "Sincronizado da Agenda Online",
+        "technician_id": 22,
+        "technician_ids": [
+          22,
+          60
+        ],
+        "technician_names": "Hélio, Gabriel P.",
+        "appointment_date": "2026-05-21",
+        "appointment_time": "08:00",
+        "status": "Agendado",
+        "created_at": "2026-08-11T20:13:45.416Z"
+      },
+      {
+        "id": 1437,
+        "external_id": "GGCAL-0su257ose1c4kv3rkf2ihs2f48",
+        "title": "SC Sorocaba - Cisa",
+        "client_name": "SC Sorocaba - Cisa",
+        "client_address": "SC Sorocaba - Cisa",
+        "client_contact": "Sincronizado da Agenda Online",
+        "technician_id": 1,
+        "technician_ids": [
+          1,
+          60
+        ],
+        "technician_names": "Mateus, Gabriel P.",
+        "appointment_date": "2026-05-22",
+        "appointment_time": "08:00",
+        "status": "Agendado",
+        "created_at": "2026-08-11T20:13:45.417Z"
+      },
+      {
+        "id": 1448,
+        "external_id": "GGCAL-vsfg0f8va8q1k1b7t45fa5kulg",
+        "title": "PM Sorocaba - MPs",
+        "client_name": "PM Sorocaba - MPs",
+        "client_address": "PM Sorocaba - MPs",
+        "client_contact": "Sincronizado da Agenda Online",
+        "technician_id": 37,
+        "technician_ids": [
+          37,
+          60
+        ],
+        "technician_names": "Christopher, Gabriel P.",
+        "appointment_date": "2026-05-25",
+        "appointment_time": "08:00",
+        "status": "Agendado",
+        "created_at": "2026-08-11T20:13:45.417Z"
+      },
+      {
+        "id": 1449,
+        "external_id": "GGCAL-1kpekg9icci8flftjvka8in96o",
+        "title": "CCPS + BOS",
+        "client_name": "CCPS + BOS",
+        "client_address": "CCPS + BOS",
+        "client_contact": "Sincronizado da Agenda Online",
+        "technician_id": 1,
+        "technician_ids": [
+          1,
+          60
+        ],
+        "technician_names": "Mateus, Gabriel P.",
+        "appointment_date": "2026-05-26",
+        "appointment_time": "08:00",
+        "status": "Agendado",
+        "created_at": "2026-08-11T20:13:45.417Z"
+      },
+      {
+        "id": 1464,
+        "external_id": "GGCAL-qo04b69dh1sifgt1uk7urh883g",
+        "title": "Unimed Itapetininga",
+        "client_name": "Unimed Itapetininga",
+        "client_address": "Unimed Itapetininga",
+        "client_contact": "Sincronizado da Agenda Online",
+        "technician_id": 1,
+        "technician_ids": [
+          1,
+          37,
+          60
+        ],
+        "technician_names": "Mateus, Christopher, Gabriel P.",
+        "appointment_date": "2026-05-28",
+        "appointment_time": "08:00",
+        "status": "Agendado",
+        "created_at": "2026-08-11T20:13:45.417Z"
+      },
+      {
+        "id": 1476,
+        "external_id": "GGCAL-mohcnn6u8g1pkabmm2ghn7i8rg",
+        "title": "Hospital Regional de Itanhaém - Diversos",
+        "client_name": "Hospital Regional de Itanhaém - Diversos",
+        "client_address": "Hospital Regional de Itanhaém - Diversos",
+        "client_contact": "Sincronizado da Agenda Online",
+        "technician_id": 60,
+        "technician_ids": [
+          60
+        ],
+        "technician_names": "Gabriel P.",
+        "appointment_date": "2026-06-01",
+        "appointment_time": "08:00",
+        "status": "Agendado",
+        "created_at": "2026-08-11T20:13:45.417Z"
+      },
+      {
+        "id": 1479,
+        "external_id": "GGCAL-fs8tlro355b9sehe0tmdtfgpf8",
+        "title": "Hospital Regional de Itanhaém - Diversos",
+        "client_name": "Hospital Regional de Itanhaém - Diversos",
+        "client_address": "Hospital Regional de Itanhaém - Diversos",
+        "client_contact": "Sincronizado da Agenda Online",
+        "technician_id": 60,
+        "technician_ids": [
+          60
+        ],
+        "technician_names": "Gabriel P.",
+        "appointment_date": "2026-06-02",
+        "appointment_time": "08:00",
+        "status": "Agendado",
+        "created_at": "2026-08-11T20:13:45.417Z"
+      },
+      {
+        "id": 1494,
+        "external_id": "GGCAL-75mbq7oii1hohuinc9potqeguo",
+        "title": "SC Itapeva (Duster)",
+        "client_name": "SC Itapeva (Duster)",
+        "client_address": "SC Itapeva (Duster)",
+        "client_contact": "Sincronizado da Agenda Online",
+        "technician_id": 37,
+        "technician_ids": [
+          37,
+          60
+        ],
+        "technician_names": "Christopher, Gabriel P.",
+        "appointment_date": "2026-06-09",
+        "appointment_time": "08:00",
+        "status": "Agendado",
+        "created_at": "2026-08-11T20:13:45.418Z"
+      },
+      {
+        "id": 1500,
+        "external_id": "GGCAL-miqac87fe9e7it9jbrnh8mdjos",
+        "title": "SC Itapeva",
+        "client_name": "SC Itapeva",
+        "client_address": "SC Itapeva",
+        "client_contact": "Sincronizado da Agenda Online",
+        "technician_id": 37,
+        "technician_ids": [
+          37,
+          60
+        ],
+        "technician_names": "Christopher, Gabriel P.",
+        "appointment_date": "2026-06-10",
+        "appointment_time": "08:00",
+        "status": "Agendado",
+        "created_at": "2026-08-11T20:13:45.418Z"
+      },
+      {
+        "id": 1501,
+        "external_id": "GGCAL-tc0lnund8ef090jaukaud9idb0",
+        "title": "CHS - Corretiva no foco",
+        "client_name": "CHS - Corretiva no foco",
+        "client_address": "CHS - Corretiva no foco",
+        "client_contact": "Sincronizado da Agenda Online",
+        "technician_id": 24,
+        "technician_ids": [
+          24,
+          22,
+          60
+        ],
+        "technician_names": "Ricardo, Hélio, Gabriel P.",
+        "appointment_date": "2026-06-10",
+        "appointment_time": "08:00",
+        "status": "Agendado",
+        "created_at": "2026-08-11T20:13:45.418Z"
+      },
+      {
+        "id": 1504,
+        "external_id": "GGCAL-u624tqgciavb33v8fnm5nlnm6g",
+        "title": "SC Itapeva",
+        "client_name": "SC Itapeva",
+        "client_address": "SC Itapeva",
+        "client_contact": "Sincronizado da Agenda Online",
+        "technician_id": 37,
+        "technician_ids": [
+          37,
+          60
+        ],
+        "technician_names": "Christopher, Gabriel P.",
+        "appointment_date": "2026-06-11",
+        "appointment_time": "08:00",
+        "status": "Agendado",
+        "created_at": "2026-08-11T20:13:45.418Z"
+      },
+      {
+        "id": 1505,
+        "external_id": "GGCAL-ecv7u09aikj61ikmcn1h2vka8k",
+        "title": "Unimed Sorocaba - Chamados Fanem",
+        "client_name": "Unimed Sorocaba - Chamados Fanem",
+        "client_address": "Unimed Sorocaba - Chamados Fanem",
+        "client_contact": "Sincronizado da Agenda Online",
+        "technician_id": 41,
+        "technician_ids": [
+          41,
+          60
+        ],
+        "technician_names": "Kauan, Gabriel P.",
+        "appointment_date": "2026-06-12",
+        "appointment_time": "08:00",
+        "status": "Agendado",
+        "created_at": "2026-08-11T20:13:45.418Z"
+      },
+      {
+        "id": 1512,
+        "external_id": "GGCAL-ad1b2g92rmlld166nku6h62h44",
+        "title": "H. Villa Lobos Fisher (1 blender)",
+        "client_name": "H. Villa Lobos Fisher (1 blender)",
+        "client_address": "H. Villa Lobos Fisher (1 blender)",
+        "client_contact": "Sincronizado da Agenda Online",
+        "technician_id": 22,
+        "technician_ids": [
+          22,
+          60
+        ],
+        "technician_names": "Hélio, Gabriel P.",
+        "appointment_date": "2026-06-16",
+        "appointment_time": "08:00",
+        "status": "Agendado",
+        "created_at": "2026-08-11T20:13:45.418Z"
+      },
+      {
+        "id": 1514,
+        "external_id": "GGCAL-i38fqdm6cii8g198lf23e9emio",
+        "title": "HC-ICR (altofluxo EQAT)",
+        "client_name": "HC-ICR (altofluxo EQAT)",
+        "client_address": "HC-ICR (altofluxo EQAT)",
+        "client_contact": "Sincronizado da Agenda Online",
+        "technician_id": 22,
+        "technician_ids": [
+          22,
+          60
+        ],
+        "technician_names": "Hélio, Gabriel P.",
+        "appointment_date": "2026-06-16",
+        "appointment_time": "08:00",
+        "status": "Agendado",
+        "created_at": "2026-08-11T20:13:45.418Z"
+      },
+      {
+        "id": 1522,
+        "external_id": "GGCAL-oice9kup41u193bqe59ddesh98",
+        "title": "PM Sorocaba - MPs",
+        "client_name": "PM Sorocaba - MPs",
+        "client_address": "PM Sorocaba - MPs",
+        "client_contact": "Sincronizado da Agenda Online",
+        "technician_id": 37,
+        "technician_ids": [
+          37,
+          60
+        ],
+        "technician_names": "Christopher, Gabriel P.",
+        "appointment_date": "2026-06-18",
+        "appointment_time": "08:00",
+        "status": "Agendado",
+        "created_at": "2026-08-11T20:13:45.418Z"
+      },
+      {
+        "id": 1527,
+        "external_id": "GGCAL-o8mje9dmi865jpns9r56b76l1g",
+        "title": "Hospital Oftalmológico - BOS (multimarcas)",
+        "client_name": "Hospital Oftalmológico - BOS (multimarcas)",
+        "client_address": "Hospital Oftalmológico - BOS (multimarcas)",
+        "client_contact": "Sincronizado da Agenda Online",
+        "technician_id": 1,
+        "technician_ids": [
+          1,
+          60
+        ],
+        "technician_names": "Mateus, Gabriel P.",
+        "appointment_date": "2026-06-19",
+        "appointment_time": "08:00",
+        "status": "Agendado",
+        "created_at": "2026-08-11T20:13:45.418Z"
+      },
+      {
+        "id": 1531,
+        "external_id": "GGCAL-ic23qjtuc79sqkek3btb8prsrc",
+        "title": "Rede São Luiz Osasco - Fisher (HB-20)",
+        "client_name": "Rede São Luiz Osasco - Fisher (HB-20)",
+        "client_address": "Rede São Luiz Osasco - Fisher (HB-20)",
+        "client_contact": "Sincronizado da Agenda Online",
+        "technician_id": 22,
+        "technician_ids": [
+          22,
+          60
+        ],
+        "technician_names": "Hélio, Gabriel P.",
+        "appointment_date": "2026-06-22",
+        "appointment_time": "07:00",
+        "status": "Agendado",
+        "created_at": "2026-08-11T20:13:45.419Z"
+      },
+      {
+        "id": 1539,
+        "external_id": "GGCAL-rp5fhufbh8s7778ve7oeort8bs",
+        "title": "Inst. de Hemodiálise Sorocaba - IHS (Argo)",
+        "client_name": "Inst. de Hemodiálise Sorocaba - IHS (Argo)",
+        "client_address": "Inst. de Hemodiálise Sorocaba - IHS (Argo)",
+        "client_contact": "Sincronizado da Agenda Online",
+        "technician_id": 37,
+        "technician_ids": [
+          37,
+          60
+        ],
+        "technician_names": "Christopher, Gabriel P.",
+        "appointment_date": "2026-06-23",
+        "appointment_time": "08:00",
+        "status": "Agendado",
+        "created_at": "2026-08-11T20:13:45.419Z"
+      },
+      {
+        "id": 1552,
+        "external_id": "GGCAL-nlv9464iepvi3spgibonoseno0",
+        "title": "Unimed Itapetininga (argo 89)",
+        "client_name": "Unimed Itapetininga (argo 89)",
+        "client_address": "Unimed Itapetininga (argo 89)",
+        "client_contact": "Sincronizado da Agenda Online",
+        "technician_id": 60,
+        "technician_ids": [
+          60,
+          2,
+          24
+        ],
+        "technician_names": "Gabriel P., Mauro, Ricardo",
+        "appointment_date": "2026-06-25",
+        "appointment_time": "08:00",
+        "status": "Agendado",
+        "created_at": "2026-08-11T20:13:45.419Z"
+      },
+      {
+        "id": 1565,
+        "external_id": "GGCAL-2q12bi86pskm22qpajdn5e6ev0",
+        "title": "PM Sorocaba - MP (Argo do léo)",
+        "client_name": "PM Sorocaba - MP (Argo do léo)",
+        "client_address": "PM Sorocaba - MP (Argo do léo)",
+        "client_contact": "Sincronizado da Agenda Online",
+        "technician_id": 41,
+        "technician_ids": [
+          41,
+          60
+        ],
+        "technician_names": "Kauan, Gabriel P.",
+        "appointment_date": "2026-06-30",
+        "appointment_time": "08:00",
+        "status": "Agendado",
+        "created_at": "2026-08-11T20:13:45.419Z"
+      },
+      {
+        "id": 1572,
+        "external_id": "GGCAL-pm53am5h3bh55o7398eoa2tq1g",
+        "title": "Regional de Itanhaém - Tecme (Saveiro)",
+        "client_name": "Regional de Itanhaém - Tecme (Saveiro)",
+        "client_address": "Regional de Itanhaém - Tecme (Saveiro)",
+        "client_contact": "Sincronizado da Agenda Online",
+        "technician_id": 60,
+        "technician_ids": [
+          60
+        ],
+        "technician_names": "Gabriel P.",
+        "appointment_date": "2026-07-01",
+        "appointment_time": "08:00",
+        "status": "Agendado",
+        "created_at": "2026-08-11T20:13:45.419Z"
+      },
+      {
+        "id": 1580,
+        "external_id": "GGCAL-uss7q30anf2eikvutk315hupt4",
+        "title": "Regional de Itanhaém - Tecme",
+        "client_name": "Regional de Itanhaém - Tecme",
+        "client_address": "Regional de Itanhaém - Tecme",
+        "client_contact": "Sincronizado da Agenda Online",
+        "technician_id": 60,
+        "technician_ids": [
+          60
+        ],
+        "technician_names": "Gabriel P.",
+        "appointment_date": "2026-07-02",
+        "appointment_time": "08:00",
+        "status": "Agendado",
+        "created_at": "2026-08-11T20:13:45.420Z"
+      },
+      {
+        "id": 1598,
+        "external_id": "GGCAL-td8947ujppf9ine2sbh3ct2998",
+        "title": "Hospital Regional de Registro (Duster)",
+        "client_name": "Hospital Regional de Registro (Duster)",
+        "client_address": "Hospital Regional de Registro (Duster)",
+        "client_contact": "Sincronizado da Agenda Online",
+        "technician_id": 60,
+        "technician_ids": [
+          60
+        ],
+        "technician_names": "Gabriel P.",
+        "appointment_date": "2026-07-07",
+        "appointment_time": "08:00",
+        "status": "Agendado",
+        "created_at": "2026-08-11T20:13:45.420Z"
+      },
+      {
+        "id": 1601,
+        "external_id": "GGCAL-9bd096cevcmjihllefcrtbam6s",
+        "title": "Hospital Regional de Registro",
+        "client_name": "Hospital Regional de Registro",
+        "client_address": "Hospital Regional de Registro",
+        "client_contact": "Sincronizado da Agenda Online",
+        "technician_id": 60,
+        "technician_ids": [
+          60
+        ],
+        "technician_names": "Gabriel P.",
+        "appointment_date": "2026-07-08",
+        "appointment_time": "08:00",
+        "status": "Agendado",
+        "created_at": "2026-08-11T20:13:45.420Z"
+      },
+      {
+        "id": 1621,
+        "external_id": "GGCAL-rrrenohl5auvr01uerqo2ql0i4",
+        "title": "Hosp. De Carid. São Vicen. Jundiaí (Argo45)",
+        "client_name": "Hosp. De Carid. São Vicen. Jundiaí (Argo45)",
+        "client_address": "Hosp. De Carid. São Vicen. Jundiaí (Argo45)",
+        "client_contact": "Sincronizado da Agenda Online",
+        "technician_id": 60,
+        "technician_ids": [
+          60,
+          41
+        ],
+        "technician_names": "Gabriel P., Kauan",
+        "appointment_date": "2026-07-14",
+        "appointment_time": "08:00",
+        "status": "Agendado",
+        "created_at": "2026-08-11T20:13:45.420Z"
+      },
+      {
+        "id": 1627,
+        "external_id": "GGCAL-n0gv4nhe7i6dball4c06glgojo",
+        "title": "Hosp. De Carid. São Vicen. Jundiaí (Argo45)",
+        "client_name": "Hosp. De Carid. São Vicen. Jundiaí (Argo45)",
+        "client_address": "Hosp. De Carid. São Vicen. Jundiaí (Argo45)",
+        "client_contact": "Sincronizado da Agenda Online",
+        "technician_id": 60,
+        "technician_ids": [
+          60
+        ],
+        "technician_names": "Gabriel P.",
+        "appointment_date": "2026-07-15",
+        "appointment_time": "08:00",
+        "status": "Agendado",
+        "created_at": "2026-08-11T20:13:45.420Z"
+      },
+      {
+        "id": 1630,
+        "external_id": "GGCAL-ocpkbl1m8uv9pptia7l5or1hfs",
+        "title": "Hosp. De Carid. São Vicen. Jundiaí (Argo45)",
+        "client_name": "Hosp. De Carid. São Vicen. Jundiaí (Argo45)",
+        "client_address": "Hosp. De Carid. São Vicen. Jundiaí (Argo45)",
+        "client_contact": "Sincronizado da Agenda Online",
+        "technician_id": 60,
+        "technician_ids": [
+          60,
+          41
+        ],
+        "technician_names": "Gabriel P., Kauan",
+        "appointment_date": "2026-07-16",
+        "appointment_time": "08:00",
+        "status": "Agendado",
+        "created_at": "2026-08-11T20:13:45.420Z"
+      },
+      {
+        "id": 1633,
+        "external_id": "GGCAL-8eb789mraio5c7m8a9061lc3lg",
+        "title": "Hospital Oftalmológico - BOS (multimarcas)",
+        "client_name": "Hospital Oftalmológico - BOS (multimarcas)",
+        "client_address": "Hospital Oftalmológico - BOS (multimarcas)",
+        "client_contact": "Sincronizado da Agenda Online",
+        "technician_id": 2,
+        "technician_ids": [
+          2,
+          60,
+          41
+        ],
+        "technician_names": "Mauro, Gabriel P., Kauan",
+        "appointment_date": "2026-07-17",
+        "appointment_time": "08:00",
+        "status": "Agendado",
+        "created_at": "2026-08-11T20:13:45.421Z"
+      },
+      {
+        "id": 1640,
+        "external_id": "GGCAL-oqa4i7nagi7infu52nldiakifs",
+        "title": "Exame periódico",
+        "client_name": "Exame periódico",
+        "client_address": "Exame periódico",
+        "client_contact": "Sincronizado da Agenda Online",
+        "technician_id": 60,
+        "technician_ids": [
+          60,
+          74,
+          75
+        ],
+        "technician_names": "Gabriel P., Gabriel S, Lucas Atyla",
+        "appointment_date": "2026-07-20",
+        "appointment_time": "08:00",
+        "status": "Agendado",
+        "created_at": "2026-08-11T20:13:45.421Z"
+      },
+      {
+        "id": 1646,
+        "external_id": "GGCAL-s5aq3mj2lcf1q9mcs6j3fu68i8",
+        "title": "SC Itapeva",
+        "client_name": "SC Itapeva",
+        "client_address": "SC Itapeva",
+        "client_contact": "Sincronizado da Agenda Online",
+        "technician_id": 37,
+        "technician_ids": [
+          37,
+          60
+        ],
+        "technician_names": "Christopher, Gabriel P.",
+        "appointment_date": "2026-07-21",
+        "appointment_time": "08:00",
+        "status": "Agendado",
+        "created_at": "2026-08-11T20:13:45.421Z"
+      },
+      {
+        "id": 1648,
+        "external_id": "GGCAL-c2mf0v0bqaofqldv9j8vkbpf7s",
+        "title": "SC Itapeva",
+        "client_name": "SC Itapeva",
+        "client_address": "SC Itapeva",
+        "client_contact": "Sincronizado da Agenda Online",
+        "technician_id": 37,
+        "technician_ids": [
+          37,
+          60
+        ],
+        "technician_names": "Christopher, Gabriel P.",
+        "appointment_date": "2026-07-22",
+        "appointment_time": "08:00",
+        "status": "Agendado",
+        "created_at": "2026-08-11T20:13:45.421Z"
+      },
+      {
+        "id": 1654,
+        "external_id": "GGCAL-803le7srd9t0j3bvkk8lp5k83k",
+        "title": "SC Itapeva",
+        "client_name": "SC Itapeva",
+        "client_address": "SC Itapeva",
+        "client_contact": "Sincronizado da Agenda Online",
+        "technician_id": 37,
+        "technician_ids": [
+          37,
+          60
+        ],
+        "technician_names": "Christopher, Gabriel P.",
+        "appointment_date": "2026-07-23",
+        "appointment_time": "08:00",
+        "status": "Agendado",
+        "created_at": "2026-08-11T20:13:45.421Z"
+      },
+      {
+        "id": 1665,
+        "external_id": "GGCAL-vmlmr2q1bqdv1puaf00k50617c",
+        "title": "Hospital Modelo - Intermédica",
+        "client_name": "Hospital Modelo - Intermédica",
+        "client_address": "Hospital Modelo - Intermédica",
+        "client_contact": "Sincronizado da Agenda Online",
+        "technician_id": 37,
+        "technician_ids": [
+          37,
+          60
+        ],
+        "technician_names": "Christopher, Gabriel P.",
+        "appointment_date": "2026-07-24",
+        "appointment_time": "08:00",
+        "status": "Agendado",
+        "created_at": "2026-08-11T20:13:45.421Z"
+      },
+      {
+        "id": 1672,
+        "external_id": "GGCAL-nr3nfkniaa23004eljnper0ffg",
+        "title": "PM Sorocaba - MP (Argo45)",
+        "client_name": "PM Sorocaba - MP (Argo45)",
+        "client_address": "PM Sorocaba - MP (Argo45)",
+        "client_contact": "Sincronizado da Agenda Online",
+        "technician_id": 41,
+        "technician_ids": [
+          41,
+          60
+        ],
+        "technician_names": "Kauan, Gabriel P.",
+        "appointment_date": "2026-07-27",
+        "appointment_time": "08:00",
+        "status": "Agendado",
+        "created_at": "2026-08-11T20:13:45.421Z"
+      },
+      {
+        "id": 1677,
+        "external_id": "GGCAL-puitgee5jb1c2tkvf7341gmj8k",
+        "title": "PM Sorocaba - MP",
+        "client_name": "PM Sorocaba - MP",
+        "client_address": "PM Sorocaba - MP",
+        "client_contact": "Sincronizado da Agenda Online",
+        "technician_id": 41,
+        "technician_ids": [
+          41,
+          60
+        ],
+        "technician_names": "Kauan, Gabriel P.",
+        "appointment_date": "2026-07-28",
+        "appointment_time": "08:00",
+        "status": "Agendado",
+        "created_at": "2026-08-11T20:13:45.421Z"
+      },
+      {
+        "id": 1679,
+        "external_id": "GGCAL-1lit7j71d7oap9fmjqj7hdep7s",
+        "title": "Unimed Itapetininga / Tatuí?",
+        "client_name": "Unimed Itapetininga / Tatuí?",
+        "client_address": "Unimed Itapetininga / Tatuí?",
+        "client_contact": "Sincronizado da Agenda Online",
+        "technician_id": 2,
+        "technician_ids": [
+          2,
+          60,
+          41
+        ],
+        "technician_names": "Mauro, Gabriel P., Kauan",
+        "appointment_date": "2026-07-29",
+        "appointment_time": "08:00",
+        "status": "Agendado",
+        "created_at": "2026-08-11T20:13:45.421Z"
+      },
+      {
+        "id": 1680,
+        "external_id": "GGCAL-iojt6qjohrnaf2dam6o892oacs",
+        "title": "PM Capão Bonito - câmaras",
+        "client_name": "PM Capão Bonito - câmaras",
+        "client_address": "PM Capão Bonito - câmaras",
+        "client_contact": "Sincronizado da Agenda Online",
+        "technician_id": 2,
+        "technician_ids": [
+          2,
+          60,
+          41
+        ],
+        "technician_names": "Mauro, Gabriel P., Kauan",
+        "appointment_date": "2026-07-29",
+        "appointment_time": "08:00",
+        "status": "Agendado",
+        "created_at": "2026-08-11T20:13:45.421Z"
+      },
+      {
+        "id": 1686,
+        "external_id": "GGCAL-s11bbk64tm262abm6cb2gmtjd8",
+        "title": "SC Piedade  (membrana osmose)  (Argo45)",
+        "client_name": "SC Piedade  (membrana osmose)  (Argo45)",
+        "client_address": "SC Piedade  (membrana osmose)  (Argo45)",
+        "client_contact": "Sincronizado da Agenda Online",
+        "technician_id": 2,
+        "technician_ids": [
+          2,
+          41,
+          60
+        ],
+        "technician_names": "Mauro, Kauan, Gabriel P.",
+        "appointment_date": "2026-07-30",
+        "appointment_time": "08:00",
+        "status": "Agendado",
+        "created_at": "2026-08-11T20:13:45.421Z"
+      },
+      {
+        "id": 1690,
+        "external_id": "GGCAL-2n4d3nvuh9p2sidv0k24el794s",
+        "title": "HC-ICR (altofluxo EQAT) (Kwid)",
+        "client_name": "HC-ICR (altofluxo EQAT) (Kwid)",
+        "client_address": "HC-ICR (altofluxo EQAT) (Kwid)",
+        "client_contact": "Sincronizado da Agenda Online",
+        "technician_id": 22,
+        "technician_ids": [
+          22,
+          60
+        ],
+        "technician_names": "Hélio, Gabriel P.",
+        "appointment_date": "2026-07-31",
+        "appointment_time": "08:00",
+        "status": "Agendado",
+        "created_at": "2026-08-11T20:13:45.421Z"
+      },
+      {
+        "id": 1698,
+        "external_id": "GGCAL-6n48r0tl7qcl750e69koeohnc4",
+        "title": "Exame médico periódico",
+        "client_name": "Exame médico periódico",
+        "client_address": "Exame médico periódico",
+        "client_contact": "Sincronizado da Agenda Online",
+        "technician_id": 60,
+        "technician_ids": [
+          60
+        ],
+        "technician_names": "Gabriel P.",
+        "appointment_date": "2026-08-03",
+        "appointment_time": "08:00",
+        "status": "Agendado",
+        "created_at": "2026-08-11T20:13:45.421Z"
+      },
+      {
+        "id": 1705,
+        "external_id": "GGCAL-tgkrjpbdu39lg040ugamh5odlo",
+        "title": "Hospital Regional de Registro",
+        "client_name": "Hospital Regional de Registro",
+        "client_address": "Hospital Regional de Registro",
+        "client_contact": "Sincronizado da Agenda Online",
+        "technician_id": 60,
+        "technician_ids": [
+          60
+        ],
+        "technician_names": "Gabriel P.",
+        "appointment_date": "2026-08-04",
+        "appointment_time": "08:00",
+        "status": "Agendado",
+        "created_at": "2026-08-11T20:13:45.421Z"
+      },
+      {
+        "id": 1707,
+        "external_id": "GGCAL-2s18b8ld8eaf6pvgp2nnpuneeo",
+        "title": "Hospital Regional de Registro",
+        "client_name": "Hospital Regional de Registro",
+        "client_address": "Hospital Regional de Registro",
+        "client_contact": "Sincronizado da Agenda Online",
+        "technician_id": 60,
+        "technician_ids": [
+          60
+        ],
+        "technician_names": "Gabriel P.",
+        "appointment_date": "2026-08-05",
+        "appointment_time": "08:00",
+        "status": "Agendado",
+        "created_at": "2026-08-11T20:13:45.421Z"
+      },
+      {
+        "id": 1728,
+        "external_id": "GGCAL-uka4ijmgl12gaqh3bsqsbnrsos",
+        "title": "SC Itapeva",
+        "client_name": "SC Itapeva",
+        "client_address": "SC Itapeva",
+        "client_contact": "Sincronizado da Agenda Online",
+        "technician_id": 37,
+        "technician_ids": [
+          37,
+          60
+        ],
+        "technician_names": "Christopher, Gabriel P.",
+        "appointment_date": "2026-08-11",
+        "appointment_time": "08:00",
+        "status": "Agendado",
+        "created_at": "2026-08-11T20:13:45.421Z"
+      },
+      {
+        "id": 1731,
+        "external_id": "GGCAL-l6khedgbo6m9alua32v5en4lf4",
+        "title": "SC Itapeva",
+        "client_name": "SC Itapeva",
+        "client_address": "SC Itapeva",
+        "client_contact": "Sincronizado da Agenda Online",
+        "technician_id": 37,
+        "technician_ids": [
+          37,
+          60
+        ],
+        "technician_names": "Christopher, Gabriel P.",
+        "appointment_date": "2026-08-12",
+        "appointment_time": "08:00",
+        "status": "Agendado",
+        "created_at": "2026-08-11T20:13:45.422Z"
+      },
+      {
+        "id": 1737,
+        "external_id": "GGCAL-9uak0rk76kjp6elfjh0hp6cc3c",
+        "title": "SC Itapeva",
+        "client_name": "SC Itapeva",
+        "client_address": "SC Itapeva",
+        "client_contact": "Sincronizado da Agenda Online",
+        "technician_id": 37,
+        "technician_ids": [
+          37,
+          60
+        ],
+        "technician_names": "Christopher, Gabriel P.",
+        "appointment_date": "2026-08-13",
+        "appointment_time": "08:00",
+        "status": "Agendado",
+        "created_at": "2026-08-11T20:13:45.422Z"
+      },
+      {
+        "id": 1770,
+        "external_id": "GGCAL-t698a2crptds75210pr5ojr1dc",
+        "title": "SC Itapeva - ventiladores + Bombas",
+        "client_name": "SC Itapeva - ventiladores + Bombas",
+        "client_address": "SC Itapeva - ventiladores + Bombas",
+        "client_contact": "Sincronizado da Agenda Online",
+        "technician_id": 60,
+        "technician_ids": [
+          60
+        ],
+        "technician_names": "Gabriel P.",
+        "appointment_date": "2026-08-24",
+        "appointment_time": "08:00",
+        "status": "Agendado",
+        "created_at": "2026-08-11T20:13:45.422Z"
+      },
+      {
+        "id": 1771,
+        "external_id": "GGCAL-6gijau5ppmpr7rserbvrqd12p4",
+        "title": "SC Itapeva - ventiladores + Bombas",
+        "client_name": "SC Itapeva - ventiladores + Bombas",
+        "client_address": "SC Itapeva - ventiladores + Bombas",
+        "client_contact": "Sincronizado da Agenda Online",
+        "technician_id": 60,
+        "technician_ids": [
+          60
+        ],
+        "technician_names": "Gabriel P.",
+        "appointment_date": "2026-08-25",
+        "appointment_time": "08:00",
+        "status": "Agendado",
+        "created_at": "2026-08-11T20:13:45.422Z"
+      },
+      {
+        "id": 1961,
+        "external_id": "GGCAL-rd33hem65ak29o7p13i2mp7obk",
+        "title": "PM Cerquilho",
+        "client_name": "PM Cerquilho",
+        "client_address": "PM Cerquilho",
+        "client_contact": "Sincronizado da Agenda Online",
+        "technician_id": 37,
+        "technician_ids": [
+          37,
+          82
+        ],
+        "technician_names": "Christopher, Gabriel Patrick",
+        "appointment_date": "2027-07-02",
+        "appointment_time": "07:00",
+        "status": "Agendado",
+        "created_at": "2026-08-11T20:13:45.424Z"
+      }
+    ],
+    "reservations": [],
+    "notificationLogs": []
+  }
+}

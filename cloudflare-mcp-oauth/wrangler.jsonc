@@ -1,0 +1,21 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "mcp-server-oauth",
+  "main": "src/index.ts",
+  "compatibility_date": "2025-02-14",
+  "compatibility_flags": [
+    "nodejs_compat"
+  ],
+  "kv_namespaces": [
+    {
+      "binding": "OAUTH_KV",
+      "id": "SUBSTITUA_PELO_ID_DO_SEU_KV_NAMESPACE"
+    }
+  ],
+  "vars": {
+    "OAUTH_CLIENT_ID": "SEU_CLIENT_ID_OAUTH",
+    "OAUTH_AUTHORIZE_URL": "https://github.com/login/oauth/authorize",
+    "OAUTH_TOKEN_URL": "https://github.com/login/oauth/access_token",
+    "OAUTH_USER_INFO_URL": "https://api.github.com/user"
+  }
+}

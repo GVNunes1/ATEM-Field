@@ -1,0 +1,1022 @@
+{
+  "version": 1,
+  "source_directory": "checklists de preventivas/equipamentos",
+  "generated_from": "56 checklists DOCX de manutenção preventiva",
+  "categories": [
+    {
+      "name": "Agitador",
+      "description": "Agitadores e homogeneizadores de bancada com controle de rotação.",
+      "source_files": [
+        "AGITADOR.docx"
+      ],
+      "templates": [
+        {
+          "analyzer_type": "Tacômetro Digital",
+          "required_parameters": [
+            "Rotação / velocidade angular (verificação funcional; ponto e tolerância conforme o modelo)"
+          ],
+          "is_mandatory": 1
+        }
+      ]
+    },
+    {
+      "name": "Aparelho de Anestesia",
+      "description": "Estações de anestesia com circuito respiratório e fornecimento de gases.",
+      "source_files": [
+        "APARELHO DE ANESTESIA.docx"
+      ],
+      "templates": [
+        {
+          "analyzer_type": "Analisador de Fluxo de Gases",
+          "required_parameters": [
+            "Volume corrente: 300 mL e 500 mL",
+            "Pressão inspiratória (cmH2O)",
+            "Pressão PEEP (cmH2O)",
+            "Fluxos de ar, O2 e N2O (verificação funcional)"
+          ],
+          "is_mandatory": 1
+        }
+      ]
+    },
+    {
+      "name": "Aspirador de Fumaça",
+      "description": "Aspiradores de fumaça cirúrgica e seus circuitos de sucção.",
+      "source_files": [
+        "ASPIRADOR DE FUMAÇA.docx"
+      ],
+      "templates": [
+        {
+          "analyzer_type": "Vacuômetro",
+          "required_parameters": [
+            "Sucção / pressão negativa (referência e tolerância conforme o modelo)"
+          ],
+          "is_mandatory": 1
+        }
+      ]
+    },
+    {
+      "name": "Aspirador / Compressor",
+      "description": "Aspiradores e compressores médico-hospitalares com saídas de vácuo e pressão.",
+      "source_files": [
+        "ASPIRADOR-COMPRESSOR.docx"
+      ],
+      "templates": [
+        {
+          "analyzer_type": "Manovacuômetro",
+          "required_parameters": [
+            "Aspiração / pressão negativa (mmHg)"
+          ],
+          "is_mandatory": 1
+        },
+        {
+          "analyzer_type": "Manômetro",
+          "required_parameters": [
+            "Pressão positiva (kgf/cm²)"
+          ],
+          "is_mandatory": 1
+        }
+      ]
+    },
+    {
+      "name": "Autoclave / Esterilização",
+      "description": "Autoclaves e equipamentos de esterilização com monitoramento elétrico e de pressão.",
+      "source_files": [
+        "AUTOCLAVE.docx"
+      ],
+      "templates": [
+        {
+          "analyzer_type": "Multímetro",
+          "required_parameters": [
+            "Potência elétrica (W)",
+            "Corrente elétrica de trabalho (A)"
+          ],
+          "is_mandatory": 1
+        },
+        {
+          "analyzer_type": "Manômetro",
+          "required_parameters": [
+            "Pressão de ciclo (kgf/cm²)"
+          ],
+          "is_mandatory": 1
+        }
+      ]
+    },
+    {
+      "name": "Balança",
+      "description": "Balanças médico-hospitalares verificadas com massas rastreáveis.",
+      "source_files": [
+        "BALANÇA.docx"
+      ],
+      "templates": [
+        {
+          "analyzer_type": "Peso Padrão de 2 Kg",
+          "required_parameters": [
+            "Massa: verificação com peso padrão de 2 kg"
+          ],
+          "is_mandatory": 1
+        },
+        {
+          "analyzer_type": "Peso Padrão de 5 Kg",
+          "required_parameters": [
+            "Massa: verificação com peso padrão de 5 kg"
+          ],
+          "is_mandatory": 1
+        }
+      ]
+    },
+    {
+      "name": "Banho-Maria",
+      "description": "Banhos-maria laboratoriais com controle de temperatura.",
+      "source_files": [
+        "BANHO MARIA.docx"
+      ],
+      "templates": [
+        {
+          "analyzer_type": "Termômetro Digital",
+          "required_parameters": [
+            "Temperatura (°C; pontos e tolerâncias conforme o modelo)"
+          ],
+          "is_mandatory": 1
+        }
+      ]
+    },
+    {
+      "name": "Berço Aquecido",
+      "description": "Berços aquecidos e módulos associados de temperatura, balança, oxigênio e fototerapia.",
+      "source_files": [
+        "BERÇO AQUECIDO.docx"
+      ],
+      "templates": [
+        {
+          "analyzer_type": "Simulador de Temperatura",
+          "required_parameters": [
+            "Temperatura de pele 1 e 2 (°C)"
+          ],
+          "is_mandatory": 1
+        },
+        {
+          "analyzer_type": "Manômetro",
+          "required_parameters": [
+            "Pressão do Baby Puff (cmH2O)"
+          ],
+          "is_mandatory": 1
+        },
+        {
+          "analyzer_type": "Peso Padrão de 5 Kg",
+          "required_parameters": [
+            "Massa da balança integrada: 5 kg"
+          ],
+          "is_mandatory": 1
+        },
+        {
+          "analyzer_type": "Analisador de Oxigênio",
+          "required_parameters": [
+            "Concentração de O2 do blender (%)"
+          ],
+          "is_mandatory": 1
+        },
+        {
+          "analyzer_type": "Multitester THOR",
+          "required_parameters": [
+            "Irradiância do Bilitron (valor e tolerância conforme o modelo)"
+          ],
+          "is_mandatory": 1
+        }
+      ]
+    },
+    {
+      "name": "BIPAP",
+      "description": "Dispositivos BIPAP/ventilação não invasiva com controle de pressões respiratórias.",
+      "source_files": [
+        "BIPAP - PHILIPS.docx"
+      ],
+      "templates": [
+        {
+          "analyzer_type": "Analisador de Fluxo de Gases",
+          "required_parameters": [
+            "Pressões CPAP, IPAP e EPAP (cmH2O)",
+            "Frequência inspiratória (rpm)"
+          ],
+          "is_mandatory": 1
+        }
+      ]
+    },
+    {
+      "name": "Bisturi Eletrônico",
+      "description": "Unidades eletrocirúrgicas com modos de corte, coagulação, blend e bipolar.",
+      "source_files": [
+        "BISTURI ELETRONICO.docx"
+      ],
+      "templates": [
+        {
+          "analyzer_type": "Analisador Eletrocirúrgico",
+          "required_parameters": [
+            "Potência de saída em corte (W; carga e ponto conforme o modelo)",
+            "Potência de saída em coagulação (W; carga e ponto conforme o modelo)",
+            "Potência de saída em blend (W; carga e ponto conforme o modelo)",
+            "Potência de saída bipolar (W; carga e ponto conforme o modelo)"
+          ],
+          "is_mandatory": 1
+        }
+      ]
+    },
+    {
+      "name": "Bomba de Infusão",
+      "description": "Bombas volumétricas de infusão contínua, incluindo variantes 550T2, ICATU e ST1000/ST1000SET.",
+      "source_files": [
+        "BOMBA DE INFUSAO - 550T2.docx",
+        "BOMBA DE INFUSAO - ICATU.docx",
+        "BOMBA DE INFUSAO - ST1000-ST1000SET.docx"
+      ],
+      "replace_template_types": {
+        "Analisador de Infusão / Fluxômetro": "Balança Digital"
+      },
+      "templates": [
+        {
+          "analyzer_type": "Balança Digital",
+          "required_parameters": [
+            "Vazão volumétrica (mL/h; medição gravimétrica)"
+          ],
+          "is_mandatory": 1
+        },
+        {
+          "analyzer_type": "Cronômetro",
+          "required_parameters": [
+            "Tempo de coleta para cálculo da vazão"
+          ],
+          "is_mandatory": 1
+        },
+        {
+          "analyzer_type": "Manômetro",
+          "required_parameters": [
+            "Pressão de oclusão (quando aplicável)"
+          ],
+          "is_mandatory": 1
+        }
+      ]
+    },
+    {
+      "name": "Bomba de Seringa",
+      "description": "Bombas de seringa com verificação de vazão e oclusão.",
+      "source_files": [
+        "BOMBA DE SERINGA.docx"
+      ],
+      "templates": [
+        {
+          "analyzer_type": "Balança Digital",
+          "required_parameters": [
+            "Vazão volumétrica (mL/h; referência conforme seringa e modelo)"
+          ],
+          "is_mandatory": 1
+        },
+        {
+          "analyzer_type": "Cronômetro",
+          "required_parameters": [
+            "Tempo de coleta para cálculo da vazão"
+          ],
+          "is_mandatory": 1
+        },
+        {
+          "analyzer_type": "Manômetro",
+          "required_parameters": [
+            "Pressão de oclusão (quando aplicável)"
+          ],
+          "is_mandatory": 1
+        }
+      ]
+    },
+    {
+      "name": "Cama de Parto",
+      "description": "Camas de parto avaliadas por inspeções visuais e funcionais.",
+      "source_files": [
+        "CAMA DE PARTO.docx"
+      ],
+      "templates": []
+    },
+    {
+      "name": "Cama Fowler",
+      "description": "Camas Fowler, incluindo variantes com balança integrada.",
+      "source_files": [
+        "CAMA FAWLER.docx"
+      ],
+      "templates": [
+        {
+          "analyzer_type": "Peso Padrão de 5 Kg",
+          "required_parameters": [
+            "Massa / peso da balança integrada, quando o recurso existir"
+          ],
+          "is_mandatory": 0
+        }
+      ]
+    },
+    {
+      "name": "Câmara B.O.D.",
+      "description": "Câmaras B.O.D. com controle térmico e compressor.",
+      "source_files": [
+        "CAMARA B.O.D.docx"
+      ],
+      "templates": [
+        {
+          "analyzer_type": "Termômetro Digital",
+          "required_parameters": [
+            "Temperatura interna e pontos dos termostatos (°C)"
+          ],
+          "is_mandatory": 1
+        },
+        {
+          "analyzer_type": "Multímetro",
+          "required_parameters": [
+            "Corrente de trabalho do compressor, quando medida"
+          ],
+          "is_mandatory": 0
+        }
+      ]
+    },
+    {
+      "name": "Câmara de Conservação",
+      "description": "Câmaras de conservação de materiais e amostras com controle térmico.",
+      "source_files": [
+        "CAMARA DE CONSERVAÇAO.docx"
+      ],
+      "templates": [
+        {
+          "analyzer_type": "Termômetro Digital",
+          "required_parameters": [
+            "Temperatura interna e pontos dos termostatos (°C)"
+          ],
+          "is_mandatory": 1
+        },
+        {
+          "analyzer_type": "Multímetro",
+          "required_parameters": [
+            "Corrente de trabalho do compressor, quando medida"
+          ],
+          "is_mandatory": 0
+        }
+      ]
+    },
+    {
+      "name": "Desfibrilador / Cardioversor",
+      "description": "Desfibriladores e cardioversores com energia de choque e módulos de sinais vitais.",
+      "source_files": [
+        "CARDIOVERSOR.docx",
+        "DESFIBRILADOR.docx"
+      ],
+      "templates": [
+        {
+          "analyzer_type": "Analisador de Desfibrilador",
+          "required_parameters": [
+            "Energia de choque: 5 J, 50 J, 150 J e 200 J",
+            "Tempo de carga do capacitor",
+            "Frequência e amplitude do marcapasso não invasivo, quando disponível",
+            "Forma de onda de desfibrilação"
+          ],
+          "is_mandatory": 1
+        },
+        {
+          "analyzer_type": "Simulador de ECG e SPO2",
+          "required_parameters": [
+            "ECG / frequência cardíaca e derivações",
+            "Pulso",
+            "SpO2"
+          ],
+          "is_mandatory": 1
+        },
+        {
+          "analyzer_type": "Simulador de NIBP",
+          "required_parameters": [
+            "Pressão arterial não invasiva (mmHg)"
+          ],
+          "is_mandatory": 1
+        }
+      ]
+    },
+    {
+      "name": "Carrinho de Alto Fluxo / Blender",
+      "description": "Carrinhos de alto fluxo com blender para ajuste de fluxo e concentração de oxigênio.",
+      "source_files": [
+        "CARRINHO DE ALTO FLUXO - BLENDER.docx"
+      ],
+      "templates": [
+        {
+          "analyzer_type": "Analisador de Fluxo - Alto Fluxo",
+          "required_parameters": [
+            "Fluxo de gás (L/min)"
+          ],
+          "is_mandatory": 1
+        },
+        {
+          "analyzer_type": "Analisador de Oxigênio",
+          "required_parameters": [
+            "Concentração de O2 (%)"
+          ],
+          "is_mandatory": 1
+        }
+      ]
+    },
+    {
+      "name": "Central de Monitorização",
+      "description": "Centrais de monitorização avaliadas por conectividade e testes funcionais.",
+      "source_files": [
+        "CENTRAL DE MONITORIZAÇAO.docx"
+      ],
+      "templates": []
+    },
+    {
+      "name": "Centrífuga",
+      "description": "Centrífugas laboratoriais, incluindo variantes refrigeradas.",
+      "source_files": [
+        "CENTRIFUGA.docx"
+      ],
+      "templates": [
+        {
+          "analyzer_type": "Tacômetro Digital",
+          "required_parameters": [
+            "Rotação (rpm; ponto conforme cruzeta e modelo)"
+          ],
+          "is_mandatory": 1
+        },
+        {
+          "analyzer_type": "Termômetro Digital",
+          "required_parameters": [
+            "Temperatura da centrífuga refrigerada (°C)"
+          ],
+          "is_mandatory": 0
+        }
+      ]
+    },
+    {
+      "name": "Coagulador a Gás Argônio",
+      "description": "Coaguladores com controle de fluxo de argônio.",
+      "source_files": [
+        "COAGULADOR A GAS ARGONIO.docx"
+      ],
+      "templates": [
+        {
+          "analyzer_type": "Analisador de Fluxo - Baixo Fluxo",
+          "required_parameters": [
+            "Fluxo de argônio (L/min)"
+          ],
+          "is_mandatory": 1
+        }
+      ]
+    },
+    {
+      "name": "Concentrador de Oxigênio",
+      "description": "Concentradores de oxigênio com medição de fluxo e pureza do gás.",
+      "source_files": [
+        "CONCENTRADOR DE O2.docx"
+      ],
+      "templates": [
+        {
+          "analyzer_type": "Analisador de Fluxo - Baixo Fluxo",
+          "required_parameters": [
+            "Fluxo de saída (L/min)"
+          ],
+          "is_mandatory": 1
+        },
+        {
+          "analyzer_type": "Analisador de Oxigênio",
+          "required_parameters": [
+            "Concentração de O2 (%)"
+          ],
+          "is_mandatory": 1
+        }
+      ]
+    },
+    {
+      "name": "CPAP",
+      "description": "Dispositivos CPAP Fanem e Philips, incluindo umidificação e mistura de oxigênio.",
+      "source_files": [
+        "CPAP - FANEM.docx",
+        "CPAP - PHILIPS.docx"
+      ],
+      "templates": [
+        {
+          "analyzer_type": "Manômetro",
+          "required_parameters": [
+            "Pressão CPAP: 4 e 20 cmH2O"
+          ],
+          "is_mandatory": 1
+        },
+        {
+          "analyzer_type": "Analisador de Oxigênio",
+          "required_parameters": [
+            "Concentração de O2 (%) na variante Fanem"
+          ],
+          "is_mandatory": 0
+        },
+        {
+          "analyzer_type": "Termômetro Digital",
+          "required_parameters": [
+            "Temperatura do umidificador e alarme de alta temperatura (36–37 °C)"
+          ],
+          "is_mandatory": 0
+        }
+      ]
+    },
+    {
+      "name": "Detector Fetal",
+      "description": "Detectores fetais avaliados por áudio, transdutor e funcionamento geral.",
+      "source_files": [
+        "DETECTOR FETAL.docx"
+      ],
+      "templates": []
+    },
+    {
+      "name": "Diversos",
+      "description": "Checklist genérica para equipamentos sem categoria específica e sem coleta quantitativa definida.",
+      "source_files": [
+        "DIVERSOS.docx"
+      ],
+      "templates": []
+    },
+    {
+      "name": "Eletrocardiógrafo",
+      "description": "Eletrocardiógrafos com verificação de derivações e características do sinal.",
+      "source_files": [
+        "ELETROCARDIOGRAFO.docx"
+      ],
+      "templates": [
+        {
+          "analyzer_type": "Simulador de ECG",
+          "required_parameters": [
+            "Derivações ECG",
+            "Amplitude do sinal: 10 mm",
+            "Linha de base: 5 mm",
+            "Sinal de calibração: 10 mm",
+            "Período / velocidade de registro: 25 mm"
+          ],
+          "is_mandatory": 1
+        }
+      ]
+    },
+    {
+      "name": "Estimulador de Tosse",
+      "description": "Insufladores-exsufladores mecânicos com medição de tempo, pressão e fluxo.",
+      "source_files": [
+        "ESTIMULADOR DE TOSSE.docx"
+      ],
+      "templates": [
+        {
+          "analyzer_type": "Cronômetro",
+          "required_parameters": [
+            "Tempo inspiratório: 1 s"
+          ],
+          "is_mandatory": 1
+        },
+        {
+          "analyzer_type": "Manovacuômetro",
+          "required_parameters": [
+            "Pressão positiva: 70 cmH2O",
+            "Pressão negativa: -25 cmH2O"
+          ],
+          "is_mandatory": 1
+        },
+        {
+          "analyzer_type": "Analisador de Fluxo - Alto Fluxo",
+          "required_parameters": [
+            "Fluxo positivo: 200 L/min",
+            "Fluxo negativo: -200 L/min"
+          ],
+          "is_mandatory": 1
+        }
+      ]
+    },
+    {
+      "name": "Estufa",
+      "description": "Estufas laboratoriais de cultura, circulação, renovação de ar e secagem.",
+      "source_files": [
+        "ESTUFA.docx"
+      ],
+      "templates": [
+        {
+          "analyzer_type": "Termômetro Digital",
+          "required_parameters": [
+            "Temperatura máxima (°C)",
+            "Temperatura de trabalho (°C; ponto e tolerância conforme o modelo)"
+          ],
+          "is_mandatory": 1
+        }
+      ]
+    },
+    {
+      "name": "Foco Cirúrgico",
+      "description": "Focos cirúrgicos avaliados por inspeções elétricas, mecânicas e funcionais.",
+      "source_files": [
+        "FOCO CIRURGICO.docx"
+      ],
+      "templates": []
+    },
+    {
+      "name": "Fototerapia",
+      "description": "Equipamentos de fototerapia com verificação de radiância e temperatura de pele.",
+      "source_files": [
+        "FOTOTERAPIA.docx"
+      ],
+      "templates": [
+        {
+          "analyzer_type": "Multitester THOR",
+          "required_parameters": [
+            "Radiância (µW/cm²·nm; distância, ponto e tolerância conforme o modelo)"
+          ],
+          "is_mandatory": 1
+        },
+        {
+          "analyzer_type": "Simulador de Temperatura",
+          "required_parameters": [
+            "Temperatura de pele: 36,1 °C"
+          ],
+          "is_mandatory": 1
+        }
+      ]
+    },
+    {
+      "name": "Freezer",
+      "description": "Freezers laboratoriais e hospitalares com controle de temperatura.",
+      "source_files": [
+        "FREEZER.docx"
+      ],
+      "templates": [
+        {
+          "analyzer_type": "Termômetro Digital",
+          "required_parameters": [
+            "Temperatura: -20 °C e -30,5 °C",
+            "Termostatos de baixa e alta (°C)"
+          ],
+          "is_mandatory": 1
+        }
+      ]
+    },
+    {
+      "name": "Homogeneizador",
+      "description": "Homogeneizadores com verificação funcional de rotação e velocidade.",
+      "source_files": [
+        "HOMOGENEIZADOR.docx"
+      ],
+      "templates": [
+        {
+          "analyzer_type": "Tacômetro Digital",
+          "required_parameters": [
+            "Rotação / velocidade (ponto e tolerância conforme o modelo)"
+          ],
+          "is_mandatory": 1
+        }
+      ]
+    },
+    {
+      "name": "Incubadora",
+      "description": "Incubadoras neonatais com controles ambientais, módulos fisiológicos, balança e Baby Puff.",
+      "source_files": [
+        "INCUBADORA - PAINEL e CUPULA.docx"
+      ],
+      "templates": [
+        {
+          "analyzer_type": "Multitester THOR",
+          "required_parameters": [
+            "Temperatura do ar: 36 °C",
+            "Temperatura de pele: 36,1 °C",
+            "Umidade: 70%"
+          ],
+          "is_mandatory": 1
+        },
+        {
+          "analyzer_type": "Decibelímetro",
+          "required_parameters": [
+            "Ruído: 0–60 dBA"
+          ],
+          "is_mandatory": 1
+        },
+        {
+          "analyzer_type": "Analisador de Oxigênio",
+          "required_parameters": [
+            "Concentração de O2: 50%"
+          ],
+          "is_mandatory": 1
+        },
+        {
+          "analyzer_type": "Peso Padrão de 5 Kg",
+          "required_parameters": [
+            "Balança integrada: 5 kg"
+          ],
+          "is_mandatory": 1
+        },
+        {
+          "analyzer_type": "Simulador de ECG e SPO2",
+          "required_parameters": [
+            "Pulso: 200 bpm",
+            "SpO2: 90%"
+          ],
+          "is_mandatory": 1
+        },
+        {
+          "analyzer_type": "Manômetro",
+          "required_parameters": [
+            "Pressão Baby Puff: 10, 20 e 40 cmH2O"
+          ],
+          "is_mandatory": 1
+        }
+      ]
+    },
+    {
+      "name": "Lavadora Ultrassônica",
+      "description": "Lavadoras ultrassônicas avaliadas por ciclos, vazamentos e intensidade funcional do ultrassom.",
+      "source_files": [
+        "LAVADORA ULTRASSONICA.docx"
+      ],
+      "templates": []
+    },
+    {
+      "name": "Mesa Cirúrgica",
+      "description": "Mesas cirúrgicas eletromecânicas com movimentos, sensores, fonte e bateria.",
+      "source_files": [
+        "MESA CIRURGICA.docx"
+      ],
+      "templates": [
+        {
+          "analyzer_type": "Multímetro",
+          "required_parameters": [
+            "Tensão da fonte, quando medida"
+          ],
+          "is_mandatory": 0
+        }
+      ]
+    },
+    {
+      "name": "Módulo de Sinais Vitais",
+      "description": "Módulos de monitorização fisiológica com ECG, respiração, SpO2, pressões e temperatura.",
+      "source_files": [
+        "MODULO DE SINAIS VITAIS.docx"
+      ],
+      "templates": [
+        {
+          "analyzer_type": "Simulador de ECG e SPO2",
+          "required_parameters": [
+            "ECG: 60 bpm e amplitude de 10 mm",
+            "Derivações ECG",
+            "Respiração: 60 rpm",
+            "SpO2: 100%, 91/92% e 82/83%",
+            "Pulso: 60 bpm"
+          ],
+          "is_mandatory": 1
+        },
+        {
+          "analyzer_type": "Simulador de NIBP",
+          "required_parameters": [
+            "NIBP: 200, 120 e 80 mmHg"
+          ],
+          "is_mandatory": 1
+        },
+        {
+          "analyzer_type": "Simulador de Temperatura",
+          "required_parameters": [
+            "Temperaturas TA, TB, T1 e T2 (pontos conforme fabricante)"
+          ],
+          "is_mandatory": 1
+        },
+        {
+          "analyzer_type": "Simulador de IBP",
+          "required_parameters": [
+            "IBP: 0, 100 e 200 mmHg"
+          ],
+          "is_mandatory": 1
+        },
+        {
+          "analyzer_type": "Jig Simulador de Débito Cardíaco",
+          "required_parameters": [
+            "Débito cardíaco: 4, 8 e 16 L/min",
+            "Temperatura associada: 25 °C e 37 °C"
+          ],
+          "is_mandatory": 1
+        }
+      ]
+    },
+    {
+      "name": "Monitor de Radiância",
+      "description": "Monitores de radiância com canais de temperatura, umidade, oxigênio e radiômetro.",
+      "source_files": [
+        "MONITOR DE RADIANCIA.docx"
+      ],
+      "templates": [
+        {
+          "analyzer_type": "Termohigrômetro Digital",
+          "required_parameters": [
+            "Temperatura: 36 °C",
+            "Umidade: 50%"
+          ],
+          "is_mandatory": 1
+        },
+        {
+          "analyzer_type": "Analisador de Oxigênio",
+          "required_parameters": [
+            "Oxigênio: 60%"
+          ],
+          "is_mandatory": 1
+        },
+        {
+          "analyzer_type": "Multitester THOR",
+          "required_parameters": [
+            "Radiômetro: 10, 20 e 30 µW/cm²·nm"
+          ],
+          "is_mandatory": 1
+        }
+      ]
+    },
+    {
+      "name": "Monitor Multiparamétrico",
+      "description": "Monitores de sinais vitais com ECG, respiração, SpO2, NIBP, IBP e temperatura.",
+      "source_files": [
+        "MONITOR DE SINAIS VITAIS.docx"
+      ],
+      "replace_template_types": {
+        "Simulador de Sinais Vitais (Multiparamétrico)": "Simulador de ECG e SPO2"
+      },
+      "templates": [
+        {
+          "analyzer_type": "Simulador de ECG e SPO2",
+          "required_parameters": [
+            "ECG: 60 bpm e amplitude de 10 mm",
+            "Derivações ECG",
+            "SpO2: 100%, 91/92% e 82/83%",
+            "Pulso: 60 bpm"
+          ],
+          "is_mandatory": 1
+        },
+        {
+          "analyzer_type": "Jig Simulador de Respiração",
+          "required_parameters": [
+            "Respiração: 60 rpm"
+          ],
+          "is_mandatory": 1
+        },
+        {
+          "analyzer_type": "Simulador de NIBP",
+          "required_parameters": [
+            "NIBP: 200, 120 e 80 mmHg"
+          ],
+          "is_mandatory": 1
+        },
+        {
+          "analyzer_type": "Simulador de Temperatura",
+          "required_parameters": [
+            "Temperaturas TA, TB, T1 e T2 (pontos conforme fabricante)"
+          ],
+          "is_mandatory": 1
+        },
+        {
+          "analyzer_type": "Simulador de IBP",
+          "required_parameters": [
+            "IBP: 0, 100 e 200 mmHg"
+          ],
+          "is_mandatory": 1
+        }
+      ]
+    },
+    {
+      "name": "Monitor Fetal",
+      "description": "Monitores fetais com transdutores de ultrassom e atividade uterina, sem coleta quantitativa definida na checklist.",
+      "source_files": [
+        "MONITOR FETAL.docx"
+      ],
+      "templates": []
+    },
+    {
+      "name": "Poltrona",
+      "description": "Poltronas hospitalares avaliadas por inspeções visuais, mecânicas e funcionais.",
+      "source_files": [
+        "POLTRONA.docx"
+      ],
+      "templates": []
+    },
+    {
+      "name": "Rack para Módulo de Monitor",
+      "description": "Racks de módulos de monitor avaliados por conectividade, trava e funcionamento.",
+      "source_files": [
+        "RACK PARA MODULO DE MONITOR.docx"
+      ],
+      "templates": []
+    },
+    {
+      "name": "Reanimador Neonatal",
+      "description": "Reanimadores neonatais com controle de pressão, fluxo e concentração de oxigênio.",
+      "source_files": [
+        "REANIMADOR.docx"
+      ],
+      "templates": [
+        {
+          "analyzer_type": "Manômetro",
+          "required_parameters": [
+            "Pressão de via aérea / saída: 10, 20 e 40 cmH2O",
+            "Pressão de entrada: 3,5 kgf/cm² (condição de ensaio)"
+          ],
+          "is_mandatory": 1
+        },
+        {
+          "analyzer_type": "Analisador de Fluxo - Baixo Fluxo",
+          "required_parameters": [
+            "Fluxo de gás: 7 L/min"
+          ],
+          "is_mandatory": 1
+        },
+        {
+          "analyzer_type": "Analisador de Oxigênio",
+          "required_parameters": [
+            "Concentração de O2: 30%, 60% e 100%"
+          ],
+          "is_mandatory": 1
+        }
+      ]
+    },
+    {
+      "name": "Sistema de Alto Fluxo",
+      "description": "Sistemas AIRVO 2 e Blender para terapia de alto fluxo aquecida e umidificada.",
+      "source_files": [
+        "SISTEMA DE ALTO FLUXO - AIRVO 2.docx",
+        "SISTEMA DE ALTO FLUXO - BLENDER.docx"
+      ],
+      "templates": [
+        {
+          "analyzer_type": "Analisador de Fluxo - Alto Fluxo",
+          "required_parameters": [
+            "Fluxo de gás: 20, 40 e 60 L/min"
+          ],
+          "is_mandatory": 1
+        },
+        {
+          "analyzer_type": "Analisador de Oxigênio",
+          "required_parameters": [
+            "Concentração de O2: 21%, 50% e 100%"
+          ],
+          "is_mandatory": 1
+        },
+        {
+          "analyzer_type": "Termômetro Digital",
+          "required_parameters": [
+            "Temperatura: 37 °C"
+          ],
+          "is_mandatory": 1
+        },
+        {
+          "analyzer_type": "Cronômetro",
+          "required_parameters": [
+            "Tempos de aquecimento, vazamento, bloqueio, tubo e desligamento da variante AIRVO 2"
+          ],
+          "is_mandatory": 0
+        }
+      ]
+    },
+    {
+      "name": "Umidificador Aquecido",
+      "description": "Umidificadores aquecidos MR850, FP950 e MR810.",
+      "source_files": [
+        "UMIDIFICADOR AQUECIDO.docx"
+      ],
+      "templates": [
+        {
+          "analyzer_type": "Termômetro Digital",
+          "required_parameters": [
+            "MR850/FP950: 37 °C",
+            "MR810: 32 °C e 57,5 °C"
+          ],
+          "is_mandatory": 1
+        }
+      ]
+    },
+    {
+      "name": "Ventilador Pulmonar",
+      "description": "Ventiladores pulmonares BRINA, DX3010/DX3012, DX3023, DX3025, KTK, OXYMAG e Trilogy.",
+      "source_files": [
+        "VENTILADOR PULMONAR - BRINA.docx",
+        "VENTILADOR PULMONAR - DX3010-DX3012-TECME 1.docx",
+        "VENTILADOR PULMONAR - DX3023.docx",
+        "VENTILADOR PULMONAR - DX3025.docx",
+        "VENTILADOR PULMONAR - KTK.docx",
+        "VENTILADOR PULMONAR - OXYMAG.docx",
+        "VENTILADOR PULMONAR - TRILOGY.docx"
+      ],
+      "replace_template_types": {
+        "Analisador de Fluxo de Gás e Pressão": "Analisador de Fluxo de Gases"
+      },
+      "templates": [
+        {
+          "analyzer_type": "Analisador de Fluxo de Gases",
+          "required_parameters": [
+            "Volume corrente: 30, 100, 200, 500, 800 e 1000 mL (conforme variante)",
+            "Fluxo: 3 a 120 L/min (conforme variante)",
+            "Frequência inspiratória: 5 a 35 rpm",
+            "Tempo inspiratório: 0,3 a 2,0 s",
+            "Pressões inspiratória, PEEP, CPAP, EPAP e IPAP (cmH2O)"
+          ],
+          "is_mandatory": 1
+        },
+        {
+          "analyzer_type": "Analisador de Oxigênio",
+          "required_parameters": [
+            "Concentração de O2 / FiO2: 21%, 30%, 60%, 90% e 100% nas variantes aplicáveis"
+          ],
+          "is_mandatory": 0
+        }
+      ]
+    }
+  ]
+}

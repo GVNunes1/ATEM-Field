@@ -1,0 +1,661 @@
+{
+  "scope": {
+    "filename_range": "P-V",
+    "docx_count": 13,
+    "source_directory": "checklists de preventivas/equipamentos",
+    "database_references": [
+      "backend/data/db.json",
+      "backend/migrations/001_initial_schema.sql"
+    ],
+    "method": "Extração integral de parágrafos, tabelas, cabeçalhos e rodapés com python-docx do runtime empacotado. O render visual não pôde ser executado porque o LibreOffice/soffice não está disponível no ambiente."
+  },
+  "existing_analyzer_types": [
+    "Analisador de Desfibrilador",
+    "Analisador de Segurança Elétrica",
+    "Simulador de Sinais Vitais (Multiparamétrico)",
+    "Analisador de Fluxo de Gás e Pressão",
+    "Analisador de Infusão / Fluxômetro"
+  ],
+  "files": [
+    {
+      "file": "POLTRONA.docx",
+      "equipment_category": "Poltrona",
+      "model_variant": "Não especificado no nome nem no conteúdo; a periodicidade cita Hospimetal como fabricante/referência.",
+      "measured_or_simulated_quantities": [],
+      "explicitly_cited_standards": {
+        "named": [],
+        "generic_mentions": [],
+        "possible_components_not_external_standards": []
+      },
+      "recommended_mappings": [],
+      "evidence_ambiguities": [
+        "A tabela 2, linhas 4-20, contém somente inspeções visuais e funcionais (revestimentos, rodízios, movimentos, atuadores, controles, cabos e fonte), sem valores de referência, leituras ou patrimônio de padrão.",
+        "O formulário oferece as opções de serviço 'Calibração' e 'Segurança Elétrica', mas não define grandezas nem ensaios de segurança elétrica; portanto não há base documental para tornar um padrão obrigatório.",
+        "Se o fluxo futuro exigir ensaio elétrico independente desta checklist, a associação condicional apropriada é 'Analisador de Segurança Elétrica', tipo já existente no banco."
+      ]
+    },
+    {
+      "file": "RACK PARA MODULO DE MONITOR.docx",
+      "equipment_category": "Rack para Módulo de Monitor",
+      "model_variant": "Não especificado.",
+      "measured_or_simulated_quantities": [],
+      "explicitly_cited_standards": {
+        "named": [],
+        "generic_mentions": [],
+        "possible_components_not_external_standards": []
+      },
+      "recommended_mappings": [],
+      "evidence_ambiguities": [
+        "A tabela 2, linhas 4-11, verifica apenas carcaça, etiquetas, cabo de interligação, trava, LED, conectividade com o monitor e conexão dos módulos.",
+        "Não existe seção 'Coleta de Dados', valor de referência, leitura ou campo de patrimônio do padrão.",
+        "A opção genérica 'Segurança Elétrica' no cabeçalho não comprova que corrente, tensão ou resistência sejam coletadas nesta checklist."
+      ]
+    },
+    {
+      "file": "REANIMADOR.docx",
+      "equipment_category": "Reanimador Neonatal",
+      "model_variant": "Baby Puff (Fanem), citado na periodicidade; o nome do arquivo não informa modelo.",
+      "measured_or_simulated_quantities": [
+        {
+          "quantity": "Pressão de via aérea/saída",
+          "mode": "medida",
+          "details": "Referências de 10, 20 e 40 cmH2O, desvio admissível de ±2 cmH2O.",
+          "evidence": "Tabela 2, linhas 17-19."
+        },
+        {
+          "quantity": "Pressão de entrada",
+          "mode": "condição de ensaio a confirmar/medir",
+          "details": "3,5 kgf/cm² aparece como condição repetida nas linhas de pressão.",
+          "evidence": "Tabela 2, linhas 17-19."
+        },
+        {
+          "quantity": "Fluxo de gás",
+          "mode": "condição de ensaio a confirmar/medir",
+          "details": "7 L/min aparece como condição repetida nas linhas de pressão.",
+          "evidence": "Tabela 2, linhas 17-19."
+        },
+        {
+          "quantity": "Concentração de oxigênio (FiO2)",
+          "mode": "medida",
+          "details": "Referências de 30%, 60% e 100%, desvio admissível de ±5%.",
+          "evidence": "Tabela 2, linhas 20-22."
+        }
+      ],
+      "explicitly_cited_standards": {
+        "named": [],
+        "generic_mentions": [
+          "Patrimônio do Padrão Utilizado"
+        ],
+        "possible_components_not_external_standards": [
+          "Manômetros",
+          "Fluxômetro"
+        ]
+      },
+      "recommended_mappings": [
+        {
+          "quantities": [
+            "Pressão de via aérea/saída",
+            "Pressão de entrada",
+            "Fluxo de gás",
+            "Concentração de oxigênio (FiO2)"
+          ],
+          "standard_category": "Analisador de Fluxo de Gás e Pressão",
+          "existing_analyzer_type": true,
+          "rationale": "O tipo existente já cobre pressão, fluxo e FiO2, permitindo um único padrão integrado para a coleta."
+        }
+      ],
+      "evidence_ambiguities": [
+        "'Manômetros' e 'Fluxômetro' aparecem entre os itens do próprio reanimador, não identificados como padrões externos; não devem ser cadastrados automaticamente como analisadores utilizados.",
+        "A pressão de entrada e o fluxo de 7 L/min são condições descritas dentro da célula da grandeza, sem colunas de leitura próprias; recomenda-se preservá-los como parâmetros requeridos, mas marcar sua natureza como condição de ensaio.",
+        "Nenhum modelo ou categoria de padrão é nomeado; existe apenas o campo genérico de patrimônio."
+      ]
+    },
+    {
+      "file": "SISTEMA DE ALTO FLUXO - AIRVO 2.docx",
+      "equipment_category": "Sistema de Alto Fluxo",
+      "model_variant": "AIRVO 2 (Fisher & Paykel).",
+      "measured_or_simulated_quantities": [
+        {
+          "quantity": "Temperatura",
+          "mode": "medida",
+          "details": "37 °C, tolerância ±2 °C.",
+          "evidence": "Tabela 2, linha 23."
+        },
+        {
+          "quantity": "Fluxo de gás",
+          "mode": "medido",
+          "details": "20, 40 e 60 L/min, com tolerâncias de ±2, ±4 e ±6 L/min.",
+          "evidence": "Tabela 2, linhas 24-26."
+        },
+        {
+          "quantity": "Concentração de oxigênio (FiO2)",
+          "mode": "medida",
+          "details": "21%, 50% e 100%, com faixas de aceitação 18-24%, 47-53% e 97-103%.",
+          "evidence": "Tabela 2, linhas 27-29."
+        },
+        {
+          "quantity": "Tempo/duração",
+          "mode": "medido em testes funcionais temporizados",
+          "details": "Aquecimento <30 min, vazamentos <2 min, bloqueios <30 s, tubo <10 s e desligamento >120 s.",
+          "evidence": "Tabela 2, linhas 30-34."
+        }
+      ],
+      "explicitly_cited_standards": {
+        "named": [],
+        "generic_mentions": [
+          "Patrimônio do Padrão Utilizado"
+        ],
+        "possible_components_not_external_standards": [
+          "Fluxômetro de Alto Fluxo 0-70 L"
+        ]
+      },
+      "recommended_mappings": [
+        {
+          "quantities": [
+            "Fluxo de gás",
+            "Concentração de oxigênio (FiO2)"
+          ],
+          "standard_category": "Analisador de Fluxo de Gás e Pressão",
+          "existing_analyzer_type": true,
+          "rationale": "Reutiliza o tipo existente que já declara fluxo e FiO2 entre os parâmetros."
+        },
+        {
+          "quantities": [
+            "Temperatura"
+          ],
+          "standard_category": "Termômetro / Analisador de Temperatura",
+          "existing_analyzer_type": false,
+          "rationale": "O banco não possui tipo de padrão térmico; a leitura de 37 °C requer instrumento de temperatura calibrado."
+        },
+        {
+          "quantities": [
+            "Tempo/duração"
+          ],
+          "standard_category": "Cronômetro",
+          "existing_analyzer_type": false,
+          "rationale": "Os cinco testes funcionais possuem critérios em segundos ou minutos."
+        }
+      ],
+      "evidence_ambiguities": [
+        "'Fluxômetro de Alto Fluxo 0-70 L' aparece na lista de componentes do sistema (item 13), não como patrimônio do padrão externo.",
+        "Os testes de vazamento, bloqueio, tubo e desligamento são apresentados como tempos-limite; a checklist não nomeia cronômetro nem esclarece se o próprio equipamento fornece a temporização.",
+        "Nenhum padrão é nomeado; somente há o campo genérico de patrimônio."
+      ]
+    },
+    {
+      "file": "SISTEMA DE ALTO FLUXO - BLENDER.docx",
+      "equipment_category": "Sistema de Alto Fluxo",
+      "model_variant": "Blender; Fisher & Paykel é citado na periodicidade, sem modelo específico.",
+      "measured_or_simulated_quantities": [
+        {
+          "quantity": "Temperatura",
+          "mode": "medida",
+          "details": "37 °C, tolerância ±1,5 °C.",
+          "evidence": "Tabela 2, linha 14."
+        },
+        {
+          "quantity": "Fluxo de gás",
+          "mode": "medido",
+          "details": "20, 40 e 60 L/min, com tolerâncias de ±2, ±4 e ±6 L/min.",
+          "evidence": "Tabela 2, linhas 15-17."
+        },
+        {
+          "quantity": "Concentração de oxigênio (FiO2)",
+          "mode": "medida",
+          "details": "21%, 50% e 100%, com faixas de aceitação 18-24%, 47-53% e 97-103%.",
+          "evidence": "Tabela 2, linhas 18-20."
+        }
+      ],
+      "explicitly_cited_standards": {
+        "named": [],
+        "generic_mentions": [
+          "Patrimônio do Padrão Utilizado"
+        ],
+        "possible_components_not_external_standards": []
+      },
+      "recommended_mappings": [
+        {
+          "quantities": [
+            "Fluxo de gás",
+            "Concentração de oxigênio (FiO2)"
+          ],
+          "standard_category": "Analisador de Fluxo de Gás e Pressão",
+          "existing_analyzer_type": true,
+          "rationale": "Tipo já existente no banco para fluxo e FiO2."
+        },
+        {
+          "quantities": [
+            "Temperatura"
+          ],
+          "standard_category": "Termômetro / Analisador de Temperatura",
+          "existing_analyzer_type": false,
+          "rationale": "Não existe tipo térmico equivalente no banco atual."
+        }
+      ],
+      "evidence_ambiguities": [
+        "O nome 'BLENDER' descreve a variante, mas não há marca/modelo inequívoco; Fisher & Paykel aparece somente na nota de periodicidade.",
+        "Nenhum padrão é nomeado; somente há o campo genérico de patrimônio."
+      ]
+    },
+    {
+      "file": "UMIDIFICADOR AQUECIDO.docx",
+      "equipment_category": "Umidificador Aquecido",
+      "model_variant": "MR850 / FP950 / MR810 (Fisher & Paykel), conforme as linhas de coleta e referências de procedimento.",
+      "measured_or_simulated_quantities": [
+        {
+          "quantity": "Temperatura",
+          "mode": "medida",
+          "details": "MR850/FP950: 37 °C (±2 °C); MR810: 32 °C (±3 °C) e 57,5 °C (±2,5 °C).",
+          "evidence": "Tabela 2, linhas 15-17."
+        }
+      ],
+      "explicitly_cited_standards": {
+        "named": [],
+        "generic_mentions": [
+          "Patrimônio do Padrão Utilizado"
+        ],
+        "possible_components_not_external_standards": []
+      },
+      "recommended_mappings": [
+        {
+          "quantities": [
+            "Temperatura"
+          ],
+          "standard_category": "Termômetro / Analisador de Temperatura",
+          "existing_analyzer_type": false,
+          "rationale": "Todas as leituras quantitativas são térmicas e o banco atual não possui padrão de temperatura."
+        }
+      ],
+      "evidence_ambiguities": [
+        "A checklist não informa o tipo de sensor térmico nem se a medição é de placa, gás ou saída do circuito.",
+        "Nenhum padrão é nomeado; somente há o campo genérico de patrimônio."
+      ]
+    },
+    {
+      "file": "VENTILADOR PULMONAR - BRINA.docx",
+      "equipment_category": "Ventilador Pulmonar",
+      "model_variant": "BRINA; fabricante não informado.",
+      "measured_or_simulated_quantities": [
+        {
+          "quantity": "Concentração de oxigênio (FiO2)",
+          "mode": "leitura funcional quantitativa",
+          "details": "Pontos de 21%, 30%, 60%, 90% e 100%.",
+          "evidence": "Tabela 1, linha 27: 'Leitura de O2 21% - 30% - 60% - 90% - 100%'."
+        }
+      ],
+      "explicitly_cited_standards": {
+        "named": [],
+        "generic_mentions": [],
+        "possible_components_not_external_standards": []
+      },
+      "recommended_mappings": [
+        {
+          "quantities": [
+            "Concentração de oxigênio (FiO2)"
+          ],
+          "standard_category": "Analisador de Fluxo de Gás e Pressão",
+          "existing_analyzer_type": true,
+          "rationale": "O tipo existente já inclui concentração de oxigênio/FiO2."
+        }
+      ],
+      "evidence_ambiguities": [
+        "Não existe seção 'Coleta de Dados', valores de desvio, leituras registráveis ou campo de patrimônio do padrão; a única grandeza com pontos quantitativos é O2.",
+        "'Sensib. Pressão adulto e neo' e 'Sensib. fluxo adulto e neo' são verificações funcionais sem referências; não foram promovidas a grandezas quantitativas.",
+        "'Detector de capnostat' e 'SpO2' aparecem como itens qualitativos, sem setpoints ou indicação explícita de simulador. Se houver intenção de simulação, a associação condicional seria 'Simulador de Sinais Vitais (Multiparamétrico)', tipo existente que cobre SpO2 e EtCO2."
+      ]
+    },
+    {
+      "file": "VENTILADOR PULMONAR - DX3010-DX3012-TECME 1.docx",
+      "equipment_category": "Ventilador Pulmonar",
+      "model_variant": "DX3010 / DX3012 / TECME 1, exatamente como no nome do arquivo; fabricante/modelo não são separados de forma inequívoca.",
+      "measured_or_simulated_quantities": [
+        {
+          "quantity": "Concentração de oxigênio (FiO2)",
+          "mode": "verificação funcional quantitativa",
+          "details": "Pontos de O2 de 100% e 60% no modo neonatal.",
+          "evidence": "Tabela 2, linha 24: 'O2 100% / 60% NEO'."
+        }
+      ],
+      "explicitly_cited_standards": {
+        "named": [],
+        "generic_mentions": [],
+        "possible_components_not_external_standards": []
+      },
+      "recommended_mappings": [
+        {
+          "quantities": [
+            "Concentração de oxigênio (FiO2)"
+          ],
+          "standard_category": "Analisador de Fluxo de Gás e Pressão",
+          "existing_analyzer_type": true,
+          "rationale": "O tipo existente inclui FiO2."
+        }
+      ],
+      "evidence_ambiguities": [
+        "Não há seção 'Coleta de Dados', tolerâncias, leituras ou patrimônio do padrão.",
+        "Sensibilidade de pressão/fluxo, estanqueidade e detector de capnografia são itens funcionais sem setpoints; não foram convertidos em medições quantitativas.",
+        "A expressão 'TECME 1' no nome pode ser fabricante, família ou erro de versionamento do arquivo."
+      ]
+    },
+    {
+      "file": "VENTILADOR PULMONAR - DX3023.docx",
+      "equipment_category": "Ventilador Pulmonar",
+      "model_variant": "DX3023 (Dixtal).",
+      "measured_or_simulated_quantities": [
+        {
+          "quantity": "Volume corrente",
+          "mode": "medido",
+          "details": "200, 500 e 800 mL, tolerância aproximada de ±10%.",
+          "evidence": "Tabela 1, linhas 29-31."
+        },
+        {
+          "quantity": "Fluxo de gás",
+          "mode": "medido",
+          "details": "20, 40, 60, 80, 100 e 120 L/min, tolerância aproximada de ±10%.",
+          "evidence": "Tabela 1, linhas 32-37."
+        },
+        {
+          "quantity": "Frequência inspiratória",
+          "mode": "medida",
+          "details": "5, 20 e 35 rpm.",
+          "evidence": "Tabela 1, linhas 38-40."
+        },
+        {
+          "quantity": "Pressão PEEP",
+          "mode": "medida",
+          "details": "Referência descrita como 'Valor Máx.' e faixa admissível de 15-20 cmH2O.",
+          "evidence": "Tabela 1, linha 41."
+        }
+      ],
+      "explicitly_cited_standards": {
+        "named": [],
+        "generic_mentions": [
+          "Patrimônio do Padrão Utilizado"
+        ],
+        "possible_components_not_external_standards": []
+      },
+      "recommended_mappings": [
+        {
+          "quantities": [
+            "Volume corrente",
+            "Fluxo de gás",
+            "Frequência inspiratória",
+            "Pressão PEEP"
+          ],
+          "standard_category": "Analisador de Fluxo de Gás e Pressão",
+          "existing_analyzer_type": true,
+          "rationale": "É o tipo já associado a Ventilador Pulmonar no banco e cobre volume, fluxo/pressão e frequência respiratória."
+        }
+      ],
+      "evidence_ambiguities": [
+        "A referência de PEEP consta como 'Valor Máx.' em vez de um setpoint numérico; a faixa de 15-20 cmH2O precisa ser interpretada/confirmada antes de virar parâmetro estruturado.",
+        "Ajustes das válvulas de ar, O2 e 10 psi e calibrações de fluxo aparecem como itens funcionais, mas não possuem linhas de leitura próprias.",
+        "Nenhum padrão é nomeado; somente há o campo genérico de patrimônio."
+      ]
+    },
+    {
+      "file": "VENTILADOR PULMONAR - DX3025.docx",
+      "equipment_category": "Ventilador Pulmonar",
+      "model_variant": "DX3025 (Dixtal).",
+      "measured_or_simulated_quantities": [
+        {
+          "quantity": "Pressão inspiratória",
+          "mode": "medida",
+          "details": "8 cmH2O, faixa de 6-10 cmH2O.",
+          "evidence": "Tabela 2, linha 29."
+        },
+        {
+          "quantity": "Pressão PEEP",
+          "mode": "medida",
+          "details": "3, 5 e 8 cmH2O, cada ponto com tolerância de ±2 cmH2O.",
+          "evidence": "Tabela 2, linhas 30-32."
+        },
+        {
+          "quantity": "Frequência inspiratória",
+          "mode": "medida",
+          "details": "30 rpm, faixa de 29-31 rpm.",
+          "evidence": "Tabela 2, linha 33."
+        },
+        {
+          "quantity": "Tempo inspiratório",
+          "mode": "medido",
+          "details": "2 s, faixa de 1,80-2,20 s.",
+          "evidence": "Tabela 2, linha 34."
+        },
+        {
+          "quantity": "Volume corrente",
+          "mode": "medido",
+          "details": "30 mL, faixa de 27-33 mL.",
+          "evidence": "Tabela 2, linha 35."
+        }
+      ],
+      "explicitly_cited_standards": {
+        "named": [],
+        "generic_mentions": [
+          "Patrimônio do Padrão Utilizado"
+        ],
+        "possible_components_not_external_standards": []
+      },
+      "recommended_mappings": [
+        {
+          "quantities": [
+            "Pressão inspiratória",
+            "Pressão PEEP",
+            "Frequência inspiratória",
+            "Tempo inspiratório",
+            "Volume corrente"
+          ],
+          "standard_category": "Analisador de Fluxo de Gás e Pressão",
+          "existing_analyzer_type": true,
+          "rationale": "Um analisador ventilatório integrado é apropriado para grandezas sincronizadas do ciclo respiratório; o tipo existente cobre explicitamente volume, pressão e frequência, e normalmente fornece tempo inspiratório."
+        }
+      ],
+      "evidence_ambiguities": [
+        "Tempo inspiratório não consta entre os required_parameters atuais do tipo existente; a cobertura pelo mesmo analisador é uma recomendação técnica inferida e deve ser refletida no template de parâmetros.",
+        "Nenhum padrão é nomeado; somente há o campo genérico de patrimônio."
+      ]
+    },
+    {
+      "file": "VENTILADOR PULMONAR - KTK.docx",
+      "equipment_category": "Ventilador Pulmonar",
+      "model_variant": "KTK; a checklist não separa fabricante e modelo.",
+      "measured_or_simulated_quantities": [
+        {
+          "quantity": "Volume corrente",
+          "mode": "medido",
+          "details": "200 e 1000 mL, tolerância aproximada de ±10%.",
+          "evidence": "Tabela 2, linhas 17-18."
+        },
+        {
+          "quantity": "Frequência inspiratória",
+          "mode": "medida",
+          "details": "15 e 35 rpm.",
+          "evidence": "Tabela 2, linhas 19-20."
+        },
+        {
+          "quantity": "Tempo inspiratório",
+          "mode": "medido",
+          "details": "0,3 e 1,0 s.",
+          "evidence": "Tabela 2, linhas 21-22."
+        },
+        {
+          "quantity": "Pressão inspiratória",
+          "mode": "medida",
+          "details": "10 e 20 cmH2O, tolerância de ±2 cmH2O.",
+          "evidence": "Tabela 2, linhas 23-24."
+        },
+        {
+          "quantity": "Pressão PEEP",
+          "mode": "medida",
+          "details": "3 e 10 cmH2O, tolerância de ±2 cmH2O.",
+          "evidence": "Tabela 2, linhas 25-26."
+        }
+      ],
+      "explicitly_cited_standards": {
+        "named": [],
+        "generic_mentions": [
+          "Patrimônio do Padrão Utilizado"
+        ],
+        "possible_components_not_external_standards": []
+      },
+      "recommended_mappings": [
+        {
+          "quantities": [
+            "Volume corrente",
+            "Frequência inspiratória",
+            "Tempo inspiratório",
+            "Pressão inspiratória",
+            "Pressão PEEP"
+          ],
+          "standard_category": "Analisador de Fluxo de Gás e Pressão",
+          "existing_analyzer_type": true,
+          "rationale": "O tipo existente é o padrão integrado apropriado para as grandezas ventilatórias."
+        }
+      ],
+      "evidence_ambiguities": [
+        "Nas linhas de frequência inspiratória, as faixas admissíveis terminam em 'mL' em vez de 'rpm' ('14-16 mL' e '34-36 mL'); é um provável erro de unidade que deve ser corrigido/confirmado antes da carga.",
+        "Tempo inspiratório não está listado nos required_parameters atuais do tipo existente, embora normalmente seja medido pelo analisador ventilatório.",
+        "Nenhum padrão é nomeado; somente há o campo genérico de patrimônio."
+      ]
+    },
+    {
+      "file": "VENTILADOR PULMONAR - OXYMAG.docx",
+      "equipment_category": "Ventilador Pulmonar",
+      "model_variant": "OXYMAG/Oximag, conforme nome do arquivo e nota de periodicidade.",
+      "measured_or_simulated_quantities": [
+        {
+          "quantity": "Volume corrente",
+          "mode": "medido",
+          "details": "100 e 1000 mL.",
+          "evidence": "Tabela 2, linhas 17-18."
+        },
+        {
+          "quantity": "Fluxo de gás",
+          "mode": "medido",
+          "details": "3 e 30 L/min.",
+          "evidence": "Tabela 2, linhas 19-20."
+        },
+        {
+          "quantity": "Frequência inspiratória",
+          "mode": "medida",
+          "details": "15 e 35 rpm.",
+          "evidence": "Tabela 2, linhas 21-22."
+        },
+        {
+          "quantity": "Tempo inspiratório",
+          "mode": "medido",
+          "details": "0,3 e 1,0 s.",
+          "evidence": "Tabela 2, linhas 23-24."
+        },
+        {
+          "quantity": "Pressão inspiratória",
+          "mode": "medida",
+          "details": "15 e 35 cmH2O.",
+          "evidence": "Tabela 2, linhas 25-26."
+        },
+        {
+          "quantity": "Pressão PEEP",
+          "mode": "medida",
+          "details": "3 e 10 cmH2O.",
+          "evidence": "Tabela 2, linhas 27-28."
+        }
+      ],
+      "explicitly_cited_standards": {
+        "named": [],
+        "generic_mentions": [
+          "Patrimônio do Padrão Utilizado"
+        ],
+        "possible_components_not_external_standards": []
+      },
+      "recommended_mappings": [
+        {
+          "quantities": [
+            "Volume corrente",
+            "Fluxo de gás",
+            "Frequência inspiratória",
+            "Tempo inspiratório",
+            "Pressão inspiratória",
+            "Pressão PEEP"
+          ],
+          "standard_category": "Analisador de Fluxo de Gás e Pressão",
+          "existing_analyzer_type": true,
+          "rationale": "O tipo existente cobre o conjunto ventilatório em um único instrumento integrado."
+        }
+      ],
+      "evidence_ambiguities": [
+        "A grafia varia entre OXYMAG no arquivo e Oximag na nota de periodicidade; normalizar somente após confirmar a denominação comercial.",
+        "Tempo inspiratório não está listado nos required_parameters atuais do tipo existente, embora normalmente seja medido pelo analisador ventilatório.",
+        "Nenhum padrão é nomeado; somente há o campo genérico de patrimônio."
+      ]
+    },
+    {
+      "file": "VENTILADOR PULMONAR - TRILOGY.docx",
+      "equipment_category": "Ventilador Pulmonar",
+      "model_variant": "Trilogy (Philips).",
+      "measured_or_simulated_quantities": [
+        {
+          "quantity": "Pressão CPAP",
+          "mode": "medida",
+          "details": "4 e 20 cmH2O.",
+          "evidence": "Tabela 2, linhas 15-16."
+        },
+        {
+          "quantity": "Pressão EPAP",
+          "mode": "medida",
+          "details": "4 e 25 cmH2O.",
+          "evidence": "Tabela 2, linhas 17-18."
+        },
+        {
+          "quantity": "Pressão IPAP",
+          "mode": "medida",
+          "details": "15 e 40 cmH2O.",
+          "evidence": "Tabela 2, linhas 19-20."
+        },
+        {
+          "quantity": "Pressão PEEP",
+          "mode": "medida",
+          "details": "5, 10 e 15 cmH2O.",
+          "evidence": "Tabela 2, linhas 21-23."
+        },
+        {
+          "quantity": "Pressão inspiratória",
+          "mode": "medida",
+          "details": "15 e 35 cmH2O.",
+          "evidence": "Tabela 2, linhas 24-25."
+        },
+        {
+          "quantity": "Frequência inspiratória",
+          "mode": "medida",
+          "details": "15 e 35 rpm.",
+          "evidence": "Tabela 2, linhas 26-27."
+        }
+      ],
+      "explicitly_cited_standards": {
+        "named": [],
+        "generic_mentions": [
+          "Patrimônio do Padrão Utilizado"
+        ],
+        "possible_components_not_external_standards": []
+      },
+      "recommended_mappings": [
+        {
+          "quantities": [
+            "Pressão CPAP",
+            "Pressão EPAP",
+            "Pressão IPAP",
+            "Pressão PEEP",
+            "Pressão inspiratória",
+            "Frequência inspiratória"
+          ],
+          "standard_category": "Analisador de Fluxo de Gás e Pressão",
+          "existing_analyzer_type": true,
+          "rationale": "O tipo existente contempla pressões ventilatórias e frequência respiratória."
+        }
+      ],
+      "evidence_ambiguities": [
+        "A checklist não coleta volume nem fluxo para esta variante; não acrescentá-los ao template apenas porque são comuns em ventiladores.",
+        "Nenhum padrão é nomeado; somente há o campo genérico de patrimônio."
+      ]
+    }
+  ]
+}

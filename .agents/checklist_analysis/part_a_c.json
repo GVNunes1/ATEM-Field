@@ -1,0 +1,1368 @@
+{
+  "scope": "Arquivos DOCX cujos nomes começam por A, B ou C em checklists de preventivas/equipamentos",
+  "source_file_count": 26,
+  "existing_analyzer_types": [
+    "Analisador de Desfibrilador",
+    "Analisador de Segurança Elétrica",
+    "Simulador de Sinais Vitais (Multiparamétrico)",
+    "Analisador de Fluxo de Gás e Pressão",
+    "Analisador de Infusão / Fluxômetro"
+  ],
+  "live_inventory_types_applied": [
+    "Analisador de Segurança Elétrica",
+    "Analisador de Desfibrilador",
+    "Analisador Eletrocirúrgico",
+    "Analisador de Oxigênio",
+    "Analisador de Fluxo de Gases",
+    "Analisador de Fluxo - Alto Fluxo",
+    "Analisador de Fluxo - Baixo Fluxo",
+    "Manômetro",
+    "Manovacuômetro",
+    "Vacuômetro",
+    "Multímetro",
+    "Cronômetro",
+    "Tacômetro Digital",
+    "Termômetro Digital",
+    "Simulador de ECG e SPO2",
+    "Simulador de NIBP",
+    "Simulador de Temperatura",
+    "Balança Digital",
+    "Peso Padrão de 2 Kg/5 Kg"
+  ],
+  "files": [
+    {
+      "file": "AGITADOR.docx",
+      "equipment_category": "Agitador",
+      "filename_model_variant": null,
+      "embedded_models_or_variants": [],
+      "quantities": [
+        {
+          "name": "Rotação / velocidade angular",
+          "measurement_context": "verificação funcional sem ponto numérico",
+          "evidence": "Item 09: 'Rotação e Velocidade'."
+        }
+      ],
+      "explicit_standards": [
+        "Analisador de Segurança Elétrica (campo 'Analisador SE.')"
+      ],
+      "recommended_associations": [
+        {
+          "quantity": "Rotação / velocidade angular",
+          "recommended_standard_category": "Tacômetro Digital",
+          "reuse_existing_analyzer_type": null,
+          "confidence": "média",
+          "rationale": "A checklist exige verificar rotação e velocidade, mas não informa RPM nem o instrumento."
+        },
+        {
+          "quantity": "Ensaios de segurança elétrica, quando executados",
+          "recommended_standard_category": "Analisador de Segurança Elétrica",
+          "reuse_existing_analyzer_type": "Analisador de Segurança Elétrica",
+          "confidence": "alta",
+          "rationale": "Há campo explícito para patrimônio, número do teste, classe, tipo e data do analisador de segurança elétrica."
+        }
+      ],
+      "evidence": [
+        "O documento contém apenas análises visuais/funcionais; não há tabela de coleta de dados.",
+        "A periodicidade cita Fanem, embora o nome do arquivo não traga fabricante ou modelo."
+      ],
+      "ambiguities": [
+        "Não é possível saber se rotação/velocidade é medida com tacômetro ou apenas observada.",
+        "A referência a Fanem pode ser resíduo de outro template."
+      ]
+    },
+    {
+      "file": "APARELHO DE ANESTESIA.docx",
+      "equipment_category": "Aparelho de Anestesia",
+      "filename_model_variant": null,
+      "embedded_models_or_variants": [],
+      "quantities": [
+        {
+          "name": "Volume corrente",
+          "measurement_context": "coleta quantitativa em 500 mL e 300 mL",
+          "evidence": "Linhas de coleta 'Volume 500mL, 450-550 mL' e 'Volume 300mL, 270-330 mL'."
+        },
+        {
+          "name": "Pressão inspiratória",
+          "measurement_context": "coleta quantitativa em cmH2O",
+          "evidence": "Pontos de 21 e 18 cmH2O, com faixas 19-23 e 16-20 cmH2O."
+        },
+        {
+          "name": "Pressão PEEP",
+          "measurement_context": "coleta quantitativa em cmH2O",
+          "evidence": "Pontos de 7 e 5 cmH2O, com faixas 5-9 e 3-7 cmH2O."
+        },
+        {
+          "name": "Fluxo de ar, O2, N2O e saídas auxiliares",
+          "measurement_context": "verificação funcional sem valores numéricos",
+          "evidence": "Itens 17 a 20 pedem verificação dos fluxos de ar, O2, N2O e saídas auxiliares."
+        }
+      ],
+      "explicit_standards": [
+        "Analisador de Segurança Elétrica (campo 'Analisador SE.')",
+        "Padrão não nomeado (coluna 'Patrimônio do Padrão Utilizado')"
+      ],
+      "recommended_associations": [
+        {
+          "quantity": "Volume, pressões respiratórias e fluxos de gases",
+          "recommended_standard_category": "Analisador de Fluxo de Gases",
+          "reuse_existing_analyzer_type": "Analisador de Fluxo de Gás e Pressão",
+          "confidence": "alta",
+          "rationale": "O tipo existente já cobre volume corrente, PIP, PEEP, concentração de O2 e frequência respiratória."
+        },
+        {
+          "quantity": "Ensaios de segurança elétrica, quando executados",
+          "recommended_standard_category": "Analisador de Segurança Elétrica",
+          "reuse_existing_analyzer_type": "Analisador de Segurança Elétrica",
+          "confidence": "alta",
+          "rationale": "Campo de analisador SE explicitamente presente."
+        }
+      ],
+      "evidence": [
+        "A tabela possui três leituras e patrimônio do padrão para volume e pressões.",
+        "O rodapé de periodicidade cita Dixtal, sem modelo identificado."
+      ],
+      "ambiguities": [
+        "Não há pontos quantitativos para os fluxos de ar, O2, N2O ou saídas auxiliares.",
+        "A referência a Dixtal pode ser reaproveitamento de template e não define o modelo do aparelho de anestesia."
+      ]
+    },
+    {
+      "file": "ASPIRADOR DE FUMAÇA.docx",
+      "equipment_category": "Aspirador de Fumaça",
+      "filename_model_variant": null,
+      "embedded_models_or_variants": [
+        "WEM SE-120 (citado apenas na periodicidade)"
+      ],
+      "quantities": [
+        {
+          "name": "Sucção / pressão negativa",
+          "measurement_context": "teste funcional sem valor numérico",
+          "evidence": "Item 10: 'Teste de Sucção'."
+        }
+      ],
+      "explicit_standards": [
+        "Analisador de Segurança Elétrica (campo 'Analisador SE.')"
+      ],
+      "recommended_associations": [
+        {
+          "quantity": "Sucção / pressão negativa",
+          "recommended_standard_category": "Vacuômetro",
+          "reuse_existing_analyzer_type": "Analisador de Fluxo de Gás e Pressão",
+          "confidence": "média",
+          "rationale": "Pressão negativa deve ser comparada por manovacuômetro; o tipo existente de fluxo/pressão é compatível, mas amplo."
+        },
+        {
+          "quantity": "Ensaios de segurança elétrica, quando executados",
+          "recommended_standard_category": "Analisador de Segurança Elétrica",
+          "reuse_existing_analyzer_type": "Analisador de Segurança Elétrica",
+          "confidence": "alta",
+          "rationale": "Campo explícito de analisador SE."
+        }
+      ],
+      "evidence": [
+        "Item 12 verifica funcionamento em 110 V e 220 V, mas não coleta tensão.",
+        "Não há seção de coleta de dados."
+      ],
+      "ambiguities": [
+        "A sucção pode ser apenas uma verificação qualitativa; não há unidade, referência ou desvio admissível.",
+        "SE-120 aparece na periodicidade, não no nome do arquivo."
+      ]
+    },
+    {
+      "file": "ASPIRADOR-COMPRESSOR.docx",
+      "equipment_category": "Aspirador / Compressor",
+      "filename_model_variant": null,
+      "embedded_models_or_variants": [
+        "Fanem Colibri",
+        "Fanem R2D2",
+        "Medela Victoria Lipos"
+      ],
+      "quantities": [
+        {
+          "name": "Aspiração / pressão negativa",
+          "measurement_context": "coleta quantitativa em mmHg",
+          "evidence": "Aspiração máxima e pontos de 300 e 500 mmHg, com tolerância de ±2,5%."
+        },
+        {
+          "name": "Pressão positiva",
+          "measurement_context": "coleta quantitativa em kgf/cm²",
+          "evidence": "Pontos de 0,8 e 1,2 kgf/cm², com tolerância de ±2,5%."
+        }
+      ],
+      "explicit_standards": [
+        "Manômetro / manovacuômetro (item funcional 15)",
+        "Analisador de Segurança Elétrica (campo 'Analisador SE.')",
+        "Padrão não nomeado (coluna 'Patrimônio do Padrão Utilizado')"
+      ],
+      "recommended_associations": [
+        {
+          "quantity": "Aspiração / pressão negativa",
+          "recommended_standard_category": "Manovacuômetro",
+          "reuse_existing_analyzer_type": "Analisador de Fluxo de Gás e Pressão",
+          "confidence": "alta",
+          "rationale": "A grandeza e o instrumento estão explicitamente indicados."
+        },
+        {
+          "quantity": "Pressão positiva",
+          "recommended_standard_category": "Manômetro",
+          "reuse_existing_analyzer_type": "Analisador de Fluxo de Gás e Pressão",
+          "confidence": "alta",
+          "rationale": "Associação direta pressão → manômetro, compatível com o tipo existente de fluxo/pressão."
+        },
+        {
+          "quantity": "Ensaios de segurança elétrica, quando executados",
+          "recommended_standard_category": "Analisador de Segurança Elétrica",
+          "reuse_existing_analyzer_type": "Analisador de Segurança Elétrica",
+          "confidence": "alta",
+          "rationale": "Campo explícito de analisador SE."
+        }
+      ],
+      "evidence": [
+        "A seção de coleta usa patrimônio do padrão e três leituras.",
+        "Ruído/vibração aparece somente como item funcional, sem unidade ou limite."
+      ],
+      "ambiguities": [
+        "O campo 'Aspiração Máx.' usa referência 'Indiferente' e não define limite de aceitação.",
+        "Os modelos aparecem apenas na nota de periodicidade."
+      ]
+    },
+    {
+      "file": "AUTOCLAVE.docx",
+      "equipment_category": "Autoclave",
+      "filename_model_variant": null,
+      "embedded_models_or_variants": [
+        "Fanem (sem modelo)",
+        "CISA (sem modelo)"
+      ],
+      "quantities": [
+        {
+          "name": "Potência elétrica",
+          "measurement_context": "coleta quantitativa em W, sem ponto de referência",
+          "evidence": "Linha 'Potência (W)' com campos de referência e desvio em branco."
+        },
+        {
+          "name": "Corrente elétrica",
+          "measurement_context": "coleta quantitativa, unidade indicada apenas por I",
+          "evidence": "Linha 'Corrente (I)' com campos de referência e desvio em branco."
+        },
+        {
+          "name": "Pressão",
+          "measurement_context": "coleta quantitativa em kgf/cm²",
+          "evidence": "Ponto de 1 kgf/cm² com tolerância de ±5%."
+        }
+      ],
+      "explicit_standards": [
+        "Analisador de Segurança Elétrica (campo 'Analisador SE.')",
+        "Padrão não nomeado (coluna 'Patrimônio do Padrão Utilizado')"
+      ],
+      "recommended_associations": [
+        {
+          "quantity": "Potência e corrente elétrica",
+          "recommended_standard_category": "Multímetro",
+          "reuse_existing_analyzer_type": null,
+          "confidence": "alta",
+          "rationale": "Corrente e potência exigem medidor elétrico; corrente segue a associação corrente → multímetro."
+        },
+        {
+          "quantity": "Pressão",
+          "recommended_standard_category": "Manômetro",
+          "reuse_existing_analyzer_type": "Analisador de Fluxo de Gás e Pressão",
+          "confidence": "alta",
+          "rationale": "Associação direta pressão → manômetro."
+        },
+        {
+          "quantity": "Ensaios de segurança elétrica, quando executados",
+          "recommended_standard_category": "Analisador de Segurança Elétrica",
+          "reuse_existing_analyzer_type": "Analisador de Segurança Elétrica",
+          "confidence": "alta",
+          "rationale": "Campo explícito de analisador SE."
+        }
+      ],
+      "evidence": [
+        "A checklist inclui válvula de segurança e condições das resistências.",
+        "A tabela de coleta não inclui temperatura nem tempo de esterilização."
+      ],
+      "ambiguities": [
+        "A ausência de temperatura e tempo é atípica para autoclave e deve ser validada antes de transformar esta checklist em regra obrigatória.",
+        "A unidade da corrente não é declarada."
+      ]
+    },
+    {
+      "file": "BALANÇA.docx",
+      "equipment_category": "Balança",
+      "filename_model_variant": null,
+      "embedded_models_or_variants": [],
+      "quantities": [
+        {
+          "name": "Massa",
+          "measurement_context": "coleta quantitativa em kg",
+          "evidence": "Pontos de 2 kg e 5 kg; tolerâncias deixadas em branco."
+        }
+      ],
+      "explicit_standards": [
+        "Analisador de Segurança Elétrica (campo 'Analisador SE.')",
+        "Padrão não nomeado (coluna 'Patrimônio do Padrão Utilizado')"
+      ],
+      "recommended_associations": [
+        {
+          "quantity": "Massa",
+          "recommended_standard_category": "Peso Padrão de 2 Kg/5 Kg",
+          "reuse_existing_analyzer_type": null,
+          "confidence": "alta",
+          "rationale": "A calibração nos pontos de 2 kg e 5 kg requer massas rastreáveis."
+        },
+        {
+          "quantity": "Ensaios de segurança elétrica, quando aplicáveis",
+          "recommended_standard_category": "Analisador de Segurança Elétrica",
+          "reuse_existing_analyzer_type": "Analisador de Segurança Elétrica",
+          "confidence": "alta",
+          "rationale": "Há campos específicos de analisador e teste de segurança elétrica."
+        }
+      ],
+      "evidence": [
+        "A seção de coleta registra patrimônio do padrão e três leituras."
+      ],
+      "ambiguities": [
+        "Os desvios admissíveis estão em branco e precisam ser definidos por classe/modelo da balança."
+      ]
+    },
+    {
+      "file": "BANHO MARIA.docx",
+      "equipment_category": "Banho-Maria",
+      "filename_model_variant": null,
+      "embedded_models_or_variants": [
+        "100",
+        "102 N-6",
+        "1100",
+        "1102",
+        "1147",
+        "147",
+        "116-Ult.",
+        "146"
+      ],
+      "quantities": [
+        {
+          "name": "Temperatura",
+          "measurement_context": "coleta quantitativa em °C, dependente do modelo",
+          "evidence": "Tabela lista pontos de 0, 30, 37, 40, 56, 60, 75 e 80 °C e tolerâncias de ±0,5, ±2 ou ±3 °C conforme modelo."
+        }
+      ],
+      "explicit_standards": [
+        "Analisador de Segurança Elétrica (campo 'Analisador SE.')",
+        "Padrão não nomeado (coluna 'Patrimônio do Padrão Utilizado')"
+      ],
+      "recommended_associations": [
+        {
+          "quantity": "Temperatura",
+          "recommended_standard_category": "Termômetro Digital",
+          "reuse_existing_analyzer_type": null,
+          "confidence": "alta",
+          "rationale": "Os pontos e desvios são térmicos e variam conforme o modelo."
+        },
+        {
+          "quantity": "Ensaios de segurança elétrica, quando executados",
+          "recommended_standard_category": "Analisador de Segurança Elétrica",
+          "reuse_existing_analyzer_type": "Analisador de Segurança Elétrica",
+          "confidence": "alta",
+          "rationale": "Campo explícito de analisador SE."
+        }
+      ],
+      "evidence": [
+        "O termostato aparece também como item funcional."
+      ],
+      "ambiguities": [
+        "A linha que relaciona modelos, pontos e tolerâncias está mesclada e deve ser normalizada por modelo antes de virar parâmetros obrigatórios."
+      ]
+    },
+    {
+      "file": "BERÇO AQUECIDO.docx",
+      "equipment_category": "Berço Aquecido",
+      "filename_model_variant": null,
+      "embedded_models_or_variants": [],
+      "quantities": [
+        {
+          "name": "Temperatura de pele 1 e 2",
+          "measurement_context": "simulação/coleta quantitativa em °C",
+          "evidence": "Pontos de 25, 34, 36,1 e 42 °C, com tolerância de ±0,5 °C."
+        },
+        {
+          "name": "Pressão do Baby Puff",
+          "measurement_context": "coleta quantitativa em cmH2O",
+          "evidence": "Pontos de 10, 20 e 40 cmH2O, com tolerância de ±2 cmH2O."
+        },
+        {
+          "name": "Massa da balança integrada",
+          "measurement_context": "coleta quantitativa em kg",
+          "evidence": "Ponto de 5 kg; a tolerância é impressa como ±0,004 g."
+        },
+        {
+          "name": "Concentração de O2 do blender",
+          "measurement_context": "coleta quantitativa em %",
+          "evidence": "Pontos de 30%, 60% e 100%, com tolerância de ±5%."
+        },
+        {
+          "name": "Irradiância do Bilitron",
+          "measurement_context": "coleta quantitativa dependente do modelo",
+          "evidence": "Campo em µW/cm².nm, sem valor fixo."
+        }
+      ],
+      "explicit_standards": [
+        "Analisador de Segurança Elétrica (campo 'Analisador SE.')",
+        "Padrões não nomeados (campos de patrimônio na tabela de coleta)"
+      ],
+      "recommended_associations": [
+        {
+          "quantity": "Temperatura de pele",
+          "recommended_standard_category": "Simulador de Temperatura",
+          "reuse_existing_analyzer_type": null,
+          "confidence": "alta",
+          "rationale": "Os pontos de pele exigem simular o sensor, não apenas medir temperatura ambiente."
+        },
+        {
+          "quantity": "Pressão do Baby Puff",
+          "recommended_standard_category": "Manômetro",
+          "reuse_existing_analyzer_type": "Analisador de Fluxo de Gás e Pressão",
+          "confidence": "alta",
+          "rationale": "Pressão em cmH2O se associa a manômetro; o tipo existente é adequado ao contexto respiratório."
+        },
+        {
+          "quantity": "Massa",
+          "recommended_standard_category": "Peso Padrão de 2 Kg/5 Kg",
+          "reuse_existing_analyzer_type": null,
+          "confidence": "alta",
+          "rationale": "Balança integrada requer massa rastreável."
+        },
+        {
+          "quantity": "Concentração de O2",
+          "recommended_standard_category": "Analisador de Oxigênio",
+          "reuse_existing_analyzer_type": "Analisador de Fluxo de Gás e Pressão",
+          "confidence": "alta",
+          "rationale": "O tipo existente inclui FiO2 de 21% a 100%."
+        },
+        {
+          "quantity": "Irradiância",
+          "recommended_standard_category": "Radiômetro de fototerapia",
+          "reuse_existing_analyzer_type": null,
+          "confidence": "alta",
+          "rationale": "A unidade µW/cm².nm caracteriza irradiância espectral de fototerapia."
+        },
+        {
+          "quantity": "Ensaios de segurança elétrica, quando executados",
+          "recommended_standard_category": "Analisador de Segurança Elétrica",
+          "reuse_existing_analyzer_type": "Analisador de Segurança Elétrica",
+          "confidence": "alta",
+          "rationale": "Campo explícito de analisador SE."
+        }
+      ],
+      "evidence": [
+        "A checklist agrupa aquecimento, Baby Puff, balança, blender e Bilitron no mesmo equipamento."
+      ],
+      "ambiguities": [
+        "A tolerância da balança '±0,004g' é incompatível com um ponto de 5 kg e pode ser erro de unidade, possivelmente ±0,004 kg.",
+        "O valor de irradiância deve ser informado por modelo."
+      ]
+    },
+    {
+      "file": "BIPAP - PHILIPS.docx",
+      "equipment_category": "BIPAP",
+      "filename_model_variant": "Philips",
+      "embedded_models_or_variants": [
+        "A30",
+        "A40",
+        "DreamStation",
+        "Focus",
+        "Synchrony",
+        "VPAP III"
+      ],
+      "quantities": [
+        {
+          "name": "Pressões CPAP, IPAP e EPAP",
+          "measurement_context": "coleta quantitativa em cmH2O",
+          "evidence": "CPAP 4/20, IPAP 8/30 e EPAP 4/25 cmH2O, todos com tolerância impressa de ±2,5 cmH2O."
+        },
+        {
+          "name": "Frequência inspiratória",
+          "measurement_context": "coleta quantitativa em rpm",
+          "evidence": "Pontos de 10 e 30 rpm, com tolerância de ±2,5 rpm."
+        }
+      ],
+      "explicit_standards": [
+        "Analisador de Segurança Elétrica (campo 'Analisador SE.')",
+        "Padrão não nomeado (coluna 'Patrimônio do Padrão Utilizado')"
+      ],
+      "recommended_associations": [
+        {
+          "quantity": "Pressões respiratórias e frequência inspiratória",
+          "recommended_standard_category": "Analisador de Fluxo de Gases",
+          "reuse_existing_analyzer_type": "Analisador de Fluxo de Gás e Pressão",
+          "confidence": "alta",
+          "rationale": "O tipo existente cobre pressão respiratória e frequência."
+        },
+        {
+          "quantity": "Ensaios de segurança elétrica, quando executados",
+          "recommended_standard_category": "Analisador de Segurança Elétrica",
+          "reuse_existing_analyzer_type": "Analisador de Segurança Elétrica",
+          "confidence": "alta",
+          "rationale": "Campo explícito de analisador SE."
+        }
+      ],
+      "evidence": [
+        "A lista de modelos aparece em uma tabela aninhada no cabeçalho do documento."
+      ],
+      "ambiguities": [
+        "O arquivo é chamado Philips, mas VPAP III é uma denominação associada a outra família/fabricante; validar a abrangência antes de cadastrar modelos."
+      ]
+    },
+    {
+      "file": "BISTURI ELETRONICO.docx",
+      "equipment_category": "Bisturi Eletrônico",
+      "filename_model_variant": null,
+      "embedded_models_or_variants": [
+        "SS-501LX",
+        "SS-501S",
+        "SS-501SX",
+        "SS-501",
+        "SS-500",
+        "SS-100MC",
+        "SS-200",
+        "SS-200E",
+        "SS-200A",
+        "SS-601MC",
+        "SS-601MCA",
+        "HF-120",
+        "HF-120 micro"
+      ],
+      "quantities": [
+        {
+          "name": "Potência de saída em corte",
+          "measurement_context": "coleta quantitativa em W, valor dependente do modelo",
+          "evidence": "Linha 'Potência - CORTE' com tolerância de ±15%."
+        },
+        {
+          "name": "Potência de saída em coagulação",
+          "measurement_context": "coleta quantitativa em W, valor dependente do modelo",
+          "evidence": "Linha 'Potência - COAGULAÇÃO' com tolerância de ±15%."
+        },
+        {
+          "name": "Potência de saída em blend",
+          "measurement_context": "coleta quantitativa em W, valor dependente do modelo",
+          "evidence": "Linha 'Potência - BLEND' com tolerância de ±15%."
+        },
+        {
+          "name": "Potência de saída bipolar",
+          "measurement_context": "coleta quantitativa em W, valor dependente do modelo",
+          "evidence": "Linha 'Potência - BIPOLAR' com tolerância de ±15%."
+        }
+      ],
+      "explicit_standards": [
+        "Analisador de Segurança Elétrica (campo 'Analisador SE.')",
+        "Padrão não nomeado (coluna 'Patrimônio do Padrão Utilizado')"
+      ],
+      "recommended_associations": [
+        {
+          "quantity": "Potência de saída eletrocirúrgica",
+          "recommended_standard_category": "Analisador Eletrocirúrgico",
+          "reuse_existing_analyzer_type": null,
+          "confidence": "alta",
+          "rationale": "Potência RF sob cargas específicas requer analisador eletrocirúrgico, não multímetro comum."
+        },
+        {
+          "quantity": "Ensaios de segurança elétrica, quando executados",
+          "recommended_standard_category": "Analisador de Segurança Elétrica",
+          "reuse_existing_analyzer_type": "Analisador de Segurança Elétrica",
+          "confidence": "alta",
+          "rationale": "Campo explícito de analisador SE."
+        }
+      ],
+      "evidence": [
+        "Tabela aninhada associa modelos a potências/cargas, incluindo valores como 300 W/300 Ω, 400 W/350 Ω e 50 W/25 Ω."
+      ],
+      "ambiguities": [
+        "A matriz modelo × potência/carga precisa ser reconstruída por colunas antes de criar parâmetros por modelo.",
+        "O documento não nomeia explicitamente o analisador de bisturi, apenas o patrimônio do padrão."
+      ]
+    },
+    {
+      "file": "BOMBA DE INFUSAO - 550T2.docx",
+      "equipment_category": "Bomba de Infusão",
+      "filename_model_variant": "550T2",
+      "embedded_models_or_variants": [
+        "ST550T2 (título interno)"
+      ],
+      "quantities": [
+        {
+          "name": "Vazão volumétrica",
+          "measurement_context": "coleta quantitativa em mL/h",
+          "evidence": "Ponto de 25 mL/h, tolerância de ±1 mL/h e três leituras."
+        },
+        {
+          "name": "Pressão de oclusão",
+          "measurement_context": "teste funcional sem ponto quantitativo",
+          "evidence": "Item 20: 'Teste de Oclusão'."
+        }
+      ],
+      "explicit_standards": [
+        "Balança Digital",
+        "Cronômetro",
+        "Proveta",
+        "Equipo",
+        "Analisador de Segurança Elétrica"
+      ],
+      "recommended_associations": [
+        {
+          "quantity": "Vazão e oclusão",
+          "recommended_standard_category": "Analisador de Infusão / Fluxômetro",
+          "reuse_existing_analyzer_type": "Analisador de Infusão / Fluxômetro",
+          "confidence": "alta",
+          "rationale": "O tipo existente cobre vazão volumétrica e pressão de oclusão; o método gravimétrico explícito usa balança e cronômetro."
+        },
+        {
+          "quantity": "Ensaios de segurança elétrica, quando executados",
+          "recommended_standard_category": "Analisador de Segurança Elétrica",
+          "reuse_existing_analyzer_type": "Analisador de Segurança Elétrica",
+          "confidence": "alta",
+          "rationale": "Campo explícito 'Analisador de Seg. Elétr.'."
+        }
+      ],
+      "evidence": [
+        "Linha de padrões: 'KIT (Balança + Cronômetro)', 'Proveta' e 'Equipo'."
+      ],
+      "ambiguities": [
+        "O nome do arquivo omite o prefixo ST presente no título interno.",
+        "Não há valor ou unidade para a pressão de oclusão."
+      ]
+    },
+    {
+      "file": "BOMBA DE INFUSAO - ICATU.docx",
+      "equipment_category": "Bomba de Infusão",
+      "filename_model_variant": "ICATU",
+      "embedded_models_or_variants": [
+        "ICATU - 2ED",
+        "ICATU - 3ED",
+        "ICATU 4.0",
+        "ICATU-S - 2ED",
+        "ICATU-S - 3ED",
+        "ICATU-S 4.0",
+        "Básica",
+        "Intelli TCI",
+        "Intelli WiFi PCA",
+        "Intelli WiFi TCI",
+        "Intelli WiFi Enteral",
+        "Enteral"
+      ],
+      "quantities": [
+        {
+          "name": "Vazão volumétrica",
+          "measurement_context": "coleta quantitativa em mL/h",
+          "evidence": "Ponto de 25 mL/h, tolerância de ±1 mL/h e três leituras."
+        },
+        {
+          "name": "Pressão de oclusão",
+          "measurement_context": "teste funcional com padrão indicado, sem ponto quantitativo",
+          "evidence": "Item 'Teste Sensor de Oclusão' e campo 'Manômetro Utilizado'."
+        }
+      ],
+      "explicit_standards": [
+        "Balança Digital",
+        "Cronômetro",
+        "Proveta",
+        "Equipo",
+        "Manômetro",
+        "Analisador de Segurança Elétrica"
+      ],
+      "recommended_associations": [
+        {
+          "quantity": "Vazão e pressão de oclusão",
+          "recommended_standard_category": "Analisador de Infusão / Fluxômetro",
+          "reuse_existing_analyzer_type": "Analisador de Infusão / Fluxômetro",
+          "confidence": "alta",
+          "rationale": "O tipo existente cobre as duas grandezas e a checklist explicita método gravimétrico e manômetro."
+        },
+        {
+          "quantity": "Ensaios de segurança elétrica, quando executados",
+          "recommended_standard_category": "Analisador de Segurança Elétrica",
+          "reuse_existing_analyzer_type": "Analisador de Segurança Elétrica",
+          "confidence": "alta",
+          "rationale": "Campo explícito 'Analisador de Seg. Elétr.'."
+        }
+      ],
+      "evidence": [
+        "Tabela aninhada lista edições e submodelos ICATU/ICATU-S."
+      ],
+      "ambiguities": [
+        "A lista de submodelos possui repetição e agrupamento visual que deve ser validado antes de cadastrar relações exatas modelo-submodelo.",
+        "Não há referência ou tolerância quantitativa para o manômetro/oclusão."
+      ]
+    },
+    {
+      "file": "BOMBA DE INFUSAO - ST1000-ST1000SET.docx",
+      "equipment_category": "Bomba de Infusão",
+      "filename_model_variant": "ST1000 / ST1000SET",
+      "embedded_models_or_variants": [
+        "ST1000 / ST100SET (grafia do título interno)"
+      ],
+      "quantities": [
+        {
+          "name": "Vazão volumétrica",
+          "measurement_context": "coleta quantitativa em mL/h",
+          "evidence": "Ponto de 25 mL/h, tolerância de ±1 mL/h e três leituras."
+        },
+        {
+          "name": "Pressão de oclusão",
+          "measurement_context": "teste funcional com padrão indicado, sem ponto quantitativo",
+          "evidence": "Itens 'Sensor de Pressão' e 'Teste de Oclusão', além do campo 'Manômetro Utilizado'."
+        }
+      ],
+      "explicit_standards": [
+        "Balança Digital",
+        "Cronômetro",
+        "Proveta",
+        "Equipo",
+        "Manômetro",
+        "Analisador de Segurança Elétrica"
+      ],
+      "recommended_associations": [
+        {
+          "quantity": "Vazão e pressão de oclusão",
+          "recommended_standard_category": "Analisador de Infusão / Fluxômetro",
+          "reuse_existing_analyzer_type": "Analisador de Infusão / Fluxômetro",
+          "confidence": "alta",
+          "rationale": "O tipo existente cobre vazão e oclusão; o método explícito usa balança, cronômetro e manômetro."
+        },
+        {
+          "quantity": "Ensaios de segurança elétrica, quando executados",
+          "recommended_standard_category": "Analisador de Segurança Elétrica",
+          "reuse_existing_analyzer_type": "Analisador de Segurança Elétrica",
+          "confidence": "alta",
+          "rationale": "Há campo de analisador de segurança elétrica."
+        }
+      ],
+      "evidence": [
+        "A checklist também contém teste de vazão livre."
+      ],
+      "ambiguities": [
+        "O título interno diz ST100SET, enquanto o arquivo diz ST1000SET; confirmar a grafia correta.",
+        "Não há referência quantitativa para pressão de oclusão."
+      ]
+    },
+    {
+      "file": "BOMBA DE SERINGA.docx",
+      "equipment_category": "Bomba de Seringa",
+      "filename_model_variant": null,
+      "embedded_models_or_variants": [
+        "ST7000 (citado na periodicidade)"
+      ],
+      "quantities": [
+        {
+          "name": "Vazão volumétrica",
+          "measurement_context": "coleta quantitativa em mL/h, ponto de referência ausente",
+          "evidence": "Linha 'VAZÃO' com tolerância de ±0,15 mL/h; observação usa faixa 4,85-5,15 mL/h."
+        },
+        {
+          "name": "Pressão de oclusão",
+          "measurement_context": "teste funcional sem ponto quantitativo",
+          "evidence": "Itens 'Teste de Sensor de Pressão' e 'Teste de Oclusão'."
+        }
+      ],
+      "explicit_standards": [
+        "Balança Digital",
+        "Cronômetro",
+        "Proveta",
+        "Seringa",
+        "Kit de calibração de seringa",
+        "Analisador de Segurança Elétrica"
+      ],
+      "recommended_associations": [
+        {
+          "quantity": "Vazão e pressão de oclusão",
+          "recommended_standard_category": "Analisador de Infusão / Fluxômetro",
+          "reuse_existing_analyzer_type": "Analisador de Infusão / Fluxômetro",
+          "confidence": "alta",
+          "rationale": "O tipo existente cobre vazão, bolus e oclusão; a checklist explicita método gravimétrico."
+        },
+        {
+          "quantity": "Ensaios de segurança elétrica, quando executados",
+          "recommended_standard_category": "Analisador de Segurança Elétrica",
+          "reuse_existing_analyzer_type": "Analisador de Segurança Elétrica",
+          "confidence": "alta",
+          "rationale": "Campo explícito de analisador SE."
+        }
+      ],
+      "evidence": [
+        "A checklist identifica seringas de 5, 10, 20 e 50 mL."
+      ],
+      "ambiguities": [
+        "O valor de referência da vazão está em branco; a observação sugere 5 mL/h.",
+        "O padrão para pressão de oclusão não é explicitado."
+      ]
+    },
+    {
+      "file": "CAMA DE PARTO.docx",
+      "equipment_category": "Cama de Parto",
+      "filename_model_variant": null,
+      "embedded_models_or_variants": [
+        "Fanem (sem modelo)"
+      ],
+      "quantities": [],
+      "explicit_standards": [
+        "Analisador de Segurança Elétrica (campo 'Analisador SE.')"
+      ],
+      "recommended_associations": [
+        {
+          "quantity": "Ensaios de segurança elétrica, quando executados",
+          "recommended_standard_category": "Analisador de Segurança Elétrica",
+          "reuse_existing_analyzer_type": "Analisador de Segurança Elétrica",
+          "confidence": "alta",
+          "rationale": "O documento possui campo explícito para o analisador SE."
+        }
+      ],
+      "evidence": [
+        "Somente inspeções visuais e funcionais de movimentos, atuadores, amortecedores, travas e rodízios."
+      ],
+      "ambiguities": [
+        "Nenhuma grandeza física é coletada numericamente."
+      ]
+    },
+    {
+      "file": "CAMA FAWLER.docx",
+      "equipment_category": "Cama Fowler",
+      "filename_model_variant": null,
+      "embedded_models_or_variants": [
+        "Hospimetal (sem modelo)"
+      ],
+      "quantities": [
+        {
+          "name": "Massa / peso pela balança integrada",
+          "measurement_context": "verificação funcional sem ponto numérico",
+          "evidence": "Item 18: 'Verificação de Funcionalidade da Balança'."
+        }
+      ],
+      "explicit_standards": [
+        "Analisador de Segurança Elétrica (campo 'Analisador SE.')"
+      ],
+      "recommended_associations": [
+        {
+          "quantity": "Massa, se a cama possuir balança",
+          "recommended_standard_category": "Peso Padrão de 2 Kg/5 Kg",
+          "reuse_existing_analyzer_type": null,
+          "confidence": "média",
+          "rationale": "A checklist apenas verifica funcionamento; massas-padrão são necessárias para teste quantitativo."
+        },
+        {
+          "quantity": "Ensaios de segurança elétrica, quando executados",
+          "recommended_standard_category": "Analisador de Segurança Elétrica",
+          "reuse_existing_analyzer_type": "Analisador de Segurança Elétrica",
+          "confidence": "alta",
+          "rationale": "Campo explícito de analisador SE."
+        }
+      ],
+      "evidence": [
+        "Não existe seção de coleta de dados."
+      ],
+      "ambiguities": [
+        "Nem toda cama Fowler possui balança; a associação deve ser condicional ao recurso."
+      ]
+    },
+    {
+      "file": "CAMARA B.O.D.docx",
+      "equipment_category": "Câmara B.O.D.",
+      "filename_model_variant": null,
+      "embedded_models_or_variants": [
+        "Fanem (sem modelo)"
+      ],
+      "quantities": [
+        {
+          "name": "Temperatura",
+          "measurement_context": "coleta quantitativa em °C",
+          "evidence": "Pontos de 4 ou 5 °C e 37 °C, tolerância de ±0,5 °C; termostatos de baixa e alta em branco."
+        },
+        {
+          "name": "Corrente de trabalho do compressor",
+          "measurement_context": "item funcional sem valor numérico",
+          "evidence": "Item 17: 'Corrente de Trabalho do Compressor'."
+        }
+      ],
+      "explicit_standards": [
+        "Analisador de Segurança Elétrica (campo 'Analisador SE.')",
+        "Padrão não nomeado (coluna 'Patrimônio do Padrão Utilizado')"
+      ],
+      "recommended_associations": [
+        {
+          "quantity": "Temperatura",
+          "recommended_standard_category": "Termômetro Digital",
+          "reuse_existing_analyzer_type": null,
+          "confidence": "alta",
+          "rationale": "A tabela define pontos e tolerância térmica."
+        },
+        {
+          "quantity": "Corrente do compressor",
+          "recommended_standard_category": "Multímetro",
+          "reuse_existing_analyzer_type": null,
+          "confidence": "média",
+          "rationale": "Corrente se associa a multímetro/alicate, mas não há valor de referência."
+        },
+        {
+          "quantity": "Ensaios de segurança elétrica, quando executados",
+          "recommended_standard_category": "Analisador de Segurança Elétrica",
+          "reuse_existing_analyzer_type": "Analisador de Segurança Elétrica",
+          "confidence": "alta",
+          "rationale": "Campo explícito de analisador SE."
+        }
+      ],
+      "evidence": [
+        "A checklist inclui termostatos de baixa/alta e alarmes, além do ponto de 37 °C."
+      ],
+      "ambiguities": [
+        "Os pontos dos termostatos estão em branco.",
+        "A corrente do compressor pode ser apenas observada; não há campo de coleta específico."
+      ]
+    },
+    {
+      "file": "CAMARA DE CONSERVAÇAO.docx",
+      "equipment_category": "Câmara de Conservação",
+      "filename_model_variant": null,
+      "embedded_models_or_variants": [
+        "3347 (recurso de data/hora, não confirmado como único modelo)",
+        "Fanem (sem modelo)"
+      ],
+      "quantities": [
+        {
+          "name": "Temperatura",
+          "measurement_context": "coleta quantitativa em °C",
+          "evidence": "Ponto de 4 ou 5 °C, tolerância de ±0,5 °C; termostato baixo entre 2-3 °C e alto entre 7-8 °C."
+        },
+        {
+          "name": "Corrente de trabalho do compressor",
+          "measurement_context": "item funcional sem valor numérico",
+          "evidence": "Item 18: 'Corrente de trabalho do compressor'."
+        }
+      ],
+      "explicit_standards": [
+        "Analisador de Segurança Elétrica (campo 'Analisador SE.')",
+        "Padrão não nomeado (coluna 'Patrimônio do Padrão Utilizado')"
+      ],
+      "recommended_associations": [
+        {
+          "quantity": "Temperatura",
+          "recommended_standard_category": "Termômetro Digital",
+          "reuse_existing_analyzer_type": null,
+          "confidence": "alta",
+          "rationale": "A coleta possui ponto, tolerância e limiares de termostato."
+        },
+        {
+          "quantity": "Corrente do compressor",
+          "recommended_standard_category": "Multímetro",
+          "reuse_existing_analyzer_type": null,
+          "confidence": "média",
+          "rationale": "Corrente se associa a multímetro/alicate, sem valor definido no documento."
+        },
+        {
+          "quantity": "Ensaios de segurança elétrica, quando executados",
+          "recommended_standard_category": "Analisador de Segurança Elétrica",
+          "reuse_existing_analyzer_type": "Analisador de Segurança Elétrica",
+          "confidence": "alta",
+          "rationale": "Campo explícito de analisador SE."
+        }
+      ],
+      "evidence": [
+        "A checklist inclui sistema de degelo, data logger e alarmes."
+      ],
+      "ambiguities": [
+        "O texto 'Apenas 3347' parece identificar um modelo, mas aparece somente no item de data/hora.",
+        "A corrente do compressor não possui referência quantitativa."
+      ]
+    },
+    {
+      "file": "CARDIOVERSOR.docx",
+      "equipment_category": "Cardioversor / Desfibrilador",
+      "filename_model_variant": null,
+      "embedded_models_or_variants": [
+        "Philips (sem modelo)"
+      ],
+      "quantities": [
+        {
+          "name": "Energia de choque",
+          "measurement_context": "coleta quantitativa em joules",
+          "evidence": "Pontos de 5, 50, 100, 150 e 200 J, com faixas admissíveis."
+        },
+        {
+          "name": "ECG / frequência cardíaca e derivações",
+          "measurement_context": "simulação em bpm e verificação funcional",
+          "evidence": "ECG em 60 bpm (±1 bpm) e verificação de derivações."
+        },
+        {
+          "name": "SpO2",
+          "measurement_context": "simulação em %",
+          "evidence": "Pontos de 100%, 91/92% e 82/83%, tolerância de ±2%."
+        },
+        {
+          "name": "Pulso",
+          "measurement_context": "simulação em bpm",
+          "evidence": "Ponto de 60 bpm, tolerância de ±1 bpm."
+        },
+        {
+          "name": "Pressão arterial não invasiva (NIBP)",
+          "measurement_context": "simulação em mmHg",
+          "evidence": "Pontos de 200, 120 e 80 mmHg, com tolerâncias de ±5 mmHg ou faixa 74-84 mmHg."
+        },
+        {
+          "name": "EtCO2",
+          "measurement_context": "verificação funcional sem ponto numérico",
+          "evidence": "Linha ETCO2 com referência '---' e avaliação N/A/C/NC."
+        }
+      ],
+      "explicit_standards": [
+        "Analisador de Segurança Elétrica (campo 'Analisador SE.')",
+        "Padrão não nomeado (coluna 'Patrimônio do Padrão Utilizado')"
+      ],
+      "recommended_associations": [
+        {
+          "quantity": "Energia de choque",
+          "recommended_standard_category": "Analisador de Desfibrilador",
+          "reuse_existing_analyzer_type": "Analisador de Desfibrilador",
+          "confidence": "alta",
+          "rationale": "O tipo existente cobre energia selecionada versus entregue."
+        },
+        {
+          "quantity": "ECG, frequência/pulso e SpO2",
+          "recommended_standard_category": "Simulador de ECG e SPO2",
+          "reuse_existing_analyzer_type": "Simulador de Sinais Vitais (Multiparamétrico)",
+          "confidence": "alta",
+          "rationale": "O inventário live possui o tipo específico para ECG e SpO2; o tipo multiparamétrico local também cobre esses sinais."
+        },
+        {
+          "quantity": "Pressão arterial não invasiva (NIBP)",
+          "recommended_standard_category": "Simulador de NIBP",
+          "reuse_existing_analyzer_type": "Simulador de Sinais Vitais (Multiparamétrico)",
+          "confidence": "alta",
+          "rationale": "O inventário live possui simulador NIBP e o tipo multiparamétrico local cobre PNI."
+        },
+        {
+          "quantity": "EtCO2",
+          "recommended_standard_category": "Simulador de Sinais Vitais (Multiparamétrico)",
+          "reuse_existing_analyzer_type": "Simulador de Sinais Vitais (Multiparamétrico)",
+          "confidence": "média",
+          "rationale": "O tipo local inclui EtCO2; nenhum tipo específico de capnografia foi informado no inventário live."
+        },
+        {
+          "quantity": "Ensaios de segurança elétrica, quando executados",
+          "recommended_standard_category": "Analisador de Segurança Elétrica",
+          "reuse_existing_analyzer_type": "Analisador de Segurança Elétrica",
+          "confidence": "alta",
+          "rationale": "Campo explícito de analisador SE."
+        }
+      ],
+      "evidence": [
+        "Este arquivo exige dois padrões funcionais distintos: analisador de desfibrilador e simulador multiparamétrico."
+      ],
+      "ambiguities": [
+        "EtCO2 não possui valor de simulação definido.",
+        "A linha NIBP de 80 mmHg mistura tolerância em faixa, diferente das demais."
+      ]
+    },
+    {
+      "file": "CARRINHO DE ALTO FLUXO - BLENDER.docx",
+      "equipment_category": "Carrinho de Alto Fluxo / Blender",
+      "filename_model_variant": "Blender",
+      "embedded_models_or_variants": [
+        "Oxigel",
+        "Intermed"
+      ],
+      "quantities": [
+        {
+          "name": "Fluxo de gás",
+          "measurement_context": "coleta quantitativa em L/min",
+          "evidence": "Pontos de 20, 40 e 60 L/min, com tolerâncias de ±2, ±4 e ±6 L/min."
+        },
+        {
+          "name": "Concentração de O2",
+          "measurement_context": "coleta quantitativa em %",
+          "evidence": "Pontos de 21%, 50% e 100%, com faixas admissíveis."
+        }
+      ],
+      "explicit_standards": [
+        "Padrão não nomeado (coluna 'Patrimônio do Padrão Utilizado')"
+      ],
+      "recommended_associations": [
+        {
+          "quantity": "Fluxo de gás",
+          "recommended_standard_category": "Analisador de Fluxo - Alto Fluxo",
+          "reuse_existing_analyzer_type": "Analisador de Fluxo de Gás e Pressão",
+          "confidence": "alta",
+          "rationale": "Os pontos de 20 a 60 L/min correspondem à faixa alta do inventário live."
+        },
+        {
+          "quantity": "Concentração de O2",
+          "recommended_standard_category": "Analisador de Oxigênio",
+          "reuse_existing_analyzer_type": "Analisador de Fluxo de Gás e Pressão",
+          "confidence": "alta",
+          "rationale": "O inventário live possui analisador específico de oxigênio; o tipo local também cobre FiO2."
+        }
+      ],
+      "evidence": [
+        "A nota informa que as faixas de O2 se referem aos blenders Oxigel e Intermed."
+      ],
+      "ambiguities": [
+        "Outras marcas exigem consulta e podem ter tolerâncias diferentes.",
+        "Não há campo explícito de analisador de segurança elétrica neste arquivo."
+      ]
+    },
+    {
+      "file": "CENTRAL DE MONITORIZAÇAO.docx",
+      "equipment_category": "Central de Monitorização",
+      "filename_model_variant": null,
+      "embedded_models_or_variants": [],
+      "quantities": [],
+      "explicit_standards": [],
+      "recommended_associations": [],
+      "evidence": [
+        "A checklist cobre limpeza, gabinete, botões, monitor, inicialização e conectividade dos periféricos.",
+        "Não há tabela de coleta de dados nem campo específico para patrimônio de padrão."
+      ],
+      "ambiguities": [
+        "O formulário global permite marcar 'Segurança Elétrica', mas não há analisador ou grandeza explícita; não foi criada associação automática."
+      ]
+    },
+    {
+      "file": "CENTRIFUGA.docx",
+      "equipment_category": "Centrífuga",
+      "filename_model_variant": null,
+      "embedded_models_or_variants": [
+        "Fanem (sem modelo)"
+      ],
+      "quantities": [
+        {
+          "name": "Rotação",
+          "measurement_context": "coleta quantitativa em rpm, dependente da cruzeta",
+          "evidence": "Rotação de acordo com a cruzeta, tolerância de ±5%; recomenda-se usar a rotação máxima ou pontos usados pelo cliente."
+        },
+        {
+          "name": "Temperatura de centrífuga refrigerada",
+          "measurement_context": "coleta quantitativa em °C",
+          "evidence": "Ponto de 4 °C, tolerância de ±2 °C."
+        }
+      ],
+      "explicit_standards": [
+        "Analisador de Segurança Elétrica (campo 'Analisador SE.')",
+        "Padrão não nomeado (coluna 'Patrimônio do Padrão Utilizado')"
+      ],
+      "recommended_associations": [
+        {
+          "quantity": "Rotação",
+          "recommended_standard_category": "Tacômetro Digital",
+          "reuse_existing_analyzer_type": null,
+          "confidence": "alta",
+          "rationale": "RPM deve ser comparado por tacômetro rastreável."
+        },
+        {
+          "quantity": "Temperatura",
+          "recommended_standard_category": "Termômetro Digital",
+          "reuse_existing_analyzer_type": null,
+          "confidence": "alta",
+          "rationale": "A grandeza é temperatura da câmara/rotor refrigerado."
+        },
+        {
+          "quantity": "Ensaios de segurança elétrica, quando executados",
+          "recommended_standard_category": "Analisador de Segurança Elétrica",
+          "reuse_existing_analyzer_type": "Analisador de Segurança Elétrica",
+          "confidence": "alta",
+          "rationale": "Campo explícito de analisador SE."
+        }
+      ],
+      "evidence": [
+        "A checklist identifica porta-tubos e tipo de cruzeta por código."
+      ],
+      "ambiguities": [
+        "O ponto de rotação deve ser parametrizado por cruzeta/modelo, não como um valor único da categoria.",
+        "Temperatura se aplica somente à variante refrigerada."
+      ]
+    },
+    {
+      "file": "COAGULADOR A GAS ARGONIO.docx",
+      "equipment_category": "Coagulador a Gás Argônio",
+      "filename_model_variant": null,
+      "embedded_models_or_variants": [
+        "Argon 2",
+        "Argon 4",
+        "SW A05_T02"
+      ],
+      "quantities": [
+        {
+          "name": "Fluxo de argônio",
+          "measurement_context": "coleta quantitativa em L/min",
+          "evidence": "Argon 2: 2,5 e 5 L/min; Argon 4: 2,5, 5, 10 e, para SW A05_T02, 7,5 L/min."
+        }
+      ],
+      "explicit_standards": [
+        "Analisador de Segurança Elétrica (campo 'Analisador SE.')",
+        "Padrão não nomeado (coluna 'Patrimônio do Padrão Utilizado')"
+      ],
+      "recommended_associations": [
+        {
+          "quantity": "Fluxo de argônio",
+          "recommended_standard_category": "Analisador de Fluxo - Baixo Fluxo",
+          "reuse_existing_analyzer_type": "Analisador de Fluxo de Gás e Pressão",
+          "confidence": "alta",
+          "rationale": "O tipo existente cobre medição de fluxo de gás."
+        },
+        {
+          "quantity": "Ensaios de segurança elétrica, quando executados",
+          "recommended_standard_category": "Analisador de Segurança Elétrica",
+          "reuse_existing_analyzer_type": "Analisador de Segurança Elétrica",
+          "confidence": "alta",
+          "rationale": "Campo explícito de analisador SE."
+        }
+      ],
+      "evidence": [
+        "Há faixas admissíveis distintas para Argon 2 e Argon 4."
+      ],
+      "ambiguities": [
+        "Argon 2 e Argon 4 podem ser modelos ou versões; o documento não explicita fabricante/modelo completo."
+      ]
+    },
+    {
+      "file": "CONCENTRADOR DE O2.docx",
+      "equipment_category": "Concentrador de Oxigênio",
+      "filename_model_variant": null,
+      "embedded_models_or_variants": [
+        "Philips (sem modelo)"
+      ],
+      "quantities": [
+        {
+          "name": "Fluxo",
+          "measurement_context": "coleta quantitativa em L/min",
+          "evidence": "Pontos de 3 L/min (2,7-3,3) e 5 L/min (4,5-5,5)."
+        },
+        {
+          "name": "Concentração de O2",
+          "measurement_context": "coleta quantitativa em %",
+          "evidence": "Ponto de 93%, faixa de 90-96%."
+        }
+      ],
+      "explicit_standards": [
+        "Analisador de Segurança Elétrica (campo 'Analisador SE.')",
+        "Padrão não nomeado para O2; o patrimônio do padrão de fluxo está impresso como '-'"
+      ],
+      "recommended_associations": [
+        {
+          "quantity": "Fluxo",
+          "recommended_standard_category": "Analisador de Fluxo - Baixo Fluxo",
+          "reuse_existing_analyzer_type": "Analisador de Fluxo de Gás e Pressão",
+          "confidence": "alta",
+          "rationale": "Os pontos de 3 e 5 L/min se enquadram na faixa baixa do inventário live."
+        },
+        {
+          "quantity": "Concentração de O2",
+          "recommended_standard_category": "Analisador de Oxigênio",
+          "reuse_existing_analyzer_type": "Analisador de Fluxo de Gás e Pressão",
+          "confidence": "alta",
+          "rationale": "O inventário live possui analisador específico de oxigênio."
+        },
+        {
+          "quantity": "Ensaios de segurança elétrica, quando executados",
+          "recommended_standard_category": "Analisador de Segurança Elétrica",
+          "reuse_existing_analyzer_type": "Analisador de Segurança Elétrica",
+          "confidence": "alta",
+          "rationale": "Campo explícito de analisador SE."
+        }
+      ],
+      "evidence": [
+        "O fluxômetro aparece também como item funcional."
+      ],
+      "ambiguities": [
+        "A coluna de patrimônio do padrão está marcada com '-' para os pontos de fluxo, o que pode indicar ausência de rastreabilidade registrada."
+      ]
+    },
+    {
+      "file": "CPAP - FANEM.docx",
+      "equipment_category": "CPAP",
+      "filename_model_variant": "Fanem",
+      "embedded_models_or_variants": [],
+      "quantities": [
+        {
+          "name": "Concentração de O2",
+          "measurement_context": "coleta quantitativa em %",
+          "evidence": "Pontos de 21%, 30%, 60%, 90% e 100%, com faixas admissíveis."
+        },
+        {
+          "name": "Temperatura do umidificador / alarme de alta temperatura",
+          "measurement_context": "verificação em 36-37 °C, sem leituras numéricas",
+          "evidence": "Linha 'Umidificador (Alarme de Alta Temperatura) 36-37°C', avaliada por N/A."
+        }
+      ],
+      "explicit_standards": [
+        "Analisador de Segurança Elétrica (campo 'Analisador SE.')",
+        "Padrão não nomeado (coluna 'Patrimônio do Padrão Utilizado')"
+      ],
+      "recommended_associations": [
+        {
+          "quantity": "Concentração de O2",
+          "recommended_standard_category": "Analisador de Oxigênio",
+          "reuse_existing_analyzer_type": "Analisador de Fluxo de Gás e Pressão",
+          "confidence": "alta",
+          "rationale": "O tipo existente inclui FiO2 de 21% a 100%."
+        },
+        {
+          "quantity": "Temperatura do umidificador",
+          "recommended_standard_category": "Termômetro Digital",
+          "reuse_existing_analyzer_type": null,
+          "confidence": "média",
+          "rationale": "O limite de 36-37 °C é térmico, mas o documento parece apenas testar o alarme."
+        },
+        {
+          "quantity": "Ensaios de segurança elétrica, quando executados",
+          "recommended_standard_category": "Analisador de Segurança Elétrica",
+          "reuse_existing_analyzer_type": "Analisador de Segurança Elétrica",
+          "confidence": "alta",
+          "rationale": "Campo explícito de analisador SE."
+        }
+      ],
+      "evidence": [
+        "A checklist contém válvula reguladora de pressão e fluxômetro, mas não coleta pressão CPAP nem fluxo."
+      ],
+      "ambiguities": [
+        "É atípica a ausência de um ponto de pressão CPAP; deve ser validado antes de gerar checklist obrigatória.",
+        "O teste de temperatura do umidificador não possui leituras nem patrimônio específico."
+      ]
+    },
+    {
+      "file": "CPAP - PHILIPS.docx",
+      "equipment_category": "CPAP",
+      "filename_model_variant": "Philips",
+      "embedded_models_or_variants": [],
+      "quantities": [
+        {
+          "name": "Pressão CPAP",
+          "measurement_context": "coleta quantitativa em cmH2O",
+          "evidence": "Pontos de 4 cmH2O (faixa 2-6) e 20 cmH2O (faixa 18-22)."
+        }
+      ],
+      "explicit_standards": [
+        "Analisador de Segurança Elétrica (campo 'Analisador SE.')",
+        "Padrão não nomeado (coluna 'Patrimônio do Padrão Utilizado')"
+      ],
+      "recommended_associations": [
+        {
+          "quantity": "Pressão CPAP",
+          "recommended_standard_category": "Manômetro",
+          "reuse_existing_analyzer_type": "Analisador de Fluxo de Gás e Pressão",
+          "confidence": "alta",
+          "rationale": "Pressão se associa a manômetro; no contexto respiratório, o tipo existente de fluxo/pressão é adequado."
+        },
+        {
+          "quantity": "Ensaios de segurança elétrica, quando executados",
+          "recommended_standard_category": "Analisador de Segurança Elétrica",
+          "reuse_existing_analyzer_type": "Analisador de Segurança Elétrica",
+          "confidence": "alta",
+          "rationale": "Campo explícito de analisador SE."
+        }
+      ],
+      "evidence": [
+        "A tabela registra patrimônio do padrão e três leituras."
+      ],
+      "ambiguities": [
+        "A unidade aparece na faixa admissível, mas não junto aos valores de referência 4 e 20."
+      ]
+    }
+  ]
+}

@@ -1,0 +1,20 @@
+{
+  "name": "cloudflare-mcp-oauth",
+  "version": "1.0.0",
+  "description": "Remote MCP Server on Cloudflare Workers with OAuth 2.0 Authentication",
+  "main": "src/index.ts",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "build": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.6.0",
+    "hono": "^4.7.2"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20250214.0",
+    "typescript": "^5.7.3",
+    "wrangler": "^3.111.0"
+  }
+}

@@ -1,0 +1,25 @@
+# Secrets and local configuration
+.env
+.env.*
+!.env.example
+
+# Generated dependencies and build output
+node_modules/
+dist/
+.npm-cache-local/
+*.log
+__pycache__/
+*.py[cod]
+
+# Local Supabase CLI state
+supabase/.temp/
+.agents/mcp_config.json
+
+# Windows 7 Excel -> Supabase watchdog runtime
+windows-watchdog/watchdog.config.ps1
+windows-watchdog/watchdog.credential
+windows-watchdog/logs/
+windows-watchdog/state/
+
+# Google Calendar OAuth and incremental sync runtime
+backend/data/google-calendar-*.json

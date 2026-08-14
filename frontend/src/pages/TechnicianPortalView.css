@@ -1,0 +1,159 @@
+.tg-dashboard {
+  min-height: 100vh;
+  color: #172033;
+  background: #f3f6fa;
+}
+
+.tg-dashboard--centered { display: grid; place-items: center; padding: 24px; }
+.tg-loading-card, .tg-access-error { display: grid; width: min(100%, 430px); justify-items: center; gap: 8px; padding: 34px 24px; text-align: center; border: 1px solid #dbe5f0; border-radius: 20px; background: #fff; box-shadow: 0 16px 45px rgba(15, 23, 42, .1); }
+.tg-loading-card svg { color: #1976d2; }
+.tg-loading-card strong { margin-top: 6px; font-size: 1rem; }
+.tg-loading-card span, .tg-access-error p { color: #667085; font-size: .82rem; }
+.tg-access-error > svg { color: #dc2626; }
+.tg-access-error h1 { margin-top: 5px; font-size: 1.25rem; }
+.tg-primary-link { display: inline-flex; min-height: 44px; align-items: center; margin-top: 12px; padding: 11px 18px; color: #fff; font-size: .84rem; font-weight: 700; text-decoration: none; border-radius: 10px; background: #1976d2; }
+.tg-spin { animation: spin .8s linear infinite; }
+
+.tg-dashboard-hero { padding: max(18px, env(safe-area-inset-top)) max(18px, env(safe-area-inset-right)) 22px max(18px, env(safe-area-inset-left)); color: #fff; background: radial-gradient(circle at 92% 0, rgba(65, 173, 255, .3), transparent 43%), linear-gradient(140deg, #102a43, #0e416b 66%, #096c8e); box-shadow: 0 8px 28px rgba(15, 42, 67, .22); }
+.tg-dashboard-hero__brand { display: flex; align-items: center; gap: 10px; }
+.tg-dashboard-hero__brand > span { display: grid; width: 35px; height: 35px; place-items: center; color: #fff; border-radius: 10px; background: #f97316; }
+.tg-dashboard-hero__brand > div { display: flex; flex-direction: column; }
+.tg-dashboard-hero__brand small { color: #8fd5ff; font-size: .59rem; font-weight: 800; letter-spacing: .12em; }
+.tg-dashboard-hero__brand strong { color: #fff; font-size: .86rem; }
+.tg-dashboard-hero__shield { margin-left: auto; color: #8fd5ff; }
+.tg-dashboard-hero__welcome { display: grid; grid-template-columns: 49px minmax(0, 1fr) 44px; align-items: center; gap: 12px; margin-top: 23px; }
+.tg-dashboard-avatar { display: grid; width: 49px; height: 49px; place-items: center; color: #ccecff; border: 1px solid rgba(255,255,255,.22); border-radius: 15px; background: rgba(255,255,255,.11); }
+.tg-dashboard-hero__welcome small { color: #a8d8f5; font-size: .65rem; }
+.tg-dashboard-hero__welcome h1 { margin-top: 1px; color: #fff; font-size: 1.35rem; line-height: 1.1; }
+.tg-dashboard-hero__welcome p { margin-top: 3px; color: #c3deee; font-size: .71rem; }
+.tg-dashboard-hero__welcome button { display: grid; width: 44px; height: 44px; place-items: center; color: #d7effd; cursor: pointer; touch-action: manipulation; border: 1px solid rgba(255,255,255,.18); border-radius: 11px; background: rgba(255,255,255,.08); }
+.tg-dashboard-hero__welcome button:focus-visible { outline: 3px solid rgba(255,255,255,.42); outline-offset: 2px; }
+.tg-dashboard-summary { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 20px; }
+.tg-dashboard-summary > div { display: flex; min-width: 0; flex-direction: column; padding: 10px 11px; border: 1px solid rgba(255,255,255,.13); border-radius: 11px; background: rgba(255,255,255,.075); }
+.tg-dashboard-summary strong { color: #fff; font-size: 1.05rem; line-height: 1; }
+.tg-dashboard-summary span { margin-top: 4px; overflow: hidden; color: #b9d8e9; font-size: .59rem; text-overflow: ellipsis; white-space: nowrap; }
+.tg-dashboard-summary .is-pending strong { color: #ffd27d; }
+.tg-dashboard-summary .is-complete strong { color: #7ce6bc; }
+
+.tg-dashboard-content { width: min(100% - 24px, 820px); margin: 0 auto; padding: 22px 0 36px; }
+.tg-dashboard-intro { display: flex; align-items: flex-start; justify-content: space-between; gap: 15px; margin-bottom: 18px; }
+.tg-eyebrow { display: inline-flex; align-items: center; gap: 6px; color: #1976d2; font-size: .62rem; font-weight: 800; letter-spacing: .08em; }
+.tg-dashboard-intro h2 { margin-top: 4px; font-size: 1.25rem; }
+.tg-dashboard-intro p { margin-top: 3px; color: #667085; font-size: .74rem; }
+.tg-secure-pill { display: inline-flex; flex: 0 0 auto; align-items: center; gap: 5px; padding: 6px 8px; color: #087a57; font-size: .58rem; font-weight: 750; border-radius: 999px; background: #e7f8f1; }
+.tg-notice { display: flex; align-items: center; gap: 9px; margin-bottom: 14px; padding: 11px 13px; font-size: .73rem; font-weight: 650; border: 1px solid; border-radius: 11px; }
+.tg-notice--success { color: #087a57; border-color: #b2dfcf; background: #ecfdf5; }
+.tg-notice--error { color: #a6211a; border-color: #fecaca; background: #fff5f5; }
+.tg-empty-state { display: grid; min-height: 260px; place-items: center; align-content: center; padding: 25px; color: #667085; text-align: center; border: 1px dashed #cbd8e7; border-radius: 18px; background: #fff; }
+.tg-empty-state h3 { margin-top: 9px; font-size: .98rem; }
+.tg-empty-state p { margin-top: 3px; font-size: .75rem; }
+
+.tg-date-group { display: flex; flex-direction: column; gap: 10px; margin-top: 20px; }
+.tg-date-group__title { display: flex; align-items: baseline; gap: 9px; padding: 0 3px; }
+.tg-date-group__title span { color: #175cd3; font-size: .7rem; font-weight: 800; text-transform: uppercase; }
+.tg-date-group__title small { color: #98a2b3; font-size: .64rem; }
+.tg-appointment { overflow: hidden; border: 1px solid #dce5ef; border-radius: 15px; background: #fff; box-shadow: 0 3px 12px rgba(16, 24, 40, .05); }
+.tg-appointment > summary { display: grid; grid-template-columns: auto minmax(0, 1fr) auto 22px; align-items: center; gap: 10px; padding: 14px; cursor: pointer; list-style: none; }
+.tg-appointment > summary::-webkit-details-marker { display: none; }
+.tg-appointment-time { display: flex; align-items: center; gap: 5px; color: #175cd3; font-family: var(--font-mono); font-size: .7rem; font-weight: 700; }
+.tg-appointment-identity { display: flex; min-width: 0; flex-direction: column; }
+.tg-appointment-identity strong { overflow: hidden; font-size: .83rem; text-overflow: ellipsis; white-space: nowrap; }
+.tg-appointment-identity span { margin-top: 2px; overflow: hidden; color: #667085; font-size: .65rem; text-overflow: ellipsis; white-space: nowrap; }
+.tg-progress-pill { display: inline-flex; align-items: center; gap: 4px; padding: 5px 7px; font-size: .61rem; font-weight: 750; border-radius: 999px; }
+.tg-progress-pill.is-ready { color: #087a57; background: #e7f8f1; }
+.tg-progress-pill.is-pending { color: #a16207; background: #fff8df; }
+.tg-appointment-chevron { color: #98a2b3; transition: transform .2s ease; }
+.tg-appointment[open] .tg-appointment-chevron { transform: rotate(180deg); }
+.tg-appointment-body { display: flex; flex-direction: column; gap: 18px; padding: 0 14px 17px; border-top: 1px solid #eef2f6; }
+.tg-address-row { display: grid; grid-template-columns: 20px minmax(0, 1fr) 44px; align-items: center; gap: 7px; margin-top: 13px; padding: 10px; color: #475467; font-size: .68rem; border-radius: 10px; background: #f7f9fc; }
+.tg-address-row > svg { color: #e25b26; }
+.tg-address-row a { display: grid; width: 44px; height: 44px; place-items: center; color: #175cd3; touch-action: manipulation; border-radius: 8px; background: #eaf2ff; }
+.tg-address-row a:focus-visible { outline: 3px solid rgba(23, 92, 211, .22); outline-offset: 2px; }
+.tg-detail-section { display: flex; flex-direction: column; gap: 10px; }
+.tg-section-heading { display: flex; align-items: center; gap: 9px; }
+.tg-section-heading > span { display: grid; width: 31px; height: 31px; place-items: center; color: #175cd3; border-radius: 9px; background: #eaf2ff; }
+.tg-section-heading > div { display: flex; flex-direction: column; }
+.tg-section-heading strong { font-size: .76rem; }
+.tg-section-heading small { color: #7b8797; font-size: .61rem; }
+.tg-equipment-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 7px; }
+.tg-equipment-list > div { display: flex; min-width: 0; flex-direction: column; padding: 10px; border: 1px solid #e3eaf2; border-radius: 10px; background: #fbfcfe; }
+.tg-equipment-list span { color: #175cd3; font-size: .57rem; font-weight: 750; text-transform: uppercase; }
+.tg-equipment-list strong { margin-top: 2px; font-size: .72rem; }
+.tg-equipment-list small { margin-top: 3px; color: #7b8797; font-size: .6rem; }
+.tg-template-list { display: flex; flex-direction: column; gap: 8px; }
+.tg-template-list article { overflow: hidden; border: 1px solid #e1e9f2; border-radius: 11px; background: #fff; }
+.tg-template-list article > div { display: flex; flex-direction: column; padding: 10px 11px; }
+.tg-template-list article span { color: #087a57; font-size: .56rem; font-weight: 750; text-transform: uppercase; }
+.tg-template-list article strong { margin-top: 2px; font-size: .73rem; }
+.tg-template-list article small { display: inline-flex; align-items: center; gap: 4px; margin-top: 4px; color: #175cd3; font-size: .61rem; font-weight: 650; }
+.tg-template-list ul { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 5px 12px; padding: 9px 11px 10px 28px; color: #475467; font-size: .62rem; border-top: 1px solid #edf1f5; background: #f8fafc; }
+.tg-muted-copy { padding: 10px; color: #7b8797; font-size: .68rem; border: 1px dashed #d7e0e9; border-radius: 9px; }
+
+.tg-reservation-section { padding-top: 2px; }
+.tg-requirement-list { display: flex; flex-direction: column; gap: 9px; }
+.tg-requirement { padding: 11px; border: 1px solid #dfe7f1; border-radius: 12px; background: #fdfefe; }
+.tg-requirement__head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.tg-requirement__head > div { display: flex; min-width: 0; flex-direction: column; }
+.tg-requirement__head small { color: #7b8797; font-size: .53rem; font-weight: 750; letter-spacing: .05em; }
+.tg-requirement__head strong { margin-top: 1px; font-size: .75rem; }
+.tg-reserved-badge, .tg-pending-badge, .tg-optional-badge { display: inline-flex; flex: 0 0 auto; align-items: center; gap: 4px; padding: 5px 7px; font-size: .57rem; font-weight: 750; border-radius: 999px; }
+.tg-reserved-badge { color: #087a57; background: #e7f8f1; }
+.tg-pending-badge { color: #a16207; background: #fff8df; }
+.tg-optional-badge { color: #475467; background: #eef2f6; }
+.tg-reserved-assets { display: flex; flex-direction: column; gap: 7px; margin-top: 10px; }
+.tg-reserved-asset-wrapper { min-width: 0; }
+.tg-reserved-asset { display: grid; grid-template-columns: 34px minmax(0, 1fr) auto; align-items: center; gap: 9px; padding: 9px; border-radius: 9px; background: #edf9f4; }
+.tg-reserved-asset > span { display: grid; width: 34px; height: 34px; place-items: center; color: #087a57; border-radius: 9px; background: #d8f2e8; }
+.tg-reserved-asset > div { display: flex; min-width: 0; flex-direction: column; }
+.tg-reserved-asset strong { color: #087a57; font-family: var(--font-mono); font-size: .72rem; }
+.tg-reserved-asset small { overflow: hidden; color: #526b61; font-size: .59rem; text-overflow: ellipsis; white-space: nowrap; }
+.tg-reserved-asset__actions { align-items: flex-end; gap: 5px; }
+.tg-reserved-asset__actions em { color: #087a57; font-size: .56rem; font-style: normal; font-weight: 700; }
+.tg-reserved-asset__buttons { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 6px; }
+.tg-reserved-asset__actions button { display: inline-flex; min-height: 44px; align-items: center; justify-content: center; gap: 5px; padding: 8px 10px; color: #175cd3; font-size: .75rem; font-weight: 750; cursor: pointer; touch-action: manipulation; border: 1px solid #b8cef0; border-radius: 8px; background: #fff; transition: color .18s ease, border-color .18s ease, background .18s ease; }
+.tg-reserved-asset__actions button:hover:not(:disabled) { color: #0f4fbf; border-color: #75a5ed; background: #f5f9ff; }
+.tg-reserved-asset__actions button.is-reschedule { color: #fff; border-color: #175cd3; background: #175cd3; }
+.tg-reserved-asset__actions button.is-reschedule:hover:not(:disabled) { color: #fff; border-color: #0f4fbf; background: #0f4fbf; }
+.tg-reserved-asset__actions button:focus-visible { outline: 3px solid rgba(23, 92, 211, .22); outline-offset: 2px; }
+.tg-reserved-asset__actions button:disabled { cursor: wait; opacity: .65; }
+.tg-reserved-asset__actions .tg-reserved-owner { overflow: visible; color: #667085; text-overflow: initial; white-space: normal; }
+.tg-reschedule-form { display: grid; gap: 8px; margin-top: 6px; padding: 11px; border: 1px solid #cbdcf3; border-radius: 9px; background: #f7faff; }
+.tg-reschedule-form label { color: #344054; font-size: .75rem; font-weight: 750; }
+.tg-reschedule-form select { width: 100%; min-height: 44px; padding: 9px 10px; color: #162033; font-size: 1rem; border: 1px solid #b8c7da; border-radius: 8px; background: #fff; }
+.tg-reschedule-form select:focus-visible { border-color: #75a5ed; outline: 3px solid rgba(23, 92, 211, .16); outline-offset: 1px; }
+.tg-reschedule-form p { color: #526477; font-size: .75rem; line-height: 1.45; }
+.tg-reschedule-form > div { display: flex; justify-content: flex-end; gap: 8px; }
+.tg-reschedule-form button { display: inline-flex; min-height: 44px; align-items: center; justify-content: center; gap: 5px; padding: 8px 12px; color: #344054; font-size: .75rem; font-weight: 750; cursor: pointer; touch-action: manipulation; border: 1px solid #b8c7da; border-radius: 8px; background: #fff; transition: color .18s ease, border-color .18s ease, background .18s ease; }
+.tg-reschedule-form button.is-confirm { color: #fff; border-color: #175cd3; background: #175cd3; }
+.tg-reschedule-form button:hover:not(:disabled) { border-color: #75a5ed; background: #eef5ff; }
+.tg-reschedule-form button.is-confirm:hover:not(:disabled) { border-color: #0f4fbf; background: #0f4fbf; }
+.tg-reschedule-form button:focus-visible { outline: 3px solid rgba(23, 92, 211, .22); outline-offset: 2px; }
+.tg-reschedule-form button:disabled { cursor: wait; opacity: .65; }
+.tg-analyzer-options { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 7px; margin-top: 10px; }
+.tg-analyzer-options button { display: flex; min-width: 0; min-height: 44px; align-items: center; justify-content: space-between; gap: 9px; padding: 9px 10px; text-align: left; cursor: pointer; touch-action: manipulation; border: 1px solid #cbdcf3; border-radius: 9px; background: #f6f9fe; transition: border-color .18s ease, background .18s ease; }
+.tg-analyzer-options button:hover:not(:disabled) { border-color: #75a5ed; background: #eef5ff; }
+.tg-analyzer-options button:focus-visible { outline: 3px solid rgba(23, 92, 211, .22); outline-offset: 2px; }
+.tg-analyzer-options button:disabled { cursor: wait; opacity: .65; }
+.tg-analyzer-options button > span { display: flex; min-width: 0; flex-direction: column; }
+.tg-analyzer-options button strong { color: #175cd3; font-family: var(--font-mono); font-size: .67rem; }
+.tg-analyzer-options button small { overflow: hidden; color: #526477; font-size: .57rem; text-overflow: ellipsis; white-space: nowrap; }
+.tg-analyzer-options button em { display: grid; min-width: 68px; min-height: 32px; place-items: center; padding: 6px 8px; color: #fff; font-size: .75rem; font-style: normal; font-weight: 750; border-radius: 7px; background: #175cd3; }
+.tg-no-assets { grid-column: 1 / -1; padding: 9px; color: #8a5c16; font-size: .62rem; border-radius: 8px; background: #fff9e8; }
+.tg-dashboard-footer { display: flex; align-items: center; justify-content: center; gap: 6px; padding: 15px 16px max(15px, env(safe-area-inset-bottom)); color: #667085; font-size: .61rem; border-top: 1px solid #dfe7f1; background: #fff; }
+
+@media (min-width: 720px) {
+  .tg-dashboard-hero { padding-right: calc((100% - 796px) / 2); padding-left: calc((100% - 796px) / 2); }
+  .tg-dashboard-summary { max-width: 460px; }
+}
+
+@media (max-width: 430px) {
+  .tg-dashboard-content { width: min(100% - 18px, 820px); }
+  .tg-secure-pill { display: none; }
+  .tg-appointment > summary { grid-template-columns: auto minmax(0, 1fr) auto 18px; gap: 7px; padding: 12px 10px; }
+  .tg-appointment-time { font-size: .62rem; }
+  .tg-progress-pill { padding: 4px 6px; }
+  .tg-reserved-asset { grid-template-columns: 34px minmax(0, 1fr); }
+  .tg-reserved-asset__actions { grid-column: 1 / -1; flex-direction: row !important; align-items: center; justify-content: space-between; }
+  .tg-reserved-asset__buttons { justify-content: flex-end; }
+  .tg-reschedule-form > div { display: grid; grid-template-columns: 1fr 1fr; }
+}

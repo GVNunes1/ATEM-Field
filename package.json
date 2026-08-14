@@ -1,0 +1,9 @@
+{
+  "name": "quick-turing-root",
+  "version": "1.0.0",
+  "private": true,
+  "description": "ATEM Field Platform Workspace Root",
+  "scripts": {
+    "test:e2e": "node backend/tests/e2e_runner.js"
+  }
+}

@@ -1,0 +1,21 @@
+services:
+  - type: web
+    name: mcp-server-oauth
+    env: node
+    region: oregon
+    plan: starter
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    envVars:
+      - key: PORT
+        value: 10000
+      - key: OAUTH_CLIENT_ID
+        sync: false
+      - key: OAUTH_CLIENT_SECRET
+        sync: false
+      - key: OAUTH_AUTHORIZE_URL
+        value: https://github.com/login/oauth/authorize
+      - key: OAUTH_TOKEN_URL
+        value: https://github.com/login/oauth/access_token
+      - key: OAUTH_USER_INFO_URL
+        value: https://api.github.com/user

@@ -1,0 +1,41 @@
+{
+  "mcpServers": {
+    "supabase": {
+      "serverUrl": "https://mcp.supabase.com/mcp?project_ref=aorclbawxpjgrbdrcith&features=docs,account,database,debugging,development,functions,branching",
+      "type": "http",
+      "url": "https://mcp.supabase.com/mcp?project_ref=aorclbawxpjgrbdrcith&features=docs,account,database,debugging,development,functions,branching"
+    },
+    "supabase-cli": {
+      "command": "npx.cmd",
+      "args": [
+        "-y",
+        "@supabase/mcp-server-supabase@latest",
+        "--project-ref",
+        "aorclbawxpjgrbdrcith"
+      ]
+    },
+    "cloudflare-mcp": {
+      "serverUrl": "http://localhost:8787/mcp/sse",
+      "command": "npx.cmd",
+      "args": [
+        "wrangler",
+        "dev"
+      ]
+    },
+    "vercel-mcp": {
+      "serverUrl": "http://localhost:3000/api/mcp",
+      "command": "npm.cmd",
+      "args": [
+        "run",
+        "dev"
+      ]
+    },
+    "render-mcp": {
+      "serverUrl": "http://localhost:10000/mcp/sse",
+      "command": "node",
+      "args": [
+        "c:/Users/tecnico.mmAT31/Documents/antigravity/quick-turing/render-mcp-oauth/dist/server.js"
+      ]
+    }
+  }
+}

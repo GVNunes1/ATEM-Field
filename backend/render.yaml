@@ -1,0 +1,24 @@
+services:
+  - type: web
+    name: atem-field-backend
+    env: node
+    plan: free
+    region: oregon
+    rootDir: backend
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    envVars:
+      - key: PORT
+        value: 10000
+      - key: NODE_ENV
+        value: production
+      - key: PUBLIC_APP_URL
+        sync: false
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      - key: TECHNICIAN_PORTAL_SECRET
+        sync: false
+      - key: TECHNICIAN_PORTAL_LINK_TTL_HOURS
+        value: 72
