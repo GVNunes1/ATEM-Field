@@ -32,6 +32,23 @@ app.get('/health', (req, res) => {
   });
 });
 
+// Keep-Alive Self-Ping para Render Free Tier
+function setupKeepAlive() {
+  const targetUrl = process.env.RENDER_EXTERNAL_URL || process.env.PUBLIC_APP_URL;
+  if (targetUrl && /^https?:\/\//i.test(targetUrl)) {
+    const healthUrl = `${targetUrl.replace(/\/$/, '')}/health`;
+    console.log(`[Keep-Alive] Self-ping ativo em 8m para: ${healthUrl}`);
+    setInterval(async () => {
+      try {
+        await fetch(healthUrl, { cache: 'no-store' });
+        console.log(`[Keep-Alive] Ping enviado com sucesso.`);
+      } catch (err: any) {
+        console.warn(`[Keep-Alive] Aviso ao enviar ping:`, err?.message || err);
+      }
+    }, 8 * 60 * 1000);
+  }
+}
+
 // Serve frontend static build if built
 const frontendBuildPath = path.resolve(__dirname, '../../frontend/dist');
 app.use(express.static(frontendBuildPath));
@@ -47,6 +64,7 @@ app.get('*', (req, res) => {
 const server = app.listen(PORT, () => {
   console.log(`🚀 Servidor Backend Quick Turing rodando em http://localhost:${PORT}`);
   console.log(`📡 Endpoints API disponíveis em http://localhost:${PORT}/api`);
+  setupKeepAlive();
 });
 
 function shutdown() {
