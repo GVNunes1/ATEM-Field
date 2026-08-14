@@ -38,10 +38,22 @@ def _configured_path(environment_key, default_path):
 
 
 def token_path():
+    raw_env_token = os.environ.get("GOOGLE_CALENDAR_TOKEN_JSON", "").strip()
+    if raw_env_token:
+        DATA_DIR.mkdir(parents=True, exist_ok=True)
+        if not DEFAULT_TOKEN_PATH.exists() or DEFAULT_TOKEN_PATH.read_text(encoding="utf-8").strip() != raw_env_token:
+            DEFAULT_TOKEN_PATH.write_text(raw_env_token, encoding="utf-8")
     return _configured_path("GOOGLE_CALENDAR_TOKEN_PATH", DEFAULT_TOKEN_PATH)
 
 
 def credentials_path():
+    raw_env_credentials = os.environ.get("GOOGLE_CALENDAR_CREDENTIALS_JSON", "").strip()
+    if raw_env_credentials:
+        DATA_DIR.mkdir(parents=True, exist_ok=True)
+        if not DEFAULT_CREDENTIALS_PATH.exists() or DEFAULT_CREDENTIALS_PATH.read_text(encoding="utf-8").strip() != raw_env_credentials:
+            DEFAULT_CREDENTIALS_PATH.write_text(raw_env_credentials, encoding="utf-8")
+        return DEFAULT_CREDENTIALS_PATH
+
     configured = os.environ.get("GOOGLE_CALENDAR_CREDENTIALS_PATH", "").strip()
     candidates = []
     if configured:
