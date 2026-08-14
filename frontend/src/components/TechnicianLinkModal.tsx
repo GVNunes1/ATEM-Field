@@ -10,6 +10,7 @@ import {
   ShieldCheck,
   X
 } from 'lucide-react';
+import { safeFetchJson } from '../lib/api';
 import './TechnicianLinkModal.css';
 
 interface TechnicianLinkModalProps {
@@ -41,8 +42,7 @@ export const TechnicianLinkModal: React.FC<TechnicianLinkModalProps> = ({
     setError('');
     setCopiedType(null);
     try {
-      const res = await fetch(`/api/technicians/${techId}/portal-link`, { cache: 'no-store' });
-      const data = await res.json();
+      const data = await safeFetchJson(`/api/technicians/${techId}/portal-link`, { cache: 'no-store' });
       if (data.success && data.portal_url) {
         setPortalUrl(data.portal_url);
       } else {

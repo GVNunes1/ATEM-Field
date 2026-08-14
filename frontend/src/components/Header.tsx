@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Calendar, Key, PackageCheck, RefreshCw, ShieldAlert, ShieldCheck } from 'lucide-react';
+import { safeFetchJson } from '../lib/api';
 
 interface HeaderProps {
   activeTab: string;
@@ -9,20 +10,18 @@ interface HeaderProps {
   lastUpdated: Date | null;
 }
 
-interface GoogleSyncStatus {
-  authenticated: boolean;
-  configured: boolean;
-  requires_auth: boolean;
-  automatic: boolean;
-  running: boolean;
-  lastSuccessAt: string | null;
-  lastError: string | null;
-}
-
 export function Header({ activeTab, setActiveTab, onRefresh, analyzerCount, lastUpdated }: HeaderProps) {
   const [syncing, setSyncing] = useState(false);
   const [loggingIn, setLoggingIn] = useState(false);
-  const [googleStatus, setGoogleStatus] = useState<GoogleSyncStatus | null>(null);
+  const [googleStatus, setGoogleStatus] = useState<{
+    authenticated?: boolean;
+    configured?: boolean;
+    requires_auth?: boolean;
+    automatic?: boolean;
+    running?: boolean;
+    lastSuccessAt?: string | null;
+    lastError?: string | null;
+  } | null>(null);
 
   const currentDate = new Date().toLocaleDateString('pt-BR', {
     weekday: 'long', day: '2-digit', month: 'long', year: 'numeric'
@@ -30,8 +29,7 @@ export function Header({ activeTab, setActiveTab, onRefresh, analyzerCount, last
 
   const loadGoogleStatus = useCallback(async () => {
     try {
-      const response = await fetch('/api/sync/google/status', { cache: 'no-store' });
-      const data = await response.json();
+      const data = await safeFetchJson('/api/sync/google/status', { cache: 'no-store' });
       if (data.success) setGoogleStatus(data);
     } catch (error) {
       console.warn('Status do Google Agenda indisponível:', error);
@@ -47,8 +45,7 @@ export function Header({ activeTab, setActiveTab, onRefresh, analyzerCount, last
   const handleSyncAgendaOnline = async () => {
     setSyncing(true);
     try {
-      const response = await fetch('/api/sync/agenda-online', { method: 'POST' });
-      const data = await response.json();
+      const data = await safeFetchJson('/api/sync/agenda-online', { method: 'POST' });
       if (!data.success) throw new Error(data.error || 'Falha na sincronização.');
       await onRefresh();
       await loadGoogleStatus();
@@ -64,8 +61,7 @@ export function Header({ activeTab, setActiveTab, onRefresh, analyzerCount, last
   const handleGoogleLogin = async () => {
     setLoggingIn(true);
     try {
-      const response = await fetch('/api/sync/get-google-auth-url', { method: 'POST' });
-      const data = await response.json();
+      const data = await safeFetchJson('/api/sync/get-google-auth-url', { method: 'POST' });
       if (!data.success || !data.auth_url) throw new Error(data.error || 'Link de acesso indisponível.');
       window.open(data.auth_url, '_blank', 'noopener,noreferrer');
       window.setTimeout(() => void loadGoogleStatus(), 8_000);

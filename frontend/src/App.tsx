@@ -8,6 +8,7 @@ import { ChecklistView } from './pages/ChecklistView';
 import { TechniciansView } from './pages/TechniciansView';
 import { OperationsAdminView } from './pages/OperationsAdminView';
 import { ReservationHistoryView } from './pages/ReservationHistoryView';
+import { safeFetchJson } from './lib/api';
 
 const noCacheFetchOptions: RequestInit = {
   cache: 'no-store',
@@ -29,21 +30,13 @@ export function App() {
   const fetchAllData = useCallback(async () => {
     setLoadError('');
     try {
-      const responses = await Promise.all([
-        fetch('/api/dashboard/stats', noCacheFetchOptions),
-        fetch('/api/analyzers', noCacheFetchOptions),
-        fetch('/api/appointments', noCacheFetchOptions),
-        fetch('/api/categories', noCacheFetchOptions),
-        fetch('/api/technicians', noCacheFetchOptions)
+      const [statsRes, analyzersRes, apptsRes, catRes, techRes] = await Promise.all([
+        safeFetchJson('/api/dashboard/stats', noCacheFetchOptions),
+        safeFetchJson('/api/analyzers', noCacheFetchOptions),
+        safeFetchJson('/api/appointments', noCacheFetchOptions),
+        safeFetchJson('/api/categories', noCacheFetchOptions),
+        safeFetchJson('/api/technicians', noCacheFetchOptions)
       ]);
-
-      if (responses.some(response => !response.ok)) {
-        throw new Error('Uma ou mais fontes de dados não responderam corretamente.');
-      }
-
-      const [statsRes, analyzersRes, apptsRes, catRes, techRes] = await Promise.all(
-        responses.map(response => response.json())
-      );
 
       if (statsRes.success) {
         setStats(statsRes.stats);
@@ -64,17 +57,10 @@ export function App() {
 
   const refreshLiveInventory = useCallback(async () => {
     try {
-      const [statsResponse, analyzersResponse, appointmentsResponse] = await Promise.all([
-        fetch('/api/dashboard/stats', noCacheFetchOptions),
-        fetch('/api/analyzers', noCacheFetchOptions),
-        fetch('/api/appointments', noCacheFetchOptions)
-      ]);
-      if (!statsResponse.ok || !analyzersResponse.ok || !appointmentsResponse.ok) throw new Error('Atualização automática indisponível.');
-
       const [statsRes, analyzersRes, appointmentsRes] = await Promise.all([
-        statsResponse.json(),
-        analyzersResponse.json(),
-        appointmentsResponse.json()
+        safeFetchJson('/api/dashboard/stats', noCacheFetchOptions),
+        safeFetchJson('/api/analyzers', noCacheFetchOptions),
+        safeFetchJson('/api/appointments', noCacheFetchOptions)
       ]);
       if (statsRes.success) {
         setStats(statsRes.stats);
@@ -84,7 +70,7 @@ export function App() {
       if (appointmentsRes.success) setAppointments(appointmentsRes.appointments || []);
       setLastUpdated(new Date());
     } catch (error) {
-      console.warn('Atualização automática do inventário falhou:', error);
+      console.warn('Atualização automática da agenda indisponível:', error);
     }
   }, []);
 
