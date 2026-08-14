@@ -70,7 +70,7 @@ function scriptPath(fileName: string) {
   return path.resolve(__dirname, '../../src/services', fileName);
 }
 
-function parsePythonJson(stdout: string) {
+function parsePythonJson(stdout: string, stderr = '') {
   const lines = stdout.split(/\r?\n/).map(line => line.trim()).filter(Boolean);
   for (let index = lines.length - 1; index >= 0; index--) {
     try {
@@ -79,12 +79,13 @@ function parsePythonJson(stdout: string) {
       // Logs from third-party Python libraries can precede the JSON result.
     }
   }
-  throw new Error('O conector Google retornou uma resposta inválida.');
+  const details = (stderr || stdout).trim();
+  throw new Error(`O conector Google retornou uma resposta inválida${details ? ': ' + details : '.'}`);
 }
 
 function executePython(fileName: string, args: string[] = [], timeoutMs = 300_000): Promise<any> {
   return new Promise((resolve, reject) => {
-    const python = process.env.PYTHON_EXECUTABLE?.trim() || 'python';
+    const python = process.env.PYTHON_EXECUTABLE?.trim() || 'python3';
     const child = spawn(python, ['-u', scriptPath(fileName), ...args], {
       cwd: path.resolve(__dirname, '../..'),
       windowsHide: true,
@@ -114,7 +115,7 @@ function executePython(fileName: string, args: string[] = [], timeoutMs = 300_00
       finished = true;
       clearTimeout(timeout);
       try {
-        const result = parsePythonJson(stdout);
+        const result = parsePythonJson(stdout, stderr);
         if (code !== 0 || !result.success) {
           const error = new Error(result.error || stderr.trim() || `Conector Google finalizado com código ${code}.`);
           Object.assign(error, { authRequired: Boolean(result.auth_required), details: result });

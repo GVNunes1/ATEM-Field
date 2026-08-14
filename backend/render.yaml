@@ -5,7 +5,7 @@ services:
     plan: free
     region: oregon
     rootDir: backend
-    buildCommand: npm install --include=dev && npm run build
+    buildCommand: npm install --include=dev && (python3 -m pip install -r requirements-google-calendar.txt || pip install -r requirements-google-calendar.txt || true) && npm run build
     startCommand: npm start
     envVars:
       - key: PORT
