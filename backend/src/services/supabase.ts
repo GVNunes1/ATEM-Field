@@ -10,6 +10,9 @@ function requiredEnv(name: 'SUPABASE_URL' | 'SUPABASE_ANON_KEY' | 'SUPABASE_SERV
   if (!value) {
     throw new Error(`Variável de ambiente obrigatória ausente: ${name}. Configure backend/.env a partir de backend/.env.example.`);
   }
+  if (name === 'SUPABASE_URL' && value.includes('supabase.com/dashboard')) {
+    throw new Error('A variável SUPABASE_URL está configurada com a URL do painel Web. Use a URL de API do projeto: https://aorclbawxpjgrbdrcith.supabase.co');
+  }
   return value;
 }
 
