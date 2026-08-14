@@ -15,6 +15,7 @@ import {
   User,
   Users
 } from 'lucide-react';
+import { safeFetchJson } from '../lib/api';
 import './ReservationHistoryView.css';
 
 interface ReservationHistoryViewProps {
@@ -73,8 +74,7 @@ export const ReservationHistoryView: React.FC<ReservationHistoryViewProps> = ({
     setLoading(true);
     setError('');
     try {
-      const response = await fetch('/api/reservations', { cache: 'no-store' });
-      const data = await response.json();
+      const data = await safeFetchJson('/api/reservations', { cache: 'no-store' });
       if (data.success) {
         setReservations(data.reservations || []);
       } else {

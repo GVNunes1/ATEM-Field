@@ -1,5 +1,6 @@
 import { FormEvent, useEffect, useMemo, useState } from 'react';
 import { isNonTechnicalAppointment } from '../lib/appointmentUtils';
+import { safeFetchJson } from '../lib/api';
 import {
   Activity,
   CalendarDays,
@@ -65,9 +66,8 @@ export function OperationsAdminView({ appointments, analyzers, technicians, onRe
   const loadReservations = async () => {
     setLoadingReservations(true);
     try {
-      const response = await fetch('/api/reservations', { cache: 'no-store' });
-      const data = await response.json();
-      if (!response.ok || !data.success) throw new Error(data.error || 'Não foi possível carregar as reservas.');
+      const data = await safeFetchJson('/api/reservations', { cache: 'no-store' });
+      if (!data.success) throw new Error(data.error || 'Não foi possível carregar as reservas.');
       setReservations(data.reservations || []);
     } catch (requestError) {
       setError(requestError instanceof Error ? requestError.message : 'Falha ao carregar reservas.');
@@ -113,8 +113,7 @@ export function OperationsAdminView({ appointments, analyzers, technicians, onRe
     setSelectedTechnicianId(preferredTechnician ? String(preferredTechnician) : '');
     setSelectedAnalyzerIds([]);
     setAnalyzerSearch('');
-    fetch(`/api/appointments/${selectedAppointment.id}/checklist`, { cache: 'no-store' })
-      .then(response => response.json())
+    safeFetchJson(`/api/appointments/${selectedAppointment.id}/checklist`, { cache: 'no-store' })
       .then(data => setChecklist(data.success ? data : null))
       .catch(() => setChecklist(null));
   }, [selectedAppointment]);
@@ -196,7 +195,7 @@ export function OperationsAdminView({ appointments, analyzers, technicians, onRe
     let completed = 0;
     try {
       for (const analyzerId of selectedAnalyzerIds) {
-        const response = await fetch('/api/reservations', {
+        const data = await safeFetchJson('/api/reservations', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -206,8 +205,7 @@ export function OperationsAdminView({ appointments, analyzers, technicians, onRe
             notes: 'Reserva criada pelo painel administrativo'
           })
         });
-        const data = await response.json();
-        if (!response.ok || !data.success) throw new Error(data.error || 'Não foi possível criar a reserva.');
+        if (!data.success) throw new Error(data.error || 'Não foi possível criar a reserva.');
         completed += 1;
       }
       setNotice(`${completed} ${completed === 1 ? 'padrão reservado' : 'padrões reservados'} com sucesso.`);
@@ -227,9 +225,8 @@ export function OperationsAdminView({ appointments, analyzers, technicians, onRe
     const action = reservation.status === 'Reservado' ? 'checkout' : 'checkin';
     setActionId(reservation.id); setError(''); setNotice('');
     try {
-      const response = await fetch(`/api/reservations/${reservation.id}/${action}`, { method: 'POST' });
-      const data = await response.json();
-      if (!response.ok || !data.success) throw new Error(data.error || 'Não foi possível atualizar a reserva.');
+      const data = await safeFetchJson(`/api/reservations/${reservation.id}/${action}`, { method: 'POST' });
+      if (!data.success) throw new Error(data.error || 'Não foi possível atualizar a reserva.');
       setNotice(data.message);
       await Promise.all([loadReservations(), onRefresh()]);
     } catch (requestError) {
@@ -243,9 +240,8 @@ export function OperationsAdminView({ appointments, analyzers, technicians, onRe
     if (!portalTechnicianId) return;
     setGeneratingLink(true); setError(''); setNotice('');
     try {
-      const response = await fetch(`/api/technicians/${portalTechnicianId}/portal-link`, { cache: 'no-store' });
-      const data = await response.json();
-      if (!response.ok || !data.success) throw new Error(data.error || 'Não foi possível gerar o acesso.');
+      const data = await safeFetchJson(`/api/technicians/${portalTechnicianId}/portal-link`, { cache: 'no-store' });
+      if (!data.success) throw new Error(data.error || 'Não foi possível gerar o acesso.');
       setPortalLink(data.portal_url);
       try {
         await navigator.clipboard.writeText(data.portal_url);

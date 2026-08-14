@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { Box, Plus, Search, Filter, CheckCircle2, ArrowRightLeft, ShieldCheck, Tag, UserRoundCheck, RotateCcw } from 'lucide-react';
+import { safeFetchJson } from '../lib/api';
 
 interface InventoryViewProps {
   analyzers: any[];
@@ -146,12 +147,11 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ analyzers, onRefre
     setMsg(null);
 
     try {
-      const res = await fetch('/api/analyzers', {
+      const data = await safeFetchJson('/api/analyzers', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData)
       });
-      const data = await res.json();
       if (data.success) {
         setMsg({ type: 'success', text: `Patrimônio ${formData.asset_tag} cadastrado com sucesso!` });
         setShowAddModal(false);
@@ -180,8 +180,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ analyzers, onRefre
   const handleCheckin = async (resId: number) => {
     if (!window.confirm('Confirmar a devolução (Check-in) deste patrimônio para o almoxarifado?')) return;
     try {
-      const res = await fetch(`/api/reservations/${resId}/checkin`, { method: 'POST' });
-      const data = await res.json();
+      const data = await safeFetchJson(`/api/reservations/${resId}/checkin`, { method: 'POST' });
       if (data.success) {
         alert(data.message);
         onRefresh();
@@ -193,8 +192,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ analyzers, onRefre
 
   const handleCheckout = async (resId: number) => {
     try {
-      const res = await fetch(`/api/reservations/${resId}/checkout`, { method: 'POST' });
-      const data = await res.json();
+      const data = await safeFetchJson(`/api/reservations/${resId}/checkout`, { method: 'POST' });
       if (data.success) {
         alert(data.message);
         onRefresh();

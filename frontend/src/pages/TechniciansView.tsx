@@ -18,6 +18,7 @@ import {
   X
 } from 'lucide-react';
 import { TechnicianLinkModal } from '../components/TechnicianLinkModal';
+import { apiUrl } from '../lib/api';
 
 interface TechniciansViewProps {
   technicians: Technician[];
@@ -227,7 +228,8 @@ export function TechniciansView({ technicians, onRefresh }: TechniciansViewProps
     setModalError('');
     try {
       const isEditing = modalMode === 'edit' && editingTechnician;
-      const response = await fetch(isEditing ? `/api/technicians/${editingTechnician.id}` : '/api/technicians', {
+      const targetUrl = isEditing ? apiUrl(`/api/technicians/${editingTechnician.id}`) : apiUrl('/api/technicians');
+      const response = await fetch(targetUrl, {
         method: isEditing ? 'PATCH' : 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData)
@@ -252,7 +254,7 @@ export function TechniciansView({ technicians, onRefresh }: TechniciansViewProps
     setSaving(true);
     setModalError('');
     try {
-      const response = await fetch(`/api/technicians/${mergeSource.id}/merge`, {
+      const response = await fetch(apiUrl(`/api/technicians/${mergeSource.id}/merge`), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ target_id: mergeTarget.id, profile: mergeProfile })
@@ -276,7 +278,7 @@ export function TechniciansView({ technicians, onRefresh }: TechniciansViewProps
     setSaving(true);
     setModalError('');
     try {
-      const response = await fetch(`/api/technicians/${deleteTarget.id}`, { method: 'DELETE' });
+      const response = await fetch(apiUrl(`/api/technicians/${deleteTarget.id}`), { method: 'DELETE' });
       const data = await readApiResponse(response);
       if (!response.ok || !data.success) throw new Error(data.error || 'Não foi possível apagar o usuário.');
       setNotice(`${deleteTarget.name} foi apagado com sucesso.`);

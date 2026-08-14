@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { isNonTechnicalAppointment } from '../lib/appointmentUtils';
+import { apiUrl } from '../lib/api';
 import {
   AlertCircle,
   ArrowUpRight,
@@ -64,7 +65,7 @@ function parametersToList(value: unknown) {
 }
 
 export function TechnicianPortalView() {
-  const [accessToken] = useState(recoverAccessToken);
+  const accessToken = useMemo(recoverAccessToken, []);
   const [dashboard, setDashboard] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -75,7 +76,7 @@ export function TechnicianPortalView() {
   const [rescheduleDraft, setRescheduleDraft] = useState<{ reservationId: number; targetAppointmentId: string } | null>(null);
 
   const request = async (path: string, options: RequestInit = {}) => {
-    const response = await fetch(path, {
+    const response = await fetch(apiUrl(path), {
       ...options,
       headers: {
         ...(options.body ? { 'Content-Type': 'application/json' } : {}),

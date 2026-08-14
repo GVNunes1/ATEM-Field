@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { CheckSquare, Plus, Activity, Sliders, Shield, Tag } from 'lucide-react';
+import { safeFetchJson } from '../lib/api';
 
 interface ChecklistViewProps {
   categories: any[];
@@ -19,7 +20,7 @@ export const ChecklistView: React.FC<ChecklistViewProps> = ({ categories, onRefr
 
     try {
       const paramsList = paramsInput.split('\n').map(p => p.trim()).filter(Boolean);
-      const res = await fetch('/api/categories/templates', {
+      const data = await safeFetchJson('/api/categories/templates', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -28,7 +29,6 @@ export const ChecklistView: React.FC<ChecklistViewProps> = ({ categories, onRefr
           required_parameters: paramsList
         })
       });
-      const data = await res.json();
       if (data.success) {
         alert('Template de teste e parâmetros salvos com sucesso!');
         setShowAddModal(false);

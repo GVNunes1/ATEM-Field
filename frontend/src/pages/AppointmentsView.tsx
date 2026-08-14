@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { isNonTechnicalAppointment } from '../lib/appointmentUtils';
+import { safeFetchJson } from '../lib/api';
 import {
   CalendarDays,
   ChevronLeft,
@@ -34,7 +35,6 @@ function monthLabel(value: string) {
   return new Intl.DateTimeFormat('pt-BR', { month: 'long', year: 'numeric' })
     .format(new Date(year, month - 1, 1));
 }
-
 export function AppointmentsView({ appointments, onOpenChecklistModal }: AppointmentsViewProps) {
   const today = new Date();
   const todayKey = dateKey(today);
@@ -44,8 +44,7 @@ export function AppointmentsView({ appointments, onOpenChecklistModal }: Appoint
   const [technicians, setTechnicians] = useState<any[]>([]);
 
   useEffect(() => {
-    fetch('/api/technicians', { cache: 'no-store' })
-      .then(response => response.json())
+    safeFetchJson('/api/technicians', { cache: 'no-store' })
       .then(data => {
         if (data.success) {
           setTechnicians([...(data.technicians || [])].sort((left, right) => left.name.localeCompare(right.name, 'pt-BR')));
