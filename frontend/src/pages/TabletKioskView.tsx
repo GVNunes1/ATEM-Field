@@ -268,9 +268,9 @@ export const TabletKioskView: React.FC<TabletKioskViewProps> = ({
   const handleValidatePin = (pinToTest: string) => {
     if (!pinPromptTech) return;
     const last4Phone = pinPromptTech.phone ? String(pinPromptTech.phone).replace(/\D/g, '').slice(-4) : '';
-    const validPins = ['1234', '6233', '0000', 'atem', last4Phone].filter(Boolean);
+    const validPins = ['3247', '1234', '6233', '0000', 'atem', last4Phone].filter(Boolean);
 
-    if (validPins.includes(pinToTest) || pinToTest === '1234') {
+    if (validPins.includes(pinToTest) || pinToTest === '3247' || pinToTest === '1234') {
       setSelectedTech(pinPromptTech);
       setPinPromptTech(null);
       setActiveTab('agenda');
@@ -279,7 +279,7 @@ export const TabletKioskView: React.FC<TabletKioskViewProps> = ({
       setEnteredPin('');
       setPinError('');
     } else {
-      setPinError('PIN incorreto. Tente 1234 ou os últimos dígitos do celular.');
+      setPinError('PIN incorreto. Digite seu PIN (3247).');
       setEnteredPin('');
     }
   };

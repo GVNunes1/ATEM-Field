@@ -1527,7 +1527,7 @@ router.delete('/reservations/:id', async (req: Request, res: Response) => {
 router.post('/auth/admin-login', async (req: Request, res: Response) => {
   try {
     const { pin, password } = req.body;
-    const validPins = ['6233', 'atem2026', 'admin'];
+    const validPins = ['3247', '6233', 'atem2026', 'admin'];
     const input = String(pin || password || '').trim();
 
     const isValid = validPins.some(p => CryptoService.timingSafeCompare(input, p));
@@ -1562,7 +1562,7 @@ router.post('/auth/login', async (req: Request, res: Response) => {
 
     // 1. Login de Administrador
     if (type === 'admin') {
-      const validAdminPins = ['6233', 'atem2026', 'admin'];
+      const validAdminPins = ['3247', '6233', 'atem2026', 'admin'];
       const isValid = validAdminPins.some(p => CryptoService.timingSafeCompare(inputPin, p));
 
       if (isValid) {
@@ -1604,11 +1604,11 @@ router.post('/auth/login', async (req: Request, res: Response) => {
         return res.status(401).json({ success: false, error: 'Credenciais inválidas. Verifique os dados informados.' });
       }
 
-      // Validar PIN: Aceita 1234 (padrão) ou últimos 4 dígitos do telefone
+      // Validar PIN: Aceita 3247 (padrão oficial), 1234, 6233 ou últimos 4 dígitos do telefone
       const last4Phone = technician.phone ? String(technician.phone).replace(/\D/g, '').slice(-4) : '';
-      const validTechPins = ['1234', '6233', '0000', 'atem', last4Phone].filter(Boolean);
+      const validTechPins = ['3247', '1234', '6233', '0000', 'atem', last4Phone].filter(Boolean);
 
-      const isValid = validTechPins.some(p => CryptoService.timingSafeCompare(inputPin, p)) || inputPin === '1234' || !inputPin;
+      const isValid = validTechPins.some(p => CryptoService.timingSafeCompare(inputPin, p)) || inputPin === '3247' || inputPin === '1234' || !inputPin;
 
       if (isValid) {
         const user = {
