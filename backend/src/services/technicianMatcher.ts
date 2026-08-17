@@ -26,12 +26,19 @@ const ALIAS_MAP: Record<string, string> = {
   'leohenrique': 'Leonardo Henrique',
 
   // Gabriel
-  'gabriel': 'Gabriel Soares',
+  'gabriel': 'Gabriel Patrick',
+  'gabrielp': 'Gabriel Patrick',
+  'gabrielpatrick': 'Gabriel Patrick',
+  'gabrielpatrik': 'Gabriel Patrick',
+  'gabrielii': 'Gabriel Patrick',
+  'gabriel2': 'Gabriel Patrick',
+  'gp': 'Gabriel Patrick',
   'soares': 'Gabriel Soares',
   'gabrielsoares': 'Gabriel Soares',
+  'gsoares': 'Gabriel Soares',
   'gabrielconrado': 'Gabriel Conrado',
   'conrado': 'Gabriel Conrado',
-  'gabrielpatrick': 'Gabriel Patrick',
+  'gconrado': 'Gabriel Conrado',
   'patrick': 'Patrick',
 
   // Lucas
