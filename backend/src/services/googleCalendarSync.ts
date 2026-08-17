@@ -3,6 +3,7 @@ import fs from 'fs';
 import path from 'path';
 import cron from 'node-cron';
 import { supabaseAdmin } from './supabase';
+import { parseAndMatchTechnicians } from './technicianMatcher';
 
 const SAO_PAULO_TIME_ZONE = 'America/Sao_Paulo';
 const DEFAULT_SYNC_SCHEDULE = '*/10 * * * *';
@@ -201,37 +202,9 @@ async function persistCalendarChanges(parsed: ImportResult) {
       .replace(/Técnicos?:/gi, '')
       .replace(/\([^)]*\)/g, '')
       .trim();
-    const technicianIds: number[] = [];
-    const technicianNames: string[] = [];
-
-    if (rawTechnicians && !rawTechnicians.includes('Equipe de Campo') && rawTechnicians !== '(?)') {
-      const names = rawTechnicians
-        .split(/[,;]|\s+e\s+/i)
-        .map(sanitizeTechnicianName)
-        .filter((name): name is string => Boolean(name));
-      for (const name of names) {
-        let technician = techMapByName.get(normalizeNameKey(name));
-        if (!technician) {
-          const { data, error } = await supabaseAdmin.from('technicians').insert({
-            name,
-            phone: 'Pendente (Cadastrar celular)',
-            telegram_id: null,
-            email: 'Pendente',
-            role: 'Técnico de Campo',
-            avatar_url: defaultTechnicianAvatar,
-            status: 'Ativo'
-          }).select('*').single();
-          if (error) throw error;
-          technician = data;
-          techMapByName.set(normalizeNameKey(name), technician);
-          newTechnicians += 1;
-        }
-        if (!technicianIds.includes(technician.id)) {
-          technicianIds.push(technician.id);
-          technicianNames.push(technician.name);
-        }
-      }
-    }
+    const { matched } = parseAndMatchTechnicians(rawTechnicians, existingTechs);
+    const technicianIds = matched.map(t => t.id);
+    const technicianNames = matched.map(t => t.name);
 
     const existingId = appointmentIdByExternalId.get(item.external_id);
     const { data: appointment, error: appointmentError } = await supabaseAdmin
@@ -305,59 +278,32 @@ async function persistCalendarChangesInBatches(parsed: ImportResult) {
     fetchAllRows('appointments', 'id, external_id'),
     fetchAllRows('appointment_equipments', 'appointment_id')
   ]);
-  const techMapByName = new Map(existingTechs.map((technician: any) => [normalizeNameKey(technician.name), technician]));
-  const namesByExternalId = new Map<string, string[]>();
-  const missingNamesByKey = new Map<string, string>();
+  const namesByExternalId = new Map<string, any[]>();
 
   for (const item of items) {
     const rawTechnicians = stripCalendarInviteNoise(item.technicians_raw || '')
       .replace(/Técnicos?:/gi, '')
       .replace(/\([^)]*\)/g, '')
       .trim();
-    const names = rawTechnicians && !rawTechnicians.includes('Equipe de Campo') && rawTechnicians !== '(?)'
-      ? rawTechnicians.split(/[,;]|\s+e\s+/i).map(sanitizeTechnicianName).filter((name): name is string => Boolean(name))
-      : [];
-    const uniqueNames = [...new Map(names.map(name => [normalizeNameKey(name), name])).values()];
-    namesByExternalId.set(item.external_id, uniqueNames);
-    uniqueNames.forEach(name => {
-      const key = normalizeNameKey(name);
-      if (!techMapByName.has(key)) missingNamesByKey.set(key, name);
-    });
+    const { matched } = parseAndMatchTechnicians(rawTechnicians, existingTechs);
+    namesByExternalId.set(item.external_id, matched);
   }
 
-  let newTechnicians = 0;
-  const missingNames = [...missingNamesByKey.values()];
-  for (let index = 0; index < missingNames.length; index += 100) {
-    const batch = missingNames.slice(index, index + 100);
-    const { data, error } = await supabaseAdmin.from('technicians').insert(batch.map(name => ({
-      name,
-      phone: 'Pendente (Cadastrar celular)',
-      telegram_id: null,
-      email: 'Pendente',
-      role: 'Técnico de Campo',
-      avatar_url: defaultTechnicianAvatar,
-      status: 'Ativo'
-    }))).select('*');
-    if (error) throw error;
-    (data || []).forEach(technician => techMapByName.set(normalizeNameKey(technician.name), technician));
-    newTechnicians += data?.length || 0;
-  }
+  const newTechnicians = 0;
 
   const existingIdByExternalId = new Map(
     existingAppointments.filter((appointment: any) => appointment.external_id).map((appointment: any) => [appointment.external_id, appointment.id])
   );
   const appointmentRows = items.map(item => {
-    const technicians = (namesByExternalId.get(item.external_id) || [])
-      .map(name => techMapByName.get(normalizeNameKey(name)))
-      .filter(Boolean);
+    const matchedTechs = namesByExternalId.get(item.external_id) || [];
     return {
       external_id: item.external_id,
       title: item.title,
       client_name: item.client_name,
       client_address: item.client_address,
       client_contact: 'Sincronizado automaticamente do Google Agenda',
-      technician_id: technicians[0]?.id || null,
-      technician_names: technicians.length ? technicians.map(technician => technician.name).join(', ') : 'Equipe de Campo',
+      technician_id: matchedTechs[0]?.id || null,
+      technician_names: matchedTechs.length ? matchedTechs.map((t: any) => t.name).join(', ') : 'Equipe de Campo',
       appointment_date: item.appointment_date,
       appointment_time: item.appointment_time
     };
@@ -390,10 +336,8 @@ async function persistCalendarChangesInBatches(parsed: ImportResult) {
   const junctionRows = items.flatMap(item => {
     const appointmentId = appointmentIdByExternalId.get(item.external_id);
     if (!appointmentId) return [];
-    return (namesByExternalId.get(item.external_id) || [])
-      .map(name => techMapByName.get(normalizeNameKey(name)))
-      .filter(Boolean)
-      .map(technician => ({ appointment_id: appointmentId, technician_id: technician.id }));
+    const matchedTechs = namesByExternalId.get(item.external_id) || [];
+    return matchedTechs.map((t: any) => ({ appointment_id: appointmentId, technician_id: t.id }));
   });
   for (let index = 0; index < junctionRows.length; index += 500) {
     const { error } = await supabaseAdmin.from('appointment_technicians').insert(junctionRows.slice(index, index + 500));

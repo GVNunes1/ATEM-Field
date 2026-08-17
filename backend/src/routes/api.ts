@@ -17,6 +17,7 @@ import {
   resolveTechnicianPortalTechnician,
   TechnicianPortalAuthError
 } from '../services/telegramDashboard';
+import { syncOfficialTechniciansDatabase } from '../scripts/syncOfficialTechnicians';
 
 const router = Router();
 const technicianMergeLocks = new Set<number>();
@@ -460,6 +461,15 @@ router.get('/technicians', async (req: Request, res: Response) => {
   try {
     const technicians = await fetchAllFromTable('technicians', 'id');
     res.json({ success: true, technicians });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+router.post('/technicians/sync-official', async (_req: Request, res: Response) => {
+  try {
+    const result = await syncOfficialTechniciansDatabase();
+    res.json(result);
   } catch (err: any) {
     res.status(500).json({ success: false, error: err.message });
   }
