@@ -63,38 +63,72 @@ button { color: inherit; }
 h1, h2, h3, h4, h5, h6 { color: var(--text-main); font-family: var(--font-heading); letter-spacing: -0.025em; }
 
 html, body {
+  margin: 0;
+  padding: 0;
   width: 100%;
+  height: 100%;
   max-width: 100vw;
-  overflow-x: hidden;
+  overflow: hidden;
 }
 
 .app-layout {
   display: flex;
-  min-height: 100vh;
+  height: 100vh;
+  max-height: 100vh;
   width: 100%;
   max-width: 100vw;
   background: var(--bg-primary);
-  overflow-x: hidden;
+  overflow: hidden;
 }
 
 .app-content-wrapper {
   flex: 1;
   min-width: 0;
-  max-width: 100vw;
+  height: 100vh;
+  max-height: 100vh;
+  overflow-y: auto;
+  overflow-x: hidden;
   display: flex;
   flex-direction: column;
   padding: 28px 36px 36px 36px;
-  overflow-x: hidden;
   box-sizing: border-box;
+  scroll-behavior: smooth;
+}
+
+.app-content-wrapper::-webkit-scrollbar {
+  width: 8px;
+}
+
+.app-content-wrapper::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.app-content-wrapper::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+
+.app-content-wrapper::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
 }
 
 @media (max-width: 768px) {
+  html, body {
+    height: auto;
+    overflow-y: auto;
+    overflow-x: hidden;
+  }
   .app-layout {
+    height: auto;
+    min-height: 100vh;
+    max-height: none;
     flex-direction: column;
-    width: 100vw;
-    max-width: 100vw;
+    overflow: visible;
   }
   .app-content-wrapper {
+    height: auto;
+    max-height: none;
+    overflow-y: visible;
     padding: 12px 12px 76px 12px;
     width: 100vw;
     max-width: 100vw;
