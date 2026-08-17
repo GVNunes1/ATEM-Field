@@ -26,6 +26,7 @@ interface OperationsAdminViewProps {
   analyzers: any[];
   technicians: any[];
   onRefresh: () => Promise<void>;
+  initialAppointmentId?: number | string | null;
 }
 
 const ACTIVE_STATUSES = new Set(['Reservado', 'Em Uso']);
@@ -45,14 +46,22 @@ function formatDate(value: string) {
     .format(new Date(`${value}T12:00:00`)).replace('.', '');
 }
 
-export function OperationsAdminView({ appointments, analyzers, technicians, onRefresh }: OperationsAdminViewProps) {
+export function OperationsAdminView({
+  appointments,
+  analyzers,
+  technicians,
+  onRefresh,
+  initialAppointmentId
+}: OperationsAdminViewProps) {
   const [reservations, setReservations] = useState<any[]>([]);
   const [loadingReservations, setLoadingReservations] = useState(true);
   const [saving, setSaving] = useState(false);
   const [actionId, setActionId] = useState<number | null>(null);
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
-  const [selectedAppointmentId, setSelectedAppointmentId] = useState('');
+  const [selectedAppointmentId, setSelectedAppointmentId] = useState<string>(
+    initialAppointmentId ? String(initialAppointmentId) : ''
+  );
   const [selectedTechnicianId, setSelectedTechnicianId] = useState('');
   const [selectedAnalyzerIds, setSelectedAnalyzerIds] = useState<number[]>([]);
   const [analyzerSearch, setAnalyzerSearch] = useState('');
@@ -62,6 +71,12 @@ export function OperationsAdminView({ appointments, analyzers, technicians, onRe
   const [portalTechnicianId, setPortalTechnicianId] = useState('');
   const [portalLink, setPortalLink] = useState('');
   const [generatingLink, setGeneratingLink] = useState(false);
+
+  useEffect(() => {
+    if (initialAppointmentId) {
+      setSelectedAppointmentId(String(initialAppointmentId));
+    }
+  }, [initialAppointmentId]);
 
   const loadReservations = async () => {
     setLoadingReservations(true);
@@ -109,14 +124,29 @@ export function OperationsAdminView({ appointments, analyzers, technicians, onRe
       setAnalyzerSearch('');
       return;
     }
-    const preferredTechnician = selectedAppointment.technician_id || selectedAppointment.technician_ids?.[0];
+    let preferredTechnician = selectedAppointment.technician_id
+      || selectedAppointment.technician_ids?.[0]
+      || (selectedAppointment.technicians && selectedAppointment.technicians[0]?.id);
+
+    if (!preferredTechnician && selectedAppointment.technician_names) {
+      const firstTechName = selectedAppointment.technician_names.split(/[,;]/)[0]?.trim().toLowerCase();
+      if (firstTechName) {
+        const found = activeTechnicians.find(t =>
+          t.name.toLowerCase() === firstTechName ||
+          t.name.toLowerCase().includes(firstTechName) ||
+          firstTechName.includes(t.name.toLowerCase())
+        );
+        if (found) preferredTechnician = found.id;
+      }
+    }
+
     setSelectedTechnicianId(preferredTechnician ? String(preferredTechnician) : '');
     setSelectedAnalyzerIds([]);
     setAnalyzerSearch('');
     safeFetchJson(`/api/appointments/${selectedAppointment.id}/checklist`, { cache: 'no-store' })
       .then(data => setChecklist(data.success ? data : null))
       .catch(() => setChecklist(null));
-  }, [selectedAppointment]);
+  }, [selectedAppointment, activeTechnicians]);
 
   const availableAnalyzers = useMemo(() => {
     if (!selectedAppointment || isNonTechnicalAppointment(selectedAppointment)) return [];

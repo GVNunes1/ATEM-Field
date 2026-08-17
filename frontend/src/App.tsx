@@ -36,6 +36,7 @@ export function App() {
   const [appointments, setAppointments] = useState<any[]>([]);
   const [categories, setCategories] = useState<any[]>([]);
   const [technicians, setTechnicians] = useState<any[]>([]);
+  const [selectedAppointmentForReservation, setSelectedAppointmentForReservation] = useState<number | string | null>(null);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState('');
 
@@ -60,6 +61,11 @@ export function App() {
     } catch {
       // Ignore in iframe / restricted environments
     }
+  };
+
+  const handleOpenReservationForAppointment = (apptId: number) => {
+    setSelectedAppointmentForReservation(apptId);
+    handleTabChange('operations');
   };
 
   useEffect(() => {
@@ -162,7 +168,7 @@ export function App() {
                 <InventoryView analyzers={analyzers} onRefresh={fetchAllData} />
               )}
               {activeTab === 'appointments' && (
-                <AppointmentsView appointments={appointments} onOpenChecklistModal={() => handleTabChange('operations')} />
+                <AppointmentsView appointments={appointments} onOpenChecklistModal={handleOpenReservationForAppointment} />
               )}
               {(activeTab === 'templates' || activeTab === 'checklist') && (
                 <ChecklistView categories={categories} onRefresh={fetchAllData} />
@@ -176,6 +182,7 @@ export function App() {
                   analyzers={analyzers}
                   technicians={technicians}
                   onRefresh={fetchAllData}
+                  initialAppointmentId={selectedAppointmentForReservation}
                 />
               )}
               {activeTab === 'history' && (
