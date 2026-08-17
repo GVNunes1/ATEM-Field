@@ -1,6 +1,7 @@
 import React from 'react';
 import {
   Box,
+  Calendar,
   ClipboardList,
   Home,
   PackageCheck,
@@ -15,6 +16,7 @@ interface NavigationProps {
 
 const navItems = [
   { id: 'dashboard', label: 'Dashboard', icon: Home },
+  { id: 'appointments', label: 'Agenda', icon: Calendar },
   { id: 'operations', label: 'Reservas', icon: PackageCheck },
   { id: 'inventory', label: 'Padrões', icon: Box },
   { id: 'technicians', label: 'Técnicos', icon: Users },

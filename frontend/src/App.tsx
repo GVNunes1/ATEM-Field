@@ -48,6 +48,8 @@ export function App() {
         window.history.pushState({}, '', '/');
       } else if (tab === 'inventory') {
         window.history.pushState({}, '', '/padroes');
+      } else if (tab === 'appointments') {
+        window.history.pushState({}, '', '/agenda');
       } else if (tab === 'operations') {
         window.history.pushState({}, '', '/reservas');
       } else if (tab === 'technicians') {
