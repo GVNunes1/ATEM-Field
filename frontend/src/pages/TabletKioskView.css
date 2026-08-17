@@ -1,16 +1,18 @@
 /* ==========================================================================
-   TABLET KIOSK / TOTEM DE SETOR STYLES (TACTILE TOUCH OPTIMIZED)
+   TABLET KIOSK / TOTEM DE SETOR STYLES (TACTILE TOUCH & MOBILE OPTIMIZED)
    ========================================================================== */
 
 .tablet-kiosk-root {
   min-height: 100vh;
   width: 100%;
+  max-width: 100vw;
   background: #f4f7fb;
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   color: #1e293b;
   display: flex;
   flex-direction: column;
   box-sizing: border-box;
+  overflow-x: hidden;
   user-select: none;
   -webkit-user-select: none;
   -webkit-touch-callout: none;
@@ -20,41 +22,56 @@
 .tablet-kiosk-header {
   background: linear-gradient(135deg, #1d4ed8 0%, #1e40af 100%);
   color: #ffffff;
-  padding: 24px 36px;
+  padding: 20px 32px;
   display: flex;
   align-items: center;
   justify-content: space-between;
   box-shadow: 0 4px 20px rgba(30, 64, 175, 0.25);
+  box-sizing: border-box;
+  width: 100%;
 }
 
 .tablet-brand {
   display: flex;
   align-items: center;
-  gap: 20px;
+  gap: 16px;
+  min-width: 0;
 }
 
 .tablet-logo-img {
-  height: 48px;
+  height: 44px;
   width: auto;
   object-fit: contain;
   background: #ffffff;
-  padding: 6px 14px;
+  padding: 5px 12px;
   border-radius: 12px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+  flex-shrink: 0;
+}
+
+.tablet-brand-text {
+  min-width: 0;
 }
 
 .tablet-brand-text h1 {
   margin: 0;
-  font-size: 1.6rem;
+  font-size: clamp(1.15rem, 2.5vw, 1.55rem);
   font-weight: 800;
   letter-spacing: -0.02em;
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .tablet-brand-text p {
-  margin: 4px 0 0 0;
-  font-size: 0.92rem;
+  margin: 3px 0 0 0;
+  font-size: clamp(0.75rem, 1.5vw, 0.88rem);
   color: #bfdbfe;
   font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .tablet-clock-card {
@@ -63,31 +80,34 @@
   align-items: flex-end;
   text-align: right;
   background: rgba(255, 255, 255, 0.12);
-  padding: 10px 20px;
+  padding: 8px 18px;
   border-radius: 14px;
   backdrop-filter: blur(8px);
   border: 1px solid rgba(255, 255, 255, 0.2);
+  flex-shrink: 0;
 }
 
 .tablet-live-time {
-  font-size: 1.8rem;
+  font-size: 1.65rem;
   font-weight: 800;
   font-family: 'JetBrains Mono', monospace;
   letter-spacing: 0.05em;
   color: #ffffff;
+  line-height: 1.1;
 }
 
 .tablet-live-date {
-  font-size: 0.85rem;
+  font-size: 0.8rem;
   color: #dbeafe;
   text-transform: capitalize;
+  margin-top: 2px;
 }
 
 /* Standby Main */
 .tablet-standby-main {
   flex: 1;
-  padding: 32px 36px;
-  max-width: 1400px;
+  padding: 28px 24px;
+  max-width: 1300px;
   margin: 0 auto;
   width: 100%;
   box-sizing: border-box;
@@ -95,34 +115,39 @@
 
 .tablet-welcome-hero {
   text-align: center;
-  margin-bottom: 28px;
+  margin-bottom: 24px;
 }
 
 .tablet-welcome-hero h2 {
-  font-size: 1.85rem;
+  font-size: clamp(1.3rem, 3.5vw, 1.85rem);
   font-weight: 800;
   color: #0f172a;
-  margin: 0 0 8px 0;
+  margin: 0 0 6px 0;
+  line-height: 1.25;
 }
 
 .tablet-welcome-hero p {
-  font-size: 1.05rem;
+  font-size: clamp(0.85rem, 2vw, 1rem);
   color: #64748b;
-  margin: 0 0 24px 0;
+  margin: 0 auto 20px auto;
+  max-width: 680px;
+  line-height: 1.45;
 }
 
 .tablet-search-bar {
-  max-width: 620px;
+  max-width: 540px;
   margin: 0 auto;
   display: flex;
   align-items: center;
   background: #ffffff;
   border: 2px solid #cbd5e1;
   border-radius: 16px;
-  padding: 8px 18px;
+  padding: 8px 16px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
-  gap: 12px;
+  gap: 10px;
   transition: all 0.2s ease;
+  box-sizing: border-box;
+  width: 100%;
 }
 
 .tablet-search-bar:focus-within {
@@ -134,9 +159,10 @@
   flex: 1;
   border: none;
   outline: none;
-  font-size: 1.15rem;
+  font-size: 1.05rem;
   color: #1e293b;
-  padding: 6px 0;
+  padding: 4px 0;
+  min-width: 0;
 }
 
 .tablet-search-bar input::placeholder {
@@ -154,16 +180,16 @@
 /* Grade de Técnicos */
 .tablet-tech-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-  gap: 18px;
-  margin-top: 24px;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 16px;
+  margin-top: 20px;
 }
 
 .tablet-tech-card {
   background: #ffffff;
   border: 2px solid #e2e8f0;
   border-radius: 18px;
-  padding: 22px 18px;
+  padding: 20px 14px;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -172,72 +198,85 @@
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.03);
   position: relative;
+  box-sizing: border-box;
 }
 
 .tablet-tech-card:hover, .tablet-tech-card:active {
-  transform: translateY(-3px);
+  transform: translateY(-2px);
   border-color: #2563eb;
   box-shadow: 0 10px 24px rgba(37, 99, 235, 0.15);
   background: #f8faff;
 }
 
 .tablet-tech-avatar {
-  width: 68px;
-  height: 68px;
-  border-radius: 22px;
+  width: 60px;
+  height: 60px;
+  border-radius: 18px;
   background: linear-gradient(135deg, #2563eb, #1d4ed8);
   color: #ffffff;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.5rem;
+  font-size: 1.35rem;
   font-weight: 800;
-  margin-bottom: 12px;
+  margin-bottom: 10px;
   box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25);
+  flex-shrink: 0;
+}
+
+.tablet-tech-info {
+  width: 100%;
+  overflow: hidden;
 }
 
 .tablet-tech-info strong {
   display: block;
-  font-size: 1.15rem;
+  font-size: 1.05rem;
   font-weight: 700;
   color: #0f172a;
-  line-height: 1.3;
+  line-height: 1.25;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .tablet-tech-info span {
   display: block;
-  font-size: 0.8rem;
+  font-size: 0.76rem;
   color: #64748b;
   margin-top: 3px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .tablet-tech-badges {
-  margin-top: 14px;
+  margin-top: 12px;
 }
 
 .tablet-badge-appts {
   display: inline-flex;
   align-items: center;
-  gap: 5px;
+  gap: 4px;
   background: #eff6ff;
   color: #1d4ed8;
   border: 1px solid #bfdbfe;
-  padding: 4px 10px;
+  padding: 3px 8px;
   border-radius: 999px;
-  font-size: 0.78rem;
+  font-size: 0.75rem;
   font-weight: 700;
 }
 
 .tablet-badge-inuse {
   display: inline-flex;
   align-items: center;
-  gap: 5px;
+  gap: 4px;
   background: #fef3c7;
   color: #92400e;
   border: 1px solid #fde68a;
-  padding: 4px 10px;
+  padding: 3px 8px;
   border-radius: 999px;
-  font-size: 0.78rem;
+  font-size: 0.75rem;
   font-weight: 700;
 }
 
@@ -245,65 +284,75 @@
   display: inline-flex;
   background: #f1f5f9;
   color: #64748b;
-  padding: 4px 10px;
+  padding: 3px 8px;
   border-radius: 999px;
-  font-size: 0.76rem;
+  font-size: 0.72rem;
   font-weight: 600;
 }
 
-/* Header do Usuário Logado */
+/* ==========================================================================
+   TELA DO USUÁRIO LOGADO / PAINEL PESSOAL DO TÉCNICO
+   ========================================================================== */
 .tablet-user-header {
   background: #ffffff;
   border-bottom: 1px solid #e2e8f0;
-  padding: 16px 36px;
+  padding: 16px 28px;
   display: flex;
   align-items: center;
   justify-content: space-between;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  box-sizing: border-box;
+  width: 100%;
 }
 
 .tablet-user-profile {
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 14px;
+  min-width: 0;
 }
 
 .tablet-user-avatar {
-  width: 52px;
-  height: 52px;
-  border-radius: 16px;
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
   background: linear-gradient(135deg, #2563eb, #1d4ed8);
   color: #ffffff;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.3rem;
+  font-size: 1.2rem;
   font-weight: 800;
+  flex-shrink: 0;
 }
 
 .tablet-user-profile h2 {
   margin: 0;
-  font-size: 1.45rem;
+  font-size: clamp(1.1rem, 2.5vw, 1.35rem);
   font-weight: 800;
   color: #0f172a;
+  line-height: 1.2;
 }
 
 .tablet-user-profile span {
-  font-size: 0.88rem;
+  font-size: 0.82rem;
   color: #64748b;
   font-weight: 500;
+  display: block;
+  margin-top: 2px;
 }
 
 .tablet-header-actions {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
+  flex-shrink: 0;
 }
 
 .tablet-btn-refresh {
-  width: 48px;
-  height: 48px;
-  border-radius: 14px;
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
   border: 1px solid #cbd5e1;
   background: #ffffff;
   color: #475569;
@@ -322,16 +371,17 @@
 .tablet-btn-logout {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
-  padding: 12px 20px;
-  border-radius: 14px;
+  gap: 6px;
+  padding: 10px 16px;
+  border-radius: 12px;
   border: 1px solid #fecaca;
   background: #fef2f2;
   color: #dc2626;
-  font-size: 0.95rem;
+  font-size: 0.88rem;
   font-weight: 700;
   cursor: pointer;
   transition: all 0.2s ease;
+  white-space: nowrap;
 }
 
 .tablet-btn-logout:hover {
@@ -343,25 +393,36 @@
 .tablet-nav-tabs {
   background: #ffffff;
   display: flex;
-  padding: 8px 36px;
-  gap: 12px;
+  padding: 6px 28px;
+  gap: 10px;
   border-bottom: 2px solid #e2e8f0;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  box-sizing: border-box;
+  width: 100%;
+}
+
+.tablet-nav-tabs::-webkit-scrollbar {
+  display: none;
 }
 
 .tablet-tab-btn {
   display: inline-flex;
   align-items: center;
-  gap: 10px;
-  padding: 14px 22px;
+  gap: 8px;
+  padding: 12px 18px;
   border-radius: 12px;
   border: none;
   background: none;
-  font-size: 1.05rem;
+  font-size: 0.95rem;
   font-weight: 700;
   color: #64748b;
   cursor: pointer;
   position: relative;
   transition: all 0.2s ease;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .tablet-tab-btn.active {
@@ -372,9 +433,9 @@
 .tablet-counter-pill {
   background: #2563eb;
   color: #ffffff;
-  font-size: 0.78rem;
+  font-size: 0.74rem;
   font-weight: 800;
-  padding: 2px 8px;
+  padding: 2px 7px;
   border-radius: 999px;
 }
 
@@ -385,46 +446,49 @@
 /* Content */
 .tablet-content-area {
   flex: 1;
-  padding: 28px 36px;
-  max-width: 1300px;
+  padding: 24px 28px;
+  max-width: 1200px;
   margin: 0 auto;
   width: 100%;
   box-sizing: border-box;
 }
 
 .tablet-section-intro {
-  margin-bottom: 20px;
+  margin-bottom: 18px;
 }
 
 .tablet-section-intro h3 {
-  font-size: 1.35rem;
+  font-size: 1.25rem;
   font-weight: 800;
   color: #0f172a;
   margin: 0 0 4px 0;
 }
 
 .tablet-section-intro p {
-  font-size: 0.95rem;
+  font-size: 0.9rem;
   color: #64748b;
   margin: 0;
+  line-height: 1.4;
 }
 
 .tablet-card-list {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 14px;
 }
 
 /* Card Atendimento */
 .tablet-appointment-card {
   background: #ffffff;
   border: 1.5px solid #e2e8f0;
-  border-radius: 18px;
-  padding: 22px 24px;
+  border-radius: 16px;
+  padding: 18px 20px;
   display: flex;
   align-items: center;
-  gap: 24px;
+  gap: 18px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  box-sizing: border-box;
+  width: 100%;
 }
 
 .tablet-appt-time-col {
@@ -432,51 +496,54 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  min-width: 110px;
-  padding-right: 20px;
+  min-width: 90px;
+  padding-right: 16px;
   border-right: 1.5px solid #f1f5f9;
   color: #1e40af;
+  flex-shrink: 0;
 }
 
 .tablet-appt-time-col strong {
-  font-size: 1.25rem;
+  font-size: 1.15rem;
   font-weight: 800;
-  margin-top: 4px;
+  margin-top: 3px;
 }
 
 .tablet-appt-time-col span {
-  font-size: 0.82rem;
+  font-size: 0.78rem;
   color: #64748b;
   text-transform: capitalize;
 }
 
 .tablet-appt-details {
   flex: 1;
+  min-width: 0;
 }
 
 .tablet-appt-details h3 {
-  margin: 0 0 6px 0;
-  font-size: 1.25rem;
+  margin: 0 0 4px 0;
+  font-size: 1.15rem;
   font-weight: 800;
   color: #0f172a;
+  line-height: 1.25;
 }
 
 .tablet-appt-location {
   display: flex;
   align-items: center;
-  gap: 6px;
-  margin: 0 0 10px 0;
-  font-size: 0.92rem;
+  gap: 5px;
+  margin: 0 0 8px 0;
+  font-size: 0.88rem;
   color: #64748b;
 }
 
 .tablet-status-pill {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding: 5px 12px;
+  gap: 5px;
+  padding: 4px 10px;
   border-radius: 999px;
-  font-size: 0.82rem;
+  font-size: 0.78rem;
   font-weight: 700;
 }
 
@@ -496,21 +563,24 @@
 .tablet-action-card {
   background: #ffffff;
   border: 1.5px solid #e2e8f0;
-  border-radius: 18px;
-  padding: 22px 26px;
+  border-radius: 16px;
+  padding: 18px 20px;
   display: flex;
   align-items: center;
-  gap: 20px;
+  gap: 16px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  box-sizing: border-box;
+  width: 100%;
 }
 
 .tablet-action-icon {
-  width: 58px;
-  height: 58px;
-  border-radius: 18px;
+  width: 52px;
+  height: 52px;
+  border-radius: 16px;
   display: flex;
   align-items: center;
   justify-content: center;
+  flex-shrink: 0;
 }
 
 .tablet-action-icon.checkout {
@@ -525,24 +595,26 @@
 
 .tablet-action-info {
   flex: 1;
+  min-width: 0;
 }
 
 .tablet-action-info strong {
   display: block;
-  font-size: 1.2rem;
+  font-size: 1.1rem;
   font-weight: 800;
   color: #0f172a;
+  line-height: 1.25;
 }
 
 .tablet-tag-pill {
   display: inline-block;
   background: #eff6ff;
   color: #1d4ed8;
-  font-size: 0.78rem;
+  font-size: 0.75rem;
   font-weight: 700;
-  padding: 2px 8px;
+  padding: 2px 7px;
   border-radius: 6px;
-  margin-top: 4px;
+  margin-bottom: 4px;
 }
 
 .tablet-tag-pill.warning {
@@ -551,22 +623,24 @@
 }
 
 .tablet-action-sub {
-  margin: 6px 0 0 0;
-  font-size: 0.9rem;
+  margin: 4px 0 0 0;
+  font-size: 0.85rem;
   color: #64748b;
 }
 
 .tablet-btn-action {
   display: inline-flex;
   align-items: center;
-  gap: 10px;
-  padding: 14px 26px;
-  border-radius: 14px;
-  font-size: 1.05rem;
+  gap: 8px;
+  padding: 12px 22px;
+  border-radius: 12px;
+  font-size: 0.95rem;
   font-weight: 700;
   border: none;
   cursor: pointer;
   transition: all 0.2s ease;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .tablet-btn-action.primary {
@@ -603,25 +677,27 @@
 .tablet-empty-box {
   background: #ffffff;
   border: 2px dashed #cbd5e1;
-  border-radius: 20px;
-  padding: 48px 24px;
+  border-radius: 18px;
+  padding: 40px 20px;
   text-align: center;
   color: #64748b;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .tablet-empty-box svg {
   color: #94a3b8;
-  margin-bottom: 12px;
+  margin-bottom: 10px;
 }
 
 .tablet-empty-box h3 {
-  font-size: 1.35rem;
+  font-size: 1.25rem;
   color: #0f172a;
-  margin: 0 0 6px 0;
+  margin: 0 0 4px 0;
 }
 
 .tablet-empty-box p {
-  font-size: 0.95rem;
+  font-size: 0.9rem;
   margin: 0;
 }
 
@@ -630,12 +706,13 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 14px 24px;
-  margin: 12px 36px 0 36px;
-  border-radius: 14px;
-  font-size: 0.98rem;
+  padding: 12px 20px;
+  margin: 10px 24px 0 24px;
+  border-radius: 12px;
+  font-size: 0.92rem;
   font-weight: 700;
-  gap: 12px;
+  gap: 10px;
+  box-sizing: border-box;
 }
 
 .tablet-toast-success {
@@ -667,14 +744,15 @@
   align-items: center;
   justify-content: center;
   z-index: 1000;
-  padding: 24px;
+  padding: 16px;
+  box-sizing: border-box;
 }
 
 .tablet-modal-box {
   background: #ffffff;
-  border-radius: 24px;
+  border-radius: 20px;
   width: 100%;
-  max-width: 900px;
+  max-width: 800px;
   max-height: 88vh;
   display: flex;
   flex-direction: column;
@@ -683,7 +761,7 @@
 }
 
 .tablet-modal-header {
-  padding: 22px 28px;
+  padding: 18px 22px;
   background: #f8faff;
   border-bottom: 1px solid #e2e8f0;
   display: flex;
@@ -693,14 +771,14 @@
 
 .tablet-modal-header h3 {
   margin: 0;
-  font-size: 1.4rem;
+  font-size: 1.25rem;
   font-weight: 800;
   color: #0f172a;
 }
 
 .tablet-modal-header p {
-  margin: 4px 0 0 0;
-  font-size: 0.92rem;
+  margin: 2px 0 0 0;
+  font-size: 0.85rem;
   color: #64748b;
 }
 
@@ -709,25 +787,24 @@
   border: none;
   color: #64748b;
   cursor: pointer;
-  padding: 6px;
-  border-radius: 8px;
+  padding: 4px;
 }
 
 .tablet-modal-search {
-  padding: 16px 28px;
+  padding: 12px 20px;
   border-bottom: 1px solid #f1f5f9;
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
   background: #ffffff;
 }
 
 .tablet-modal-search input {
   flex: 1;
   border: 1.5px solid #cbd5e1;
-  border-radius: 12px;
-  padding: 10px 14px;
-  font-size: 1rem;
+  border-radius: 10px;
+  padding: 8px 12px;
+  font-size: 0.95rem;
   outline: none;
 }
 
@@ -738,17 +815,17 @@
 .tablet-modal-grid {
   flex: 1;
   overflow-y: auto;
-  padding: 20px 28px;
+  padding: 16px 20px;
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-  gap: 14px;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 12px;
 }
 
 .tablet-analyzer-select-card {
   background: #f8fafc;
   border: 2px solid #e2e8f0;
-  border-radius: 14px;
-  padding: 16px;
+  border-radius: 12px;
+  padding: 14px;
   text-align: left;
   cursor: pointer;
   transition: all 0.2s ease;
@@ -772,9 +849,9 @@
   align-self: flex-start;
   background: #e2e8f0;
   color: #334155;
-  font-size: 0.75rem;
+  font-size: 0.72rem;
   font-weight: 800;
-  padding: 2px 7px;
+  padding: 2px 6px;
   border-radius: 6px;
   margin-bottom: 6px;
 }
@@ -785,33 +862,33 @@
 }
 
 .tablet-analyzer-select-card strong {
-  font-size: 1.05rem;
+  font-size: 0.98rem;
   color: #0f172a;
-  margin-bottom: 4px;
+  margin-bottom: 2px;
 }
 
 .tablet-analyzer-select-card span {
-  font-size: 0.82rem;
+  font-size: 0.78rem;
   color: #64748b;
 }
 
 .tablet-modal-footer {
-  padding: 18px 28px;
+  padding: 14px 22px;
   background: #f8fafc;
   border-top: 1px solid #e2e8f0;
   display: flex;
   align-items: center;
   justify-content: flex-end;
-  gap: 14px;
+  gap: 10px;
 }
 
 .tablet-btn-secondary {
-  padding: 12px 22px;
-  border-radius: 12px;
+  padding: 10px 18px;
+  border-radius: 10px;
   border: 1px solid #cbd5e1;
   background: #ffffff;
   color: #475569;
-  font-size: 0.95rem;
+  font-size: 0.9rem;
   font-weight: 700;
   cursor: pointer;
 }
@@ -819,13 +896,13 @@
 .tablet-btn-primary {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
-  padding: 12px 24px;
-  border-radius: 12px;
+  gap: 6px;
+  padding: 10px 20px;
+  border-radius: 10px;
   border: none;
   background: #2563eb;
   color: #ffffff;
-  font-size: 1rem;
+  font-size: 0.92rem;
   font-weight: 700;
   cursor: pointer;
   box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25);
@@ -838,7 +915,7 @@
 
 /* Footer / Exit */
 .tablet-kiosk-footer {
-  padding: 18px 36px;
+  padding: 14px 24px;
   display: flex;
   justify-content: center;
   border-top: 1px solid #e2e8f0;
@@ -848,13 +925,13 @@
 .tablet-exit-btn {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
   background: none;
   border: 1px solid #cbd5e1;
   color: #64748b;
-  padding: 10px 18px;
-  border-radius: 12px;
-  font-size: 0.88rem;
+  padding: 8px 16px;
+  border-radius: 10px;
+  font-size: 0.85rem;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s ease;
@@ -865,24 +942,15 @@
   color: #0f172a;
 }
 
-.spin {
-  animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
-}
-
 /* ==========================================================================
    MODAL DE PIN TÁTIL DO TOTEM
    ========================================================================== */
 .tablet-pin-modal {
   background: #ffffff;
-  border-radius: 28px;
-  padding: 32px 36px;
+  border-radius: 24px;
+  padding: 24px 24px;
   width: 100%;
-  max-width: 400px;
+  max-width: 360px;
   box-shadow: 0 20px 50px rgba(15, 23, 42, 0.25), 0 0 0 1px rgba(0, 0, 0, 0.05);
   display: flex;
   flex-direction: column;
@@ -901,25 +969,25 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  margin-bottom: 18px;
+  margin-bottom: 14px;
 }
 
 .tablet-tech-avatar.large {
-  width: 68px;
-  height: 68px;
-  font-size: 1.5rem;
-  margin-bottom: 12px;
+  width: 60px;
+  height: 60px;
+  font-size: 1.35rem;
+  margin-bottom: 8px;
 }
 
 .tablet-pin-header h3 {
-  font-size: 1.45rem;
+  font-size: 1.3rem;
   font-weight: 800;
   color: #0f172a;
-  margin: 0 0 4px 0;
+  margin: 0 0 3px 0;
 }
 
 .tablet-pin-header p {
-  font-size: 0.88rem;
+  font-size: 0.84rem;
   color: #64748b;
   margin: 0;
 }
@@ -927,13 +995,13 @@
 /* Dots */
 .tablet-pin-dots {
   display: flex;
-  gap: 16px;
-  margin: 12px 0 18px 0;
+  gap: 14px;
+  margin: 10px 0 14px 0;
 }
 
 .tablet-pin-dot {
-  width: 18px;
-  height: 18px;
+  width: 16px;
+  height: 16px;
   border-radius: 50%;
   border: 2px solid #cbd5e1;
   background: #f1f5f9;
@@ -944,18 +1012,18 @@
   background: #2563eb;
   border-color: #2563eb;
   transform: scale(1.2);
-  box-shadow: 0 0 12px rgba(37, 99, 235, 0.45);
+  box-shadow: 0 0 10px rgba(37, 99, 235, 0.45);
 }
 
 .tablet-pin-error {
   background: #fef2f2;
   border: 1px solid #fecaca;
   color: #b91c1c;
-  padding: 8px 14px;
-  border-radius: 10px;
-  font-size: 0.84rem;
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-size: 0.8rem;
   font-weight: 600;
-  margin-bottom: 16px;
+  margin-bottom: 12px;
   text-align: center;
   width: 100%;
   box-sizing: border-box;
@@ -965,16 +1033,16 @@
 .tablet-numpad-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 12px;
+  gap: 10px;
   width: 100%;
-  margin-bottom: 18px;
+  margin-bottom: 14px;
 }
 
 .tablet-numpad-btn {
-  height: 64px;
-  font-size: 1.6rem;
+  height: 56px;
+  font-size: 1.45rem;
   font-weight: 800;
-  border-radius: 16px;
+  border-radius: 14px;
   border: 1.5px solid #e2e8f0;
   background: #f8fafc;
   color: #0f172a;
@@ -998,7 +1066,7 @@
 }
 
 .tablet-numpad-btn.action {
-  font-size: 0.92rem;
+  font-size: 0.88rem;
   font-weight: 700;
   color: #64748b;
   background: #f1f5f9;
@@ -1010,22 +1078,18 @@
   border-color: #fee2e2;
 }
 
-.tablet-numpad-btn.action:hover {
-  background: #e2e8f0;
-}
-
 .tablet-pin-cancel-btn {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
+  gap: 6px;
   width: 100%;
-  padding: 12px;
-  border-radius: 12px;
+  padding: 10px;
+  border-radius: 10px;
   border: 1px solid #cbd5e1;
   background: transparent;
   color: #64748b;
-  font-size: 0.92rem;
+  font-size: 0.88rem;
   font-weight: 700;
   cursor: pointer;
   transition: all 0.15s ease;
@@ -1036,3 +1100,181 @@
   color: #0f172a;
 }
 
+/* ==========================================================================
+   MOBILE RESPONSIVENESS OVERRIDES (@media <= 768px & <= 480px)
+   ========================================================================== */
+@media (max-width: 768px) {
+  .tablet-kiosk-header {
+    padding: 14px 16px;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .tablet-brand {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .tablet-logo-img {
+    height: 36px;
+    padding: 4px 8px;
+  }
+
+  .tablet-clock-card {
+    display: none;
+  }
+
+  .tablet-standby-main {
+    padding: 18px 14px;
+  }
+
+  .tablet-welcome-hero {
+    margin-bottom: 16px;
+  }
+
+  .tablet-tech-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+
+  .tablet-tech-card {
+    padding: 14px 8px;
+    border-radius: 14px;
+  }
+
+  .tablet-tech-avatar {
+    width: 48px;
+    height: 48px;
+    font-size: 1.15rem;
+    border-radius: 14px;
+    margin-bottom: 6px;
+  }
+
+  .tablet-tech-info strong {
+    font-size: 0.92rem;
+  }
+
+  .tablet-tech-info span {
+    font-size: 0.7rem;
+  }
+
+  .tablet-user-header {
+    padding: 12px 14px;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+
+  .tablet-user-avatar {
+    width: 42px;
+    height: 42px;
+    font-size: 1.1rem;
+    border-radius: 12px;
+  }
+
+  .tablet-header-actions {
+    width: 100%;
+    justify-content: flex-end;
+  }
+
+  .tablet-btn-logout {
+    flex: 1;
+    justify-content: center;
+    padding: 8px 12px;
+    font-size: 0.82rem;
+  }
+
+  .tablet-nav-tabs {
+    padding: 6px 12px;
+    gap: 6px;
+  }
+
+  .tablet-tab-btn {
+    padding: 10px 12px;
+    font-size: 0.82rem;
+  }
+
+  .tablet-content-area {
+    padding: 16px 12px;
+  }
+
+  .tablet-appointment-card {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+    padding: 14px;
+  }
+
+  .tablet-appt-time-col {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    border-right: none;
+    border-bottom: 1px solid #f1f5f9;
+    padding-right: 0;
+    padding-bottom: 8px;
+    width: 100%;
+  }
+
+  .tablet-action-card {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+    padding: 14px;
+  }
+
+  .tablet-action-icon {
+    display: none;
+  }
+
+  .tablet-btn-action {
+    width: 100%;
+    justify-content: center;
+    padding: 12px;
+    font-size: 0.92rem;
+  }
+
+  .tablet-pin-modal {
+    padding: 20px 16px;
+    max-width: 320px;
+  }
+
+  .tablet-numpad-btn {
+    height: 50px;
+    font-size: 1.3rem;
+  }
+
+  .tablet-toast {
+    margin: 8px 12px 0 12px;
+    font-size: 0.85rem;
+    padding: 10px 14px;
+  }
+}
+
+@media (max-width: 480px) {
+  .tablet-tech-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  .tablet-tech-card {
+    padding: 12px 6px;
+  }
+
+  .tablet-tech-avatar {
+    width: 42px;
+    height: 42px;
+    font-size: 1rem;
+    border-radius: 12px;
+  }
+
+  .tablet-tech-info strong {
+    font-size: 0.85rem;
+  }
+
+  .tablet-badge-appts, .tablet-badge-inuse, .tablet-badge-free {
+    font-size: 0.68rem;
+    padding: 2px 6px;
+  }
+}

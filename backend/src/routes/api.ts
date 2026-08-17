@@ -391,7 +391,7 @@ router.post('/sync/agenda-online-legacy-disabled', (req: Request, res: Response)
           model: item.client_name,
           serial_number: `S/N-REG-${item.appointment_date.replace(/-/g, '')}`,
           tag: `PAT-HOSP-${apptId}`,
-          sector: 'Engenharia Clínica'
+          sector: 'Assistência Técnica'
         });
 
         importedCount++;

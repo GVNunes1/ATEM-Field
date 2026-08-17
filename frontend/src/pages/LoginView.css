@@ -215,3 +215,23 @@
   font-size: 0.78rem;
   color: #94a3b8;
 }
+
+@media (max-width: 480px) {
+  .login-page-root {
+    padding: 16px 12px;
+  }
+  .login-card {
+    padding: 24px 18px;
+    border-radius: 18px;
+  }
+  .login-brand-header h2 {
+    font-size: 1.35rem;
+  }
+  .login-brand-header p {
+    font-size: 0.8rem;
+  }
+  .login-tab-btn {
+    padding: 8px 10px;
+    font-size: 0.82rem;
+  }
+}

@@ -111,7 +111,7 @@ export const LoginView: React.FC<LoginViewProps> = ({ technicians, onLoginSucces
         <div className="login-brand-header">
           <img src="/logomarca.png" alt="ATEM" className="login-logo-img" />
           <h2>Acesso ao Sistema</h2>
-          <p>ATEM Field · Engenharia Clínica & Gestão de Campo</p>
+          <p>ATEM Field · Assistência Técnica & Gestão de Campo</p>
         </div>
 
         {/* Tab Switcher */}
@@ -223,7 +223,7 @@ export const LoginView: React.FC<LoginViewProps> = ({ technicians, onLoginSucces
 
         {/* Footer info */}
         <div className="login-card-footer">
-          <span>ATEM Hospitalar · Engenharia Clínica © 2026</span>
+          <span>ATEM Hospitalar · Assistência Técnica © 2026</span>
         </div>
       </div>
     </div>

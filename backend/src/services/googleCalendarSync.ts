@@ -248,7 +248,7 @@ async function persistCalendarChanges(parsed: ImportResult) {
         model: item.client_name,
         serial_number: `S/N-REG-${item.appointment_date.replace(/-/g, '')}`,
         tag: `PAT-HOSP-${appointmentId}`,
-        sector: 'Engenharia Clínica'
+        sector: 'Assistência Técnica'
       });
       if (equipmentError) throw equipmentError;
       appointmentsWithEquipment.add(appointmentId);
@@ -355,7 +355,7 @@ async function persistCalendarChangesInBatches(parsed: ImportResult) {
       model: item.client_name,
       serial_number: `S/N-REG-${item.appointment_date.replace(/-/g, '')}`,
       tag: `PAT-HOSP-${appointmentId}`,
-      sector: 'Engenharia Clínica'
+      sector: 'Assistência Técnica'
     }];
   });
   for (let index = 0; index < equipmentRows.length; index += 500) {

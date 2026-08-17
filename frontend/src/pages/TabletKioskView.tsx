@@ -329,7 +329,7 @@ export const TabletKioskView: React.FC<TabletKioskViewProps> = ({
             <img src="/logomarca.png" alt="ATEM" className="tablet-logo-img" />
             <div className="tablet-brand-text">
               <h1>Totem de Autoatendimento</h1>
-              <p>Setor de Engenharia Clínica · Controle de Padrões</p>
+              <p>Setor de Assistência Técnica · Controle de Padrões</p>
             </div>
           </div>
           <div className="tablet-clock-card">
@@ -513,7 +513,7 @@ export const TabletKioskView: React.FC<TabletKioskViewProps> = ({
           </div>
           <div>
             <h2>{selectedTech.name}</h2>
-            <span>{selectedTech.role || 'Técnico de Campo'} · Setor de Engenharia Clínica</span>
+            <span>{selectedTech.role || 'Técnico de Campo'} · Setor de Assistência Técnica</span>
           </div>
         </div>
 

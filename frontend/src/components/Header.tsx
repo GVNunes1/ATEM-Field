@@ -88,7 +88,7 @@ export function Header({ activeTab, setActiveTab, onRefresh, analyzerCount, last
       <div className="topbar-left">
         <div className="topbar-context-tag">
           <strong>ATEM Field</strong>
-          <span>· Engenharia Clínica</span>
+          <span>· Assistência Técnica</span>
         </div>
         <span
           className={`sync-badge${requiresGoogleAccess ? ' sync-badge--warning' : ''}${googleStatus?.running ? ' sync-badge--running' : ''}`}

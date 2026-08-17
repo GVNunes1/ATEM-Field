@@ -47,7 +47,7 @@ const defaultForm: TechnicianForm = {
   name: '',
   phone: '',
   email: '',
-  role: 'Técnico Especialista em Engenharia Clínica',
+  role: 'Técnico Especialista em Assistência Técnica',
   status: 'Ativo'
 };
 
