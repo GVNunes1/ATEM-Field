@@ -5,6 +5,7 @@ import {
   ClipboardList,
   Home,
   PackageCheck,
+  TabletSmartphone,
   Users
 } from 'lucide-react';
 import './Navigation.css';
@@ -61,8 +62,18 @@ export const Navigation: React.FC<NavigationProps> = ({ activeTab, setActiveTab 
         })}
       </nav>
 
-      {/* Bottom Profile */}
+      {/* Bottom Profile and Totem Shortcut */}
       <div className="sidebar-footer">
+        <button
+          type="button"
+          onClick={() => setActiveTab('totem')}
+          className="sidebar-totem-shortcut"
+          title="Abrir o Totem / Tablet de Autoatendimento do Setor"
+        >
+          <TabletSmartphone size={18} />
+          <span>Modo Tablet / Totem</span>
+        </button>
+
         <div className="sidebar-user">
           <div className="sidebar-avatar" aria-hidden="true">
             <span>AP</span>

@@ -7,6 +7,7 @@ import { ChecklistView } from './pages/ChecklistView';
 import { TechniciansView } from './pages/TechniciansView';
 import { OperationsAdminView } from './pages/OperationsAdminView';
 import { ReservationHistoryView } from './pages/ReservationHistoryView';
+import { TabletKioskView } from './pages/TabletKioskView';
 import { safeFetchJson } from './lib/api';
 
 const noCacheFetchOptions: RequestInit = {
@@ -16,6 +17,7 @@ const noCacheFetchOptions: RequestInit = {
 
 function getInitialTab(): string {
   const path = window.location.pathname.toLowerCase().replace(/^\/+/, '');
+  if (path === 'totem' || path === 'tablet' || path === 'kiosk') return 'totem';
   if (path === 'templates' || path === 'checklist') return 'templates';
   if (path === 'reservas' || path === 'operacoes' || path === 'operations') return 'operations';
   if (path === 'padroes' || path === 'inventory' || path === 'diagnostico') return 'inventory';
@@ -43,7 +45,9 @@ export function App() {
   const handleTabChange = (tab: string) => {
     setActiveTab(tab);
     try {
-      if (tab === 'templates' || tab === 'checklist') {
+      if (tab === 'totem' || tab === 'tablet') {
+        window.history.pushState({}, '', '/totem');
+      } else if (tab === 'templates' || tab === 'checklist') {
         window.history.pushState({}, '', '/templates');
       } else if (tab === 'dashboard') {
         window.history.pushState({}, '', '/');
@@ -77,27 +81,26 @@ export function App() {
   }, []);
 
   const fetchAllData = useCallback(async () => {
-    setLoadError('');
     try {
-      const [statsRes, analyzersRes, apptsRes, catRes, techRes] = await Promise.all([
-        safeFetchJson('/api/dashboard/stats', noCacheFetchOptions),
-        safeFetchJson('/api/analyzers', noCacheFetchOptions),
-        safeFetchJson('/api/appointments', noCacheFetchOptions),
-        safeFetchJson('/api/categories', noCacheFetchOptions),
-        safeFetchJson('/api/technicians', noCacheFetchOptions)
+      setLoadError('');
+      const [statsData, analyzersData, apptsData, catsData, techsData] = await Promise.all([
+        safeFetchJson('/api/dashboard/stats', noCacheFetchOptions).catch(() => ({ success: false })),
+        safeFetchJson('/api/analyzers', noCacheFetchOptions).catch(() => ({ success: false })),
+        safeFetchJson('/api/appointments', noCacheFetchOptions).catch(() => ({ success: false })),
+        safeFetchJson('/api/categories', noCacheFetchOptions).catch(() => ({ success: false })),
+        safeFetchJson('/api/technicians', noCacheFetchOptions).catch(() => ({ success: false }))
       ]);
 
-      if (statsRes.success) {
-        setStats(statsRes.stats);
-        setRecentReservations(statsRes.recentReservations || []);
+      if (statsData?.success) {
+        setStats(statsData.stats);
+        setRecentReservations(statsData.recentReservations || []);
       }
-      if (analyzersRes.success) setAnalyzers(analyzersRes.analyzers || []);
-      if (apptsRes.success) setAppointments(apptsRes.appointments || []);
-      if (catRes.success) setCategories(catRes.categories || []);
-      if (techRes.success) setTechnicians(techRes.technicians || []);
-    } catch (error) {
-      console.error('Erro ao carregar dados da API:', error);
-      setLoadError(error instanceof Error ? error.message : 'Não foi possível carregar os dados.');
+      if (analyzersData?.success) setAnalyzers(analyzersData.analyzers || []);
+      if (apptsData?.success) setAppointments(apptsData.appointments || []);
+      if (catsData?.success) setCategories(catsData.categories || []);
+      if (techsData?.success) setTechnicians(techsData.technicians || []);
+    } catch (err: any) {
+      setLoadError(err.message || 'Falha ao carregar dados operacionais.');
     } finally {
       setLoading(false);
     }
@@ -105,19 +108,20 @@ export function App() {
 
   const refreshLiveInventory = useCallback(async () => {
     try {
-      const [statsRes, analyzersRes, appointmentsRes] = await Promise.all([
-        safeFetchJson('/api/dashboard/stats', noCacheFetchOptions),
-        safeFetchJson('/api/analyzers', noCacheFetchOptions),
-        safeFetchJson('/api/appointments', noCacheFetchOptions)
+      const [analyzersData, statsData] = await Promise.all([
+        safeFetchJson('/api/analyzers', noCacheFetchOptions).catch(() => null),
+        safeFetchJson('/api/dashboard/stats', noCacheFetchOptions).catch(() => null)
       ]);
-      if (statsRes.success) {
-        setStats(statsRes.stats);
-        setRecentReservations(statsRes.recentReservations || []);
+
+      if (analyzersData?.success) {
+        setAnalyzers(analyzersData.analyzers || []);
       }
-      if (analyzersRes.success) setAnalyzers(analyzersRes.analyzers || []);
-      if (appointmentsRes.success) setAppointments(appointmentsRes.appointments || []);
-    } catch (error) {
-      console.warn('Atualização automática da agenda indisponível:', error);
+      if (statsData?.success) {
+        setStats(statsData.stats);
+        setRecentReservations(statsData.recentReservations || []);
+      }
+    } catch {
+      // Background inventory refresh error
     }
   }, []);
 
@@ -126,18 +130,26 @@ export function App() {
   }, [fetchAllData]);
 
   useEffect(() => {
-    const intervalId = window.setInterval(() => void refreshLiveInventory(), 30_000);
-    const refreshWhenVisible = () => {
-      if (document.visibilityState === 'visible') void refreshLiveInventory();
-    };
-    document.addEventListener('visibilitychange', refreshWhenVisible);
-    window.addEventListener('focus', refreshWhenVisible);
-    return () => {
-      window.clearInterval(intervalId);
-      document.removeEventListener('visibilitychange', refreshWhenVisible);
-      window.removeEventListener('focus', refreshWhenVisible);
-    };
+    const interval = setInterval(() => {
+      if (document.visibilityState === 'visible') {
+        void refreshLiveInventory();
+      }
+    }, 15000);
+    return () => clearInterval(interval);
   }, [refreshLiveInventory]);
+
+  // Se estiver no Modo Totem / Tablet de Setor (Full Screen Kiosk)
+  if (activeTab === 'totem') {
+    return (
+      <TabletKioskView
+        technicians={technicians}
+        appointments={appointments}
+        analyzers={analyzers}
+        onRefresh={fetchAllData}
+        onExitKiosk={() => handleTabChange('dashboard')}
+      />
+    );
+  }
 
   return (
     <div className="app-layout">
