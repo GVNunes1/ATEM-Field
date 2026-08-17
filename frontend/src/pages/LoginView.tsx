@@ -159,7 +159,7 @@ export const LoginView: React.FC<LoginViewProps> = ({ technicians, onLoginSucces
                   id="admin-pin-input"
                   type="password"
                   required
-                  placeholder="Digite o PIN (padrão: 1234)"
+                  placeholder="Digite o PIN de administrador"
                   value={adminPin}
                   onChange={e => setAdminPin(e.target.value)}
                   autoFocus

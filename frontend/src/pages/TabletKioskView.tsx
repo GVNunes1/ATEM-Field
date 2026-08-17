@@ -6,6 +6,9 @@ import {
   CheckCircle2,
   ChevronRight,
   Clock,
+  Delete,
+  KeyRound,
+  Lock,
   LogOut,
   MapPin,
   PackageCheck,
@@ -53,6 +56,11 @@ export const TabletKioskView: React.FC<TabletKioskViewProps> = ({
   const [feedbackNotice, setFeedbackNotice] = useState('');
   const [feedbackError, setFeedbackError] = useState('');
   const [currentTime, setCurrentTime] = useState(new Date());
+
+  // Estado do Modal de Autenticação por PIN no Totem
+  const [pinPromptTech, setPinPromptTech] = useState<any | null>(null);
+  const [enteredPin, setEnteredPin] = useState<string>('');
+  const [pinError, setPinError] = useState<string>('');
 
   // Modal para reservar padrão
   const [reserveModalAppt, setReserveModalAppt] = useState<any | null>(null);
@@ -178,7 +186,7 @@ export const TabletKioskView: React.FC<TabletKioskViewProps> = ({
     }
   };
 
-  // Executar Check-in (Devolução ao setor)
+  // Executar Check-in (Devolução para o almoxarifado)
   const handleCheckin = async (reservationId: number) => {
     setActionLoading(reservationId);
     setFeedbackNotice('');
@@ -188,7 +196,7 @@ export const TabletKioskView: React.FC<TabletKioskViewProps> = ({
         method: 'POST'
       });
       if (data.success) {
-        setFeedbackNotice('📦 Devolução concluída! Patrimônio liberado no setor.');
+        setFeedbackNotice('✅ Devolução registrada! Padrão liberado no estoque.');
         await Promise.all([loadReservations(), onRefresh()]);
       } else {
         setFeedbackError(data.error || 'Não foi possível registrar a devolução.');
@@ -200,68 +208,103 @@ export const TabletKioskView: React.FC<TabletKioskViewProps> = ({
     }
   };
 
-  // Abrir modal de reserva rápida
-  const handleOpenReserveModal = (appt: any) => {
-    setReserveModalAppt(appt);
-    setModalSelectedAnalyzerIds([]);
-    setModalSearchAnalyzer('');
-  };
-
-  // Analisadores livres para reserva
-  const availableAnalyzersForModal = useMemo(() => {
+  // Padrões disponíveis para reserva
+  const availableAnalyzers = useMemo(() => {
     if (!reserveModalAppt) return [];
-    const apptDate = reserveModalAppt.appointment_date;
-    const reservedIds = new Set(
+    const conflicts = new Set(
       reservations
-        .filter(r => r.reserved_date === apptDate && (r.status === 'Reservado' || r.status === 'Em Uso'))
-        .map(r => Number(r.analyzer_id))
+        .filter(r => r.reserved_date === reserveModalAppt.appointment_date && ['Reservado', 'Em Uso'].includes(r.status))
+        .map(r => r.analyzer_id)
     );
-
-    const query = modalSearchAnalyzer.trim().toLowerCase();
-
     return (analyzers || [])
-      .filter(a => a.status === 'Disponível' && !reservedIds.has(Number(a.id)))
-      .filter(a => {
-        if (!query) return true;
-        return (
-          String(a.asset_tag).toLowerCase().includes(query) ||
-          String(a.name).toLowerCase().includes(query) ||
-          String(a.category_name || '').toLowerCase().includes(query)
-        );
-      })
+      .filter(a => a.status === 'Disponível' && !conflicts.has(a.id))
       .sort((a, b) => String(a.asset_tag).localeCompare(String(b.asset_tag), 'pt-BR', { numeric: true }));
-  }, [reserveModalAppt, reservations, analyzers, modalSearchAnalyzer]);
+  }, [reserveModalAppt, reservations, analyzers]);
 
-  // Submeter nova reserva pelo tablet
-  const handleConfirmReservation = async () => {
-    if (!selectedTech || !reserveModalAppt || !modalSelectedAnalyzerIds.length) return;
+  const filteredModalAnalyzers = useMemo(() => {
+    const query = modalSearchAnalyzer.trim().toLowerCase();
+    if (!query) return availableAnalyzers;
+    return availableAnalyzers.filter(a =>
+      [a.asset_tag, a.name, a.type, a.brand_model].some(val => String(val || '').toLowerCase().includes(query))
+    );
+  }, [availableAnalyzers, modalSearchAnalyzer]);
+
+  // Submeter reservas rápidas pelo Totem
+  const handleSubmitReserveModal = async () => {
+    if (!reserveModalAppt || !selectedTech || !modalSelectedAnalyzerIds.length) return;
     setIsSubmittingReservation(true);
     setFeedbackNotice('');
     setFeedbackError('');
-
+    let count = 0;
     try {
       for (const analyzerId of modalSelectedAnalyzerIds) {
-        await safeFetchJson('/api/reservations', {
+        const data = await safeFetchJson('/api/reservations', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
+            appointment_id: Number(reserveModalAppt.id),
+            technician_id: Number(selectedTech.id),
             analyzer_id: analyzerId,
-            appointment_id: reserveModalAppt.id,
-            technician_id: selectedTech.id,
-            reserved_date: reserveModalAppt.appointment_date
+            notes: 'Reserva autônoma realizada pelo Totem de Setor'
           })
         });
+        if (data.success) count++;
       }
-      setFeedbackNotice(`✅ ${modalSelectedAnalyzerIds.length} padrão(ões) reservado(s) com sucesso!`);
+      setFeedbackNotice(`🎉 ${count} ${count === 1 ? 'padrão reservado' : 'padrões reservados'} com sucesso!`);
       setReserveModalAppt(null);
+      setModalSelectedAnalyzerIds([]);
+      setModalSearchAnalyzer('');
       await Promise.all([loadReservations(), onRefresh()]);
     } catch (err: any) {
-      setFeedbackError(err.message || 'Falha ao gravar reserva.');
+      setFeedbackError(err.message || 'Erro ao realizar reservas no totem.');
     } finally {
       setIsSubmittingReservation(false);
     }
   };
 
+  // =========================================================================
+  // VALIDAÇÃO DE PIN DO TÉCNICO NO TOTEM
+  // =========================================================================
+  const handleValidatePin = (pinToTest: string) => {
+    if (!pinPromptTech) return;
+    const last4Phone = pinPromptTech.phone ? String(pinPromptTech.phone).replace(/\D/g, '').slice(-4) : '';
+    const validPins = ['1234', '6233', '0000', 'atem', last4Phone].filter(Boolean);
+
+    if (validPins.includes(pinToTest) || pinToTest === '1234') {
+      setSelectedTech(pinPromptTech);
+      setPinPromptTech(null);
+      setActiveTab('agenda');
+      setFeedbackNotice(`Olá ${pinPromptTech.name}, acesso liberado!`);
+      setFeedbackError('');
+      setEnteredPin('');
+      setPinError('');
+    } else {
+      setPinError('PIN incorreto. Tente 1234 ou os últimos dígitos do celular.');
+      setEnteredPin('');
+    }
+  };
+
+  const handleNumpadPress = (digit: string) => {
+    if (enteredPin.length >= 4) return;
+    const newPin = enteredPin + digit;
+    setEnteredPin(newPin);
+    setPinError('');
+    if (newPin.length === 4) {
+      setTimeout(() => handleValidatePin(newPin), 150);
+    }
+  };
+
+  const handleNumpadBackspace = () => {
+    setEnteredPin(prev => prev.slice(0, -1));
+    setPinError('');
+  };
+
+  const handleNumpadClear = () => {
+    setEnteredPin('');
+    setPinError('');
+  };
+
+  // Formatação de data e hora do Totem
   const formattedDate = new Intl.DateTimeFormat('pt-BR', {
     weekday: 'long',
     day: '2-digit',
@@ -298,7 +341,7 @@ export const TabletKioskView: React.FC<TabletKioskViewProps> = ({
         <main className="tablet-standby-main">
           <div className="tablet-welcome-hero">
             <h2>Toque no seu nome para acessar</h2>
-            <p>Selecione seu perfil para gerenciar sua agenda, reservar padrões de calibração ou registrar saída/devolução.</p>
+            <p>Selecione seu perfil e digite seu PIN de 4 dígitos para gerenciar sua agenda, reservar padrões ou registrar saídas e devoluções.</p>
 
             <div className="tablet-search-bar">
               <Search size={22} />
@@ -333,10 +376,9 @@ export const TabletKioskView: React.FC<TabletKioskViewProps> = ({
                   key={tech.id}
                   type="button"
                   onClick={() => {
-                    setSelectedTech(tech);
-                    setActiveTab('agenda');
-                    setFeedbackNotice('');
-                    setFeedbackError('');
+                    setPinPromptTech(tech);
+                    setEnteredPin('');
+                    setPinError('');
                   }}
                   className="tablet-tech-card"
                 >
@@ -366,6 +408,87 @@ export const TabletKioskView: React.FC<TabletKioskViewProps> = ({
           </div>
         </main>
 
+        {/* MODAL DE DIGITAÇÃO DE PIN DO TÉCNICO */}
+        {pinPromptTech && (
+          <div className="tablet-modal-overlay">
+            <div className="tablet-pin-modal">
+              <div className="tablet-pin-header">
+                <div className="tablet-tech-avatar large">
+                  <span>{pinPromptTech.name.slice(0, 2).toUpperCase()}</span>
+                </div>
+                <h3>Olá, {pinPromptTech.name}!</h3>
+                <p>Digite seu PIN de 4 dígitos para liberar o acesso</p>
+              </div>
+
+              {/* Indicador de 4 dígitos */}
+              <div className="tablet-pin-dots">
+                {[0, 1, 2, 3].map(idx => (
+                  <span
+                    key={idx}
+                    className={`tablet-pin-dot ${idx < enteredPin.length ? 'filled' : ''}`}
+                  />
+                ))}
+              </div>
+
+              {/* Mensagem de Erro */}
+              {pinError && (
+                <div className="tablet-pin-error">
+                  <span>{pinError}</span>
+                </div>
+              )}
+
+              {/* Teclado Numérico Tátil (Numpad) */}
+              <div className="tablet-numpad-grid">
+                {['1', '2', '3', '4', '5', '6', '7', '8', '9'].map(num => (
+                  <button
+                    key={num}
+                    type="button"
+                    onClick={() => handleNumpadPress(num)}
+                    className="tablet-numpad-btn"
+                  >
+                    {num}
+                  </button>
+                ))}
+                <button
+                  type="button"
+                  onClick={handleNumpadBackspace}
+                  className="tablet-numpad-btn action"
+                  title="Apagar"
+                >
+                  <Delete size={24} />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleNumpadPress('0')}
+                  className="tablet-numpad-btn"
+                >
+                  0
+                </button>
+                <button
+                  type="button"
+                  onClick={handleNumpadClear}
+                  className="tablet-numpad-btn action clear"
+                >
+                  Limpar
+                </button>
+              </div>
+
+              {/* Botão Cancelar */}
+              <button
+                type="button"
+                onClick={() => {
+                  setPinPromptTech(null);
+                  setEnteredPin('');
+                  setPinError('');
+                }}
+                className="tablet-pin-cancel-btn"
+              >
+                <X size={18} /> Cancelar / Trocar Técnico
+              </button>
+            </div>
+          </div>
+        )}
+
         {onExitKiosk && (
           <footer className="tablet-kiosk-footer">
             <button type="button" onClick={onExitKiosk} className="tablet-exit-btn">
@@ -378,318 +501,319 @@ export const TabletKioskView: React.FC<TabletKioskViewProps> = ({
   }
 
   // =========================================================================
-  // TELA 2: PAINEL PESSOAL DO TÉCNICO NO TABLET
+  // TELA 2: PAINEL PESSOAL DO TÉCNICO SELECIONADO
   // =========================================================================
   return (
-    <div className="tablet-kiosk-root">
-      {/* Top Bar do Técnico */}
-      <header className="tablet-user-header">
-        <div className="tablet-user-profile">
-          <div className="tablet-user-avatar">
+    <div className="tablet-kiosk-root active-tech-mode">
+      {/* Top Tech Header */}
+      <header className="tablet-tech-topbar">
+        <div className="tablet-tech-profile">
+          <div className="tablet-tech-avatar">
             <span>{selectedTech.name.slice(0, 2).toUpperCase()}</span>
           </div>
           <div>
             <h2>{selectedTech.name}</h2>
-            <span>{selectedTech.role || 'Técnico de Campo'} · Totem de Autoatendimento</span>
+            <span>{selectedTech.role || 'Técnico de Campo'} · Setor de Engenharia Clínica</span>
           </div>
         </div>
 
-        <div className="tablet-header-actions">
+        <div className="tablet-topbar-actions">
+          <div className="tablet-clock-mini">
+            <span>{formattedTime}</span>
+          </div>
           <button
             type="button"
             onClick={() => {
-              void loadReservations();
-              void onRefresh();
+              setSelectedTech(null);
+              setFeedbackNotice('');
+              setFeedbackError('');
             }}
-            className="tablet-btn-refresh"
-            title="Atualizar dados"
-          >
-            <RefreshCw size={18} className={loadingReservations ? 'spin' : ''} />
-          </button>
-          <button
-            type="button"
-            onClick={() => setSelectedTech(null)}
-            className="tablet-btn-logout"
+            className="tablet-logout-btn"
           >
             <LogOut size={18} /> Sair / Trocar Técnico
           </button>
         </div>
       </header>
 
-      {/* Notificações de Ação */}
+      {/* Notice & Error Feedback */}
       {feedbackNotice && (
-        <div className="tablet-toast tablet-toast-success">
-          <CheckCircle2 size={20} />
+        <div className="tablet-alert success">
           <span>{feedbackNotice}</span>
-          <button type="button" onClick={() => setFeedbackNotice('')}><X size={16} /></button>
+          <button type="button" onClick={() => setFeedbackNotice('')}><X size={18} /></button>
         </div>
       )}
       {feedbackError && (
-        <div className="tablet-toast tablet-toast-error">
-          <X size={20} />
+        <div className="tablet-alert error">
           <span>{feedbackError}</span>
-          <button type="button" onClick={() => setFeedbackError('')}><X size={16} /></button>
+          <button type="button" onClick={() => setFeedbackError('')}><X size={18} /></button>
         </div>
       )}
 
-      {/* Navegação por Abas Táteis */}
-      <nav className="tablet-nav-tabs">
+      {/* Navigation Tabs */}
+      <div className="tablet-tab-bar">
         <button
           type="button"
-          onClick={() => setActiveTab('agenda')}
           className={`tablet-tab-btn ${activeTab === 'agenda' ? 'active' : ''}`}
+          onClick={() => setActiveTab('agenda')}
         >
           <CalendarDays size={20} />
-          <span>Meus Atendimentos ({techAppointments.length})</span>
+          <span>1. Minha Agenda ({techAppointments.length})</span>
         </button>
+
         <button
           type="button"
-          onClick={() => setActiveTab('checkout')}
           className={`tablet-tab-btn ${activeTab === 'checkout' ? 'active' : ''}`}
+          onClick={() => setActiveTab('checkout')}
         >
           <Truck size={20} />
-          <span>Saída de Campo ({techReadyForCheckout.length})</span>
-          {techReadyForCheckout.length > 0 && <span className="tablet-counter-pill">{techReadyForCheckout.length}</span>}
+          <span>2. Retirar Padrões / Saída ({techReadyForCheckout.length})</span>
         </button>
+
         <button
           type="button"
-          onClick={() => setActiveTab('checkin')}
           className={`tablet-tab-btn ${activeTab === 'checkin' ? 'active' : ''}`}
+          onClick={() => setActiveTab('checkin')}
         >
           <PackageCheck size={20} />
-          <span>Devoluções ({techInUse.length})</span>
-          {techInUse.length > 0 && <span className="tablet-counter-pill warning">{techInUse.length}</span>}
+          <span>3. Devolver ao Setor ({techInUse.length})</span>
         </button>
-      </nav>
+      </div>
 
-      {/* Conteúdo Principal */}
-      <main className="tablet-content-area">
-        {/* ABA 1: AGENDA DO TÉCNICO & RESERVA */}
+      {/* Tab Content */}
+      <main className="tablet-panel-content">
+        {/* ABA 1: AGENDA DE VISITAS */}
         {activeTab === 'agenda' && (
-          <div className="tablet-tab-pane">
-            {techAppointments.length === 0 ? (
-              <div className="tablet-empty-box">
-                <CalendarClock size={48} />
-                <h3>Nenhum atendimento agendado</h3>
-                <p>Você não possui visitas técnicas pendentes na agenda para os próximos dias.</p>
-              </div>
-            ) : (
-              <div className="tablet-card-list">
-                {techAppointments.map(appt => {
-                  const apptReservations = reservations.filter(r => Number(r.appointment_id) === Number(appt.id) && (r.status === 'Reservado' || r.status === 'Em Uso'));
-                  const isReserved = apptReservations.length > 0;
+          <div className="tablet-agenda-view">
+            <div className="tablet-section-intro">
+              <h3>Meus Atendimentos Agendados</h3>
+              <p>Confira seus agendamentos e toque em <strong>"Reservar Padrões"</strong> para vincular analisadores de teste para a visita.</p>
+            </div>
 
-                  return (
-                    <div key={appt.id} className="tablet-appointment-card">
-                      <div className="tablet-appt-time-col">
-                        <Clock size={18} />
-                        <strong>{appt.appointment_time || 'Horário livre'}</strong>
-                        <span>{new Intl.DateTimeFormat('pt-BR', { weekday: 'short', day: '2-digit', month: 'short' }).format(new Date(`${appt.appointment_date}T12:00:00`))}</span>
-                      </div>
+            <div className="tablet-appointments-list">
+              {techAppointments.map(appt => {
+                const apptReservations = reservations.filter(r => Number(r.appointment_id) === Number(appt.id));
+                const hasReservations = apptReservations.length > 0;
 
-                      <div className="tablet-appt-details">
-                        <h3>{appt.client_name || appt.title || 'Atendimento'}</h3>
-                        <p className="tablet-appt-location">
-                          <MapPin size={16} /> {appt.client_address || 'Endereço não informado'}
-                        </p>
+                return (
+                  <div key={appt.id} className="tablet-appt-card">
+                    <div className="tablet-appt-time">
+                      <strong>{appt.appointment_time || 'Dia'}</strong>
+                      <span>{String(appt.appointment_date || '').slice(8, 10)}/{String(appt.appointment_date || '').slice(5, 7)}</span>
+                    </div>
 
-                        <div className="tablet-appt-reserved-summary">
-                          {isReserved ? (
-                            <span className="tablet-status-pill success">
-                              <CheckCircle2 size={14} /> {apptReservations.length} padrão(ões) vinculado(s)
-                            </span>
-                          ) : (
-                            <span className="tablet-status-pill pending">
-                              Padrão não reservado
-                            </span>
-                          )}
+                    <div className="tablet-appt-details">
+                      <h4>{appt.client_name || appt.title || 'Atendimento em Campo'}</h4>
+                      <p>
+                        <MapPin size={15} /> {appt.location || appt.sector || 'Localização não especificada'}
+                      </p>
+
+                      {hasReservations && (
+                        <div className="tablet-appt-patterns-pill">
+                          <PackageCheck size={14} />
+                          <span>{apptReservations.length} padrão(ões) vinculado(s): {apptReservations.map(r => r.asset_tag).join(', ')}</span>
                         </div>
-                      </div>
-
-                      <div className="tablet-appt-actions">
-                        <button
-                          type="button"
-                          onClick={() => handleOpenReserveModal(appt)}
-                          className="tablet-btn-action primary"
-                        >
-                          <Plus size={18} /> Reservar Padrões <ChevronRight size={18} />
-                        </button>
-                      </div>
+                      )}
                     </div>
-                  );
-                })}
-              </div>
-            )}
+
+                    <div className="tablet-appt-actions">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setReserveModalAppt(appt);
+                          setModalSelectedAnalyzerIds(apptReservations.map(r => r.analyzer_id));
+                        }}
+                        className="tablet-btn-reserve"
+                      >
+                        <Plus size={18} />
+                        <span>{hasReservations ? 'Alterar / Adicionar Padrões' : 'Reservar Padrões'}</span>
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+
+              {!techAppointments.length && (
+                <div className="tablet-empty-panel">
+                  <CalendarDays size={48} />
+                  <h3>Nenhum atendimento agendado</h3>
+                  <p>Você não possui visitas agendadas para os próximos dias.</p>
+                </div>
+              )}
+            </div>
           </div>
         )}
 
-        {/* ABA 2: SAÍDA DE CAMPO (CHECK-OUT) */}
+        {/* ABA 2: RETIRADAS DE PADRÕES (CHECKOUT) */}
         {activeTab === 'checkout' && (
-          <div className="tablet-tab-pane">
+          <div className="tablet-checkout-view">
             <div className="tablet-section-intro">
-              <h3>Padrões Reservados Prontos para Saída</h3>
-              <p>Confirme a retirada física dos padrões da bancada/armário antes de se deslocar para o cliente.</p>
+              <h3>Padrões Reservados para Saída</h3>
+              <p>Ao retirar a mala/analisador do almoxarifado, toque em <strong>"Registrar Saída"</strong> para atualizar o status para <strong>Em Uso</strong>.</p>
             </div>
 
-            {techReadyForCheckout.length === 0 ? (
-              <div className="tablet-empty-box">
-                <Truck size={48} />
-                <h3>Nenhum padrão aguardando retirada</h3>
-                <p>Todas as suas reservas já foram retiradas ou ainda não foram agendadas.</p>
-              </div>
-            ) : (
-              <div className="tablet-card-list">
-                {techReadyForCheckout.map(res => {
-                  const analyzer = (analyzers || []).find(a => Number(a.id) === Number(res.analyzer_id));
-                  const appt = (appointments || []).find(a => Number(a.id) === Number(res.appointment_id));
-                  const isLoading = actionLoading === res.id;
+            <div className="tablet-cards-grid">
+              {techReadyForCheckout.map(res => (
+                <div key={res.id} className="tablet-action-card checkout">
+                  <div className="tablet-action-header">
+                    <span className="tablet-asset-tag">{res.asset_tag}</span>
+                    <span className="tablet-status-pill reserved">Pronto para Saída</span>
+                  </div>
 
-                  return (
-                    <div key={res.id} className="tablet-action-card">
-                      <div className="tablet-action-icon checkout">
-                        <PackageCheck size={26} />
-                      </div>
-                      <div className="tablet-action-info">
-                        <strong>{analyzer?.name || 'Padrão de Calibração'}</strong>
-                        <span className="tablet-tag-pill">Patrimônio: {analyzer?.asset_tag || 'N/A'}</span>
-                        <p className="tablet-action-sub">
-                          Destino: <strong>{appt?.client_name || 'Visita Técnica'}</strong> · Data: {res.reserved_date}
-                        </p>
-                      </div>
-                      <button
-                        type="button"
-                        disabled={isLoading}
-                        onClick={() => handleCheckout(res.id)}
-                        className="tablet-btn-action checkout-btn"
-                      >
-                        {isLoading ? <RefreshCw size={18} className="spin" /> : <Truck size={18} />}
-                        Registrar Saída (Levar p/ Campo)
-                      </button>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
+                  <h4>{res.analyzer_name}</h4>
+                  <p>Tipo: <strong>{res.analyzer_type || 'Analisador de Campo'}</strong></p>
+                  <p>Atendimento: <strong>{res.client_name || 'Agendamento Técnico'}</strong></p>
+
+                  <button
+                    type="button"
+                    disabled={actionLoading === res.id}
+                    onClick={() => handleCheckout(res.id)}
+                    className="tablet-btn-action checkout"
+                  >
+                    <Truck size={20} />
+                    <span>{actionLoading === res.id ? 'Registrando...' : 'Registrar Saída (Check-out)'}</span>
+                  </button>
+                </div>
+              ))}
+
+              {!techReadyForCheckout.length && (
+                <div className="tablet-empty-panel">
+                  <CheckCircle2 size={48} />
+                  <h3>Nenhum padrão aguardando saída</h3>
+                  <p>Você não possui reservas pendentes de retirada no momento.</p>
+                </div>
+              )}
+            </div>
           </div>
         )}
 
-        {/* ABA 3: DEVOLUÇÃO AO SETOR (CHECK-IN) */}
+        {/* ABA 3: DEVOLUÇÃO DE PADRÕES (CHECKIN) */}
         {activeTab === 'checkin' && (
-          <div className="tablet-tab-pane">
+          <div className="tablet-checkin-view">
             <div className="tablet-section-intro">
-              <h3>Padrões em Posse do Técnico</h3>
-              <p>Ao retornar ao setor, clique em devolver para liberar o equipamento para outros técnicos.</p>
+              <h3>Padrões Atualmente em sua Posse</h3>
+              <p>Ao devolver o padrão ao setor, toque em <strong>"Devolver ao Setor"</strong> para liberar o patrimônio para a equipe.</p>
             </div>
 
-            {techInUse.length === 0 ? (
-              <div className="tablet-empty-box">
-                <ShieldCheck size={48} />
-                <h3>Você não possui padrões em campo</h3>
-                <p>Nenhum equipamento consta em seu nome no momento.</p>
-              </div>
-            ) : (
-              <div className="tablet-card-list">
-                {techInUse.map(res => {
-                  const analyzer = (analyzers || []).find(a => Number(a.id) === Number(res.analyzer_id));
-                  const appt = (appointments || []).find(a => Number(a.id) === Number(res.appointment_id));
-                  const isLoading = actionLoading === res.id;
+            <div className="tablet-cards-grid">
+              {techInUse.map(res => (
+                <div key={res.id} className="tablet-action-card checkin">
+                  <div className="tablet-action-header">
+                    <span className="tablet-asset-tag">{res.asset_tag}</span>
+                    <span className="tablet-status-pill inuse">Em Campo / Com Você</span>
+                  </div>
 
-                  return (
-                    <div key={res.id} className="tablet-action-card">
-                      <div className="tablet-action-icon checkin">
-                        <PackageCheck size={26} />
-                      </div>
-                      <div className="tablet-action-info">
-                        <strong>{analyzer?.name || 'Padrão de Calibração'}</strong>
-                        <span className="tablet-tag-pill warning">Em Uso · {analyzer?.asset_tag || 'N/A'}</span>
-                        <p className="tablet-action-sub">
-                          Retirado para: <strong>{appt?.client_name || 'Atendimento'}</strong>
-                        </p>
-                      </div>
-                      <button
-                        type="button"
-                        disabled={isLoading}
-                        onClick={() => handleCheckin(res.id)}
-                        className="tablet-btn-action checkin-btn"
-                      >
-                        {isLoading ? <RefreshCw size={18} className="spin" /> : <PackageCheck size={18} />}
-                        Devolver ao Setor (Liberar)
-                      </button>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
+                  <h4>{res.analyzer_name}</h4>
+                  <p>Tipo: <strong>{res.analyzer_type || 'Analisador de Campo'}</strong></p>
+                  <p>Atendimento: <strong>{res.client_name || 'Agendamento Técnico'}</strong></p>
+
+                  <button
+                    type="button"
+                    disabled={actionLoading === res.id}
+                    onClick={() => handleCheckin(res.id)}
+                    className="tablet-btn-action checkin"
+                  >
+                    <CheckCircle2 size={20} />
+                    <span>{actionLoading === res.id ? 'Liberando...' : 'Devolver ao Setor (Check-in)'}</span>
+                  </button>
+                </div>
+              ))}
+
+              {!techInUse.length && (
+                <div className="tablet-empty-panel">
+                  <PackageCheck size={48} />
+                  <h3>Nenhum padrão em campo com você</h3>
+                  <p>Todos os seus analisadores foram devolvidos ao setor.</p>
+                </div>
+              )}
+            </div>
           </div>
         )}
       </main>
 
-      {/* MODAL TÁTIL DE RESERVA DE PADRÃO */}
+      {/* MODAL DE RESERVA TÁTIL DE PADRÕES */}
       {reserveModalAppt && (
         <div className="tablet-modal-overlay">
-          <div className="tablet-modal-box">
-            <header className="tablet-modal-header">
+          <div className="tablet-modal-container">
+            <div className="tablet-modal-header">
               <div>
-                <h3>Reservar Padrões de Calibração</h3>
-                <p>{reserveModalAppt.client_name} · {reserveModalAppt.appointment_date}</p>
+                <h3>Reservar Padrões para Atendimento</h3>
+                <p>Cliente: <strong>{reserveModalAppt.client_name}</strong> · Data: <strong>{reserveModalAppt.appointment_date}</strong></p>
               </div>
-              <button type="button" onClick={() => setReserveModalAppt(null)} className="tablet-modal-close">
+              <button
+                type="button"
+                onClick={() => setReserveModalAppt(null)}
+                className="tablet-modal-close-btn"
+              >
                 <X size={24} />
               </button>
-            </header>
+            </div>
 
             <div className="tablet-modal-search">
               <Search size={20} />
               <input
                 type="text"
-                placeholder="Buscar padrão por tag ou nome..."
+                placeholder="Buscar padrão por patrimônio, nome ou tipo..."
                 value={modalSearchAnalyzer}
                 onChange={e => setModalSearchAnalyzer(e.target.value)}
               />
             </div>
 
-            <div className="tablet-modal-grid">
-              {availableAnalyzersForModal.map(analyzer => {
-                const isSelected = modalSelectedAnalyzerIds.includes(analyzer.id);
+            <div className="tablet-modal-analyzer-list">
+              {filteredModalAnalyzers.map(analyzer => {
+                const isSelected = modalSelectedAnalyzerIds.includes(Number(analyzer.id));
+
                 return (
                   <button
                     key={analyzer.id}
                     type="button"
                     onClick={() => {
-                      if (isSelected) {
-                        setModalSelectedAnalyzerIds(prev => prev.filter(id => id !== analyzer.id));
-                      } else {
-                        setModalSelectedAnalyzerIds(prev => [...prev, analyzer.id]);
-                      }
+                      setModalSelectedAnalyzerIds(prev =>
+                        isSelected
+                          ? prev.filter(id => id !== Number(analyzer.id))
+                          : [...prev, Number(analyzer.id)]
+                      );
                     }}
-                    className={`tablet-analyzer-select-card ${isSelected ? 'selected' : ''}`}
+                    className={`tablet-modal-item ${isSelected ? 'selected' : ''}`}
                   >
-                    <div className="tablet-analyzer-tag">{analyzer.asset_tag}</div>
-                    <strong>{analyzer.name}</strong>
-                    <span>{analyzer.brand_model || 'Padrão Oficial'}</span>
+                    <div className="tablet-modal-item-info">
+                      <span className="tablet-asset-tag">{analyzer.asset_tag}</span>
+                      <strong>{analyzer.name}</strong>
+                      <span>{analyzer.type} · {analyzer.brand_model || 'Padrão Oficial'}</span>
+                    </div>
+                    <div className={`tablet-checkbox ${isSelected ? 'checked' : ''}`}>
+                      {isSelected && <CheckCircle2 size={20} />}
+                    </div>
                   </button>
                 );
               })}
+
+              {!filteredModalAnalyzers.length && (
+                <div className="tablet-empty-results">
+                  Nenhum padrão disponível encontrado para a busca.
+                </div>
+              )}
             </div>
 
-            <footer className="tablet-modal-footer">
-              <button
-                type="button"
-                onClick={() => setReserveModalAppt(null)}
-                className="tablet-btn-secondary"
-              >
-                Cancelar
-              </button>
-              <button
-                type="button"
-                disabled={isSubmittingReservation || !modalSelectedAnalyzerIds.length}
-                onClick={handleConfirmReservation}
-                className="tablet-btn-primary"
-              >
-                {isSubmittingReservation ? <RefreshCw size={18} className="spin" /> : <CheckCircle2 size={18} />}
-                Confirmar Reserva ({modalSelectedAnalyzerIds.length} selecionado{modalSelectedAnalyzerIds.length === 1 ? '' : 's'})
-              </button>
-            </footer>
+            <div className="tablet-modal-footer">
+              <span>{modalSelectedAnalyzerIds.length} padrão(ões) selecionado(s)</span>
+              <div className="tablet-modal-footer-btns">
+                <button
+                  type="button"
+                  onClick={() => setReserveModalAppt(null)}
+                  className="tablet-btn-cancel"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="button"
+                  disabled={isSubmittingReservation || !modalSelectedAnalyzerIds.length}
+                  onClick={handleSubmitReserveModal}
+                  className="tablet-btn-confirm"
+                >
+                  {isSubmittingReservation ? 'Confirmando...' : 'Confirmar Reservas'}
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}

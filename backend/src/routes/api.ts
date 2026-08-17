@@ -1526,7 +1526,7 @@ router.delete('/reservations/:id', async (req: Request, res: Response) => {
 router.post('/auth/admin-login', async (req: Request, res: Response) => {
   try {
     const { pin, password } = req.body;
-    const validPins = ['1234', 'atem2026', 'admin', '0000'];
+    const validPins = ['6233', 'atem2026', 'admin'];
     const input = String(pin || password || '').trim();
 
     if (validPins.includes(input)) {
@@ -1554,7 +1554,7 @@ router.post('/auth/login', async (req: Request, res: Response) => {
 
     // 1. Login de Administrador
     if (type === 'admin') {
-      const validAdminPins = ['1234', 'atem2026', 'admin', '0000'];
+      const validAdminPins = ['6233', 'atem2026', 'admin'];
       if (validAdminPins.includes(inputPin)) {
         return res.json({
           success: true,
