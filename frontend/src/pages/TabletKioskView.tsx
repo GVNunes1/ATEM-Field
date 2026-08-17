@@ -326,7 +326,7 @@ export const TabletKioskView: React.FC<TabletKioskViewProps> = ({
       <div className="tablet-kiosk-root">
         <header className="tablet-kiosk-header">
           <div className="tablet-brand">
-            <img src="/logomarca.png" alt="ATEM" className="tablet-logo-img" />
+            <img src="/logomarca_azul_clinico_sem_fundo.png" alt="ATEM" className="tablet-logo-img" />
             <div className="tablet-brand-text">
               <h1>Totem de Autoatendimento</h1>
               <p>Setor de Assistência Técnica · Controle de Padrões</p>

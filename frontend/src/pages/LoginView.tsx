@@ -109,7 +109,7 @@ export const LoginView: React.FC<LoginViewProps> = ({ technicians, onLoginSucces
       <div className="login-card">
         {/* Brand Header */}
         <div className="login-brand-header">
-          <img src="/logomarca.png" alt="ATEM" className="login-logo-img" />
+          <img src="/logomarca_azul_clinico_sem_fundo.png" alt="ATEM" className="login-logo-img" />
           <h2>Acesso ao Sistema</h2>
           <p>ATEM Field · Assistência Técnica & Gestão de Campo</p>
         </div>
