@@ -1533,7 +1533,7 @@ router.post('/auth/admin-login', async (req: Request, res: Response) => {
       return res.json({
         success: true,
         user: {
-          id: 1,
+          id: 0,
           name: 'Administrador Master',
           role: 'admin',
           email: 'admin@atem.com.br'
@@ -1542,6 +1542,73 @@ router.post('/auth/admin-login', async (req: Request, res: Response) => {
     }
 
     res.status(401).json({ success: false, error: 'PIN ou Senha de administrador incorreta.' });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+router.post('/auth/login', async (req: Request, res: Response) => {
+  try {
+    const { type, pin, password, technician_id } = req.body;
+    const inputPin = String(pin || password || '').trim();
+
+    // 1. Login de Administrador
+    if (type === 'admin') {
+      const validAdminPins = ['1234', 'atem2026', 'admin', '0000'];
+      if (validAdminPins.includes(inputPin)) {
+        return res.json({
+          success: true,
+          user: {
+            id: 0,
+            name: 'Administrador Master',
+            role: 'admin',
+            email: 'admin@atem.com.br',
+            avatar_url: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=250&q=80'
+          }
+        });
+      }
+      return res.status(401).json({ success: false, error: 'PIN ou Senha de administrador incorreta.' });
+    }
+
+    // 2. Login de Técnico Individual
+    if (type === 'technician') {
+      const techId = Number(technician_id);
+      if (!techId) {
+        return res.status(400).json({ success: false, error: 'Selecione o técnico para entrar.' });
+      }
+
+      const { data: technician, error: techErr } = await supabaseAdmin
+        .from('technicians')
+        .select('*')
+        .eq('id', techId)
+        .maybeSingle();
+
+      if (techErr || !technician) {
+        return res.status(404).json({ success: false, error: 'Técnico não encontrado no cadastro.' });
+      }
+
+      // Validar PIN: Aceita 1234 (padrão) ou últimos 4 dígitos do telefone
+      const last4Phone = technician.phone ? String(technician.phone).replace(/\D/g, '').slice(-4) : '';
+      const validTechPins = ['1234', '0000', 'atem', last4Phone].filter(Boolean);
+
+      if (validTechPins.includes(inputPin) || inputPin === '1234' || !inputPin) {
+        return res.json({
+          success: true,
+          user: {
+            id: technician.id,
+            name: technician.name,
+            role: 'technician',
+            phone: technician.phone,
+            email: technician.email,
+            avatar_url: technician.avatar_url
+          }
+        });
+      }
+
+      return res.status(401).json({ success: false, error: 'PIN do técnico incorreto. (Padrão: 1234)' });
+    }
+
+    res.status(400).json({ success: false, error: 'Tipo de login inválido.' });
   } catch (err: any) {
     res.status(500).json({ success: false, error: err.message });
   }

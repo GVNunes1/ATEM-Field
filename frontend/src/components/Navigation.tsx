@@ -4,27 +4,46 @@ import {
   Calendar,
   ClipboardList,
   Home,
+  LogOut,
   PackageCheck,
   TabletSmartphone,
   Users
 } from 'lucide-react';
+import { AuthUser } from '../types/auth';
 import './Navigation.css';
 
 interface NavigationProps {
   activeTab: string;
   setActiveTab: (tab: string) => void;
+  currentUser?: AuthUser | null;
+  onLogout?: () => void;
 }
 
-const navItems = [
-  { id: 'dashboard', label: 'Dashboard', icon: Home },
-  { id: 'appointments', label: 'Agenda', icon: Calendar },
-  { id: 'operations', label: 'Reservas', icon: PackageCheck },
-  { id: 'inventory', label: 'Padrões', icon: Box },
-  { id: 'technicians', label: 'Técnicos', icon: Users },
-  { id: 'history', label: 'Histórico', icon: ClipboardList }
-];
+export const Navigation: React.FC<NavigationProps> = ({
+  activeTab,
+  setActiveTab,
+  currentUser,
+  onLogout
+}) => {
+  const isAdmin = currentUser?.role === 'admin';
 
-export const Navigation: React.FC<NavigationProps> = ({ activeTab, setActiveTab }) => {
+  // Técnicos não veem gerenciamento de equipe/usuários
+  const navItems = [
+    { id: 'dashboard', label: 'Dashboard', icon: Home },
+    { id: 'appointments', label: 'Agenda', icon: Calendar },
+    { id: 'operations', label: 'Reservas', icon: PackageCheck },
+    { id: 'inventory', label: 'Padrões', icon: Box },
+    ...(isAdmin ? [{ id: 'technicians', label: 'Técnicos', icon: Users }] : []),
+    { id: 'history', label: 'Histórico', icon: ClipboardList }
+  ];
+
+  const userInitials = (currentUser?.name || 'Admin')
+    .split(' ')
+    .slice(0, 2)
+    .map(p => p[0])
+    .join('')
+    .toUpperCase();
+
   return (
     <aside className="app-sidebar" aria-label="Navegação principal">
       {/* Top Logo */}
@@ -76,12 +95,22 @@ export const Navigation: React.FC<NavigationProps> = ({ activeTab, setActiveTab 
 
         <div className="sidebar-user">
           <div className="sidebar-avatar" aria-hidden="true">
-            <span>AP</span>
+            <span>{userInitials || 'AP'}</span>
           </div>
           <div className="sidebar-user-info">
-            <strong>Administrador</strong>
-            <span>Admin</span>
+            <strong>{currentUser?.name || 'Administrador'}</strong>
+            <span>{isAdmin ? 'Admin Master' : 'Técnico de Campo'}</span>
           </div>
+          {onLogout && (
+            <button
+              type="button"
+              onClick={onLogout}
+              className="sidebar-logout-btn"
+              title="Encerrar sessão"
+            >
+              <LogOut size={16} />
+            </button>
+          )}
         </div>
       </div>
     </aside>

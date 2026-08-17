@@ -175,6 +175,26 @@
   margin-top: 2px;
 }
 
+.sidebar-logout-btn {
+  margin-left: auto;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  color: #64748b;
+  padding: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.sidebar-logout-btn:hover {
+  background: #fef2f2;
+  border-color: #fecaca;
+  color: #dc2626;
+}
+
 /* Responsive adjustments */
 @media (max-width: 900px) {
   .app-sidebar {

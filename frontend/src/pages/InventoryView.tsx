@@ -17,9 +17,12 @@ import {
 } from 'lucide-react';
 import { safeFetchJson } from '../lib/api';
 
+import { AuthUser } from '../types/auth';
+
 interface InventoryViewProps {
   analyzers: any[];
   onRefresh: () => void;
+  currentUser?: AuthUser | null;
 }
 
 const normalizeSearchText = (value: unknown) => String(value ?? '')
@@ -60,7 +63,8 @@ const getReservationOwner = (item: any) => {
   return owner || 'Setor não informado';
 };
 
-export const InventoryView: React.FC<InventoryViewProps> = ({ analyzers, onRefresh }) => {
+export const InventoryView: React.FC<InventoryViewProps> = ({ analyzers, onRefresh, currentUser }) => {
+  const isAdmin = currentUser?.role === 'admin';
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('ALL');
   const [typeFilter, setTypeFilter] = useState('ALL');
@@ -328,9 +332,11 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ analyzers, onRefre
             </p>
           </div>
 
-          <button onClick={() => setShowAddModal(true)} className="btn btn-primary inventory-add-button">
-            <Plus size={18} aria-hidden="true" /> Cadastrar Patrimônio
-          </button>
+          {isAdmin && (
+            <button onClick={() => setShowAddModal(true)} className="btn btn-primary inventory-add-button">
+              <Plus size={18} aria-hidden="true" /> Cadastrar Patrimônio
+            </button>
+          )}
         </div>
 
         <div className="inventory-filters" role="search" aria-label="Filtros do inventário">
@@ -479,38 +485,42 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ analyzers, onRefre
                       {item.status}
                     </span>
 
-                    {/* Admin Actions: Edit & Delete */}
-                    <button
-                      type="button"
-                      onClick={() => handleOpenEdit(item)}
-                      title="Editar Padrão (Admin)"
-                      style={{
-                        background: '#eff6ff',
-                        border: '1px solid #bfdbfe',
-                        borderRadius: '6px',
-                        color: '#1d4ed8',
-                        padding: '4px 6px',
-                        cursor: 'pointer'
-                      }}
-                    >
-                      <Edit2 size={13} />
-                    </button>
+                    {/* Admin Actions: Edit & Delete (Apenas Administrador) */}
+                    {isAdmin && (
+                      <>
+                        <button
+                          type="button"
+                          onClick={() => handleOpenEdit(item)}
+                          title="Editar Padrão (Admin)"
+                          style={{
+                            background: '#eff6ff',
+                            border: '1px solid #bfdbfe',
+                            borderRadius: '6px',
+                            color: '#1d4ed8',
+                            padding: '4px 6px',
+                            cursor: 'pointer'
+                          }}
+                        >
+                          <Edit2 size={13} />
+                        </button>
 
-                    <button
-                      type="button"
-                      onClick={() => handleDelete(item)}
-                      title="Excluir Padrão do Banco (Admin)"
-                      style={{
-                        background: '#fef2f2',
-                        border: '1px solid #fecaca',
-                        borderRadius: '6px',
-                        color: '#dc2626',
-                        padding: '4px 6px',
-                        cursor: 'pointer'
-                      }}
-                    >
-                      <Trash2 size={13} />
-                    </button>
+                        <button
+                          type="button"
+                          onClick={() => handleDelete(item)}
+                          title="Excluir Padrão do Banco (Admin)"
+                          style={{
+                            background: '#fef2f2',
+                            border: '1px solid #fecaca',
+                            borderRadius: '6px',
+                            color: '#dc2626',
+                            padding: '4px 6px',
+                            cursor: 'pointer'
+                          }}
+                        >
+                          <Trash2 size={13} />
+                        </button>
+                      </>
+                    )}
                   </div>
                 </div>
 

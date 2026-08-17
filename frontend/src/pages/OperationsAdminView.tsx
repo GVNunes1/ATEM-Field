@@ -1,6 +1,7 @@
 import { FormEvent, useEffect, useMemo, useState } from 'react';
 import { isNonTechnicalAppointment } from '../lib/appointmentUtils';
 import { safeFetchJson } from '../lib/api';
+import { AuthUser } from '../types/auth';
 import {
   Activity,
   CalendarDays,
@@ -10,6 +11,7 @@ import {
   Edit2,
   ExternalLink,
   LoaderCircle,
+  Lock,
   MessageCircleMore,
   PackageCheck,
   Plus,
@@ -29,6 +31,7 @@ interface OperationsAdminViewProps {
   technicians: any[];
   onRefresh: () => Promise<void>;
   initialAppointmentId?: number | string | null;
+  currentUser?: AuthUser | null;
 }
 
 const ACTIVE_STATUSES = new Set(['Reservado', 'Em Uso']);
@@ -53,8 +56,12 @@ export function OperationsAdminView({
   analyzers,
   technicians,
   onRefresh,
-  initialAppointmentId
+  initialAppointmentId,
+  currentUser
 }: OperationsAdminViewProps) {
+  const isAdmin = currentUser?.role === 'admin';
+  const isTechnician = currentUser?.role === 'technician';
+
   const [reservations, setReservations] = useState<any[]>([]);
   const [loadingReservations, setLoadingReservations] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -64,7 +71,9 @@ export function OperationsAdminView({
   const [selectedAppointmentId, setSelectedAppointmentId] = useState<string>(
     initialAppointmentId ? String(initialAppointmentId) : ''
   );
-  const [selectedTechnicianId, setSelectedTechnicianId] = useState('');
+  const [selectedTechnicianId, setSelectedTechnicianId] = useState<string>(
+    isTechnician && currentUser ? String(currentUser.id) : ''
+  );
   const [selectedAnalyzerIds, setSelectedAnalyzerIds] = useState<number[]>([]);
   const [analyzerSearch, setAnalyzerSearch] = useState('');
   const [checklist, setChecklist] = useState<any>(null);
@@ -74,7 +83,7 @@ export function OperationsAdminView({
   const [portalLink, setPortalLink] = useState('');
   const [generatingLink, setGeneratingLink] = useState(false);
 
-  // Edit Reservation Modal State
+  // Edit Reservation Modal State (Admin only)
   const [editReservationModal, setEditReservationModal] = useState<any | null>(null);
   const [editResForm, setEditResForm] = useState<{
     technician_id: string;
@@ -87,6 +96,12 @@ export function OperationsAdminView({
       setSelectedAppointmentId(String(initialAppointmentId));
     }
   }, [initialAppointmentId]);
+
+  useEffect(() => {
+    if (isTechnician && currentUser) {
+      setSelectedTechnicianId(String(currentUser.id));
+    }
+  }, [isTechnician, currentUser]);
 
   const loadReservations = async () => {
     setLoadingReservations(true);
@@ -129,34 +144,40 @@ export function OperationsAdminView({
   useEffect(() => {
     if (!selectedAppointment) {
       setChecklist(null);
-      setSelectedTechnicianId('');
+      if (!isTechnician) setSelectedTechnicianId('');
       setSelectedAnalyzerIds([]);
       setAnalyzerSearch('');
       return;
     }
-    let preferredTechnician = selectedAppointment.technician_id
-      || selectedAppointment.technician_ids?.[0]
-      || (selectedAppointment.technicians && selectedAppointment.technicians[0]?.id);
 
-    if (!preferredTechnician && selectedAppointment.technician_names) {
-      const firstTechName = selectedAppointment.technician_names.split(/[,;]/)[0]?.trim().toLowerCase();
-      if (firstTechName) {
-        const found = activeTechnicians.find(t =>
-          t.name.toLowerCase() === firstTechName ||
-          t.name.toLowerCase().includes(firstTechName) ||
-          firstTechName.includes(t.name.toLowerCase())
-        );
-        if (found) preferredTechnician = found.id;
+    if (isTechnician && currentUser) {
+      setSelectedTechnicianId(String(currentUser.id));
+    } else {
+      let preferredTechnician = selectedAppointment.technician_id
+        || selectedAppointment.technician_ids?.[0]
+        || (selectedAppointment.technicians && selectedAppointment.technicians[0]?.id);
+
+      if (!preferredTechnician && selectedAppointment.technician_names) {
+        const firstTechName = selectedAppointment.technician_names.split(/[,;]/)[0]?.trim().toLowerCase();
+        if (firstTechName) {
+          const found = activeTechnicians.find(t =>
+            t.name.toLowerCase() === firstTechName ||
+            t.name.toLowerCase().includes(firstTechName) ||
+            firstTechName.includes(t.name.toLowerCase())
+          );
+          if (found) preferredTechnician = found.id;
+        }
       }
+
+      setSelectedTechnicianId(preferredTechnician ? String(preferredTechnician) : '');
     }
 
-    setSelectedTechnicianId(preferredTechnician ? String(preferredTechnician) : '');
     setSelectedAnalyzerIds([]);
     setAnalyzerSearch('');
     safeFetchJson(`/api/appointments/${selectedAppointment.id}/checklist`, { cache: 'no-store' })
       .then(data => setChecklist(data.success ? data : null))
       .catch(() => setChecklist(null));
-  }, [selectedAppointment, activeTechnicians]);
+  }, [selectedAppointment, activeTechnicians, isTechnician, currentUser]);
 
   const availableAnalyzers = useMemo(() => {
     if (!selectedAppointment || isNonTechnicalAppointment(selectedAppointment)) return [];
@@ -191,24 +212,35 @@ export function OperationsAdminView({
   const filteredReservations = useMemo(() => {
     const query = searchTerm.trim().toLocaleLowerCase('pt-BR');
     return reservations
+      .filter(reservation => {
+        // Se for técnico, só vê suas próprias reservas
+        if (isTechnician && currentUser) {
+          return Number(reservation.technician_id) === Number(currentUser.id);
+        }
+        return true;
+      })
       .filter(reservation => statusFilter === 'ALL' || (statusFilter === 'ACTIVE' ? ACTIVE_STATUSES.has(reservation.status) : reservation.status === statusFilter))
       .filter(reservation => !query || [reservation.asset_tag, reservation.analyzer_name, reservation.technician_name, reservation.client_name]
         .some(value => String(value || '').toLocaleLowerCase('pt-BR').includes(query)))
       .sort((left, right) => String(right.reserved_date || '').localeCompare(String(left.reserved_date || '')) || Number(right.id) - Number(left.id));
-  }, [reservations, searchTerm, statusFilter]);
+  }, [reservations, searchTerm, statusFilter, isTechnician, currentUser]);
 
   const metrics = useMemo(() => {
     const current = todayKey();
     const inSevenDays = new Date(`${current}T12:00:00`);
     inSevenDays.setDate(inSevenDays.getDate() + 7);
     const limit = inSevenDays.toISOString().slice(0, 10);
+    const myRes = isTechnician && currentUser
+      ? reservations.filter(r => Number(r.technician_id) === Number(currentUser.id))
+      : reservations;
+
     return {
-      active: reservations.filter(reservation => ACTIVE_STATUSES.has(reservation.status)).length,
-      inUse: reservations.filter(reservation => reservation.status === 'Em Uso').length,
+      active: myRes.filter(reservation => ACTIVE_STATUSES.has(reservation.status)).length,
+      inUse: myRes.filter(reservation => reservation.status === 'Em Uso').length,
       available: analyzers.filter(analyzer => analyzer.status === 'Disponível').length,
       weekAppointments: upcomingAppointments.filter(appointment => appointment.appointment_date <= limit).length
     };
-  }, [analyzers, reservations, upcomingAppointments]);
+  }, [analyzers, reservations, upcomingAppointments, isTechnician, currentUser]);
 
   const analyzerOverview = useMemo(() => {
     const countStatus = (status: string) => analyzers.filter(analyzer => analyzer.status === status).length;
@@ -231,7 +263,8 @@ export function OperationsAdminView({
 
   const createReservation = async (event: FormEvent) => {
     event.preventDefault();
-    if (!selectedAppointmentId || !selectedTechnicianId || !selectedAnalyzerIds.length) return;
+    const effectiveTechId = isTechnician && currentUser ? Number(currentUser.id) : Number(selectedTechnicianId);
+    if (!selectedAppointmentId || !effectiveTechId || !selectedAnalyzerIds.length) return;
     setSaving(true); setError(''); setNotice('');
     let completed = 0;
     try {
@@ -241,9 +274,11 @@ export function OperationsAdminView({
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             appointment_id: Number(selectedAppointmentId),
-            technician_id: Number(selectedTechnicianId),
+            technician_id: effectiveTechId,
             analyzer_id: analyzerId,
-            notes: 'Reserva criada pelo painel administrativo'
+            notes: isTechnician
+              ? `Reserva efetuada pelo próprio técnico (${currentUser?.name})`
+              : 'Reserva criada pelo painel administrativo'
           })
         });
         if (!data.success) throw new Error(data.error || 'Não foi possível criar a reserva.');
@@ -360,9 +395,13 @@ export function OperationsAdminView({
     <div className="operations-admin-view animate-fade-in">
       <header className="page-hero">
         <div className="page-hero__copy">
-          <span className="eyebrow"><ShieldCheck size={16} /> Painel de Reservas & Operações</span>
-          <h2>Controle Operacional de Padrões e Saídas</h2>
-          <p>Faça reservas administrativas, registre retiradas e devoluções e envie acessos individuais para os técnicos.</p>
+          <span className="eyebrow"><ShieldCheck size={16} /> {isTechnician ? `Painel de Reservas do Técnico: ${currentUser?.name}` : 'Painel de Reservas & Operações'}</span>
+          <h2>{isTechnician ? 'Minhas Reservas & Saída de Padrões' : 'Controle Operacional de Padrões e Saídas'}</h2>
+          <p>
+            {isTechnician
+              ? 'Selecione seus atendimentos da agenda, reserve os padrões necessários em seu nome e registre as retiradas e devoluções.'
+              : 'Faça reservas administrativas, registre retiradas e devoluções e envie acessos individuais para os técnicos.'}
+          </p>
         </div>
       </header>
 
@@ -370,114 +409,227 @@ export function OperationsAdminView({
       {error && <div className="operations-notice is-error" role="alert"><p>{error}</p><button type="button" onClick={() => setError('')} aria-label="Fechar erro"><X size={15} /></button></div>}
 
       <section className="operations-metrics-grid" aria-label="Métricas da operação">
-        <article><span><PackageCheck size={20} /></span><div><strong>{metrics.active}</strong><small>reservas ativas</small></div></article>
-        <article><span><Activity size={20} /></span><div><strong>{metrics.inUse}</strong><small>em campo</small></div></article>
+        <article><span><PackageCheck size={20} /></span><div><strong>{metrics.active}</strong><small>{isTechnician ? 'minhas reservas ativas' : 'reservas ativas'}</small></div></article>
+        <article><span><Activity size={20} /></span><div><strong>{metrics.inUse}</strong><small>{isTechnician ? 'comigo em campo' : 'em campo'}</small></div></article>
         <article><span><Wrench size={20} /></span><div><strong>{metrics.available}</strong><small>padrões disponíveis</small></div></article>
         <article><span><CalendarDays size={20} /></span><div><strong>{metrics.weekAppointments}</strong><small>atendimentos em 7 dias</small></div></article>
       </section>
 
       <section className="operations-primary-grid">
         <form className="glass-panel reservation-form" onSubmit={createReservation}>
-          <div className="operations-section-heading"><span><PackageCheck size={19} /></span><div><h3>Nova reserva administrativa</h3><p>Vincule atendimento, técnico e patrimônio.</p></div></div>
-          <label><span>Atendimento (Serviços Técnicos)</span><select value={selectedAppointmentId} onChange={event => setSelectedAppointmentId(event.target.value)} required><option value="">Selecione o atendimento</option>{upcomingTechnicalAppointments.map(appointment => <option key={appointment.id} value={appointment.id}>{formatDate(appointment.appointment_date)} · {appointment.appointment_time || '--:--'} · {appointment.client_name || appointment.title}</option>)}</select></label>
-          <label><span>Técnico responsável</span><select value={selectedTechnicianId} onChange={event => setSelectedTechnicianId(event.target.value)} required><option value="">Selecione</option>{activeTechnicians.map(technician => <option key={technician.id} value={technician.id}>{technician.name}</option>)}</select></label>
+          <div className="operations-section-heading">
+            <span><PackageCheck size={19} /></span>
+            <div>
+              <h3>{isTechnician ? 'Reservar Padrão para Atendimento' : 'Nova reserva administrativa'}</h3>
+              <p>{isTechnician ? 'A reserva será vinculada estritamente ao seu perfil.' : 'Vincule atendimento, técnico e patrimônio.'}</p>
+            </div>
+          </div>
+
+          <label>
+            <span>Atendimento (Serviços Técnicos)</span>
+            <select value={selectedAppointmentId} onChange={event => setSelectedAppointmentId(event.target.value)} required>
+              <option value="">Selecione o atendimento</option>
+              {upcomingTechnicalAppointments.map(appointment => (
+                <option key={appointment.id} value={appointment.id}>
+                  {formatDate(appointment.appointment_date)} · {appointment.appointment_time || '--:--'} · {appointment.client_name || appointment.title}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          <label>
+            <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              Técnico responsável {isTechnician && <span style={{ color: 'var(--primary)', fontWeight: 700 }}>(Fixo no seu perfil)</span>}
+            </span>
+            <select
+              value={isTechnician && currentUser ? String(currentUser.id) : selectedTechnicianId}
+              onChange={event => setSelectedTechnicianId(event.target.value)}
+              disabled={isTechnician}
+              style={isTechnician ? { background: '#f1f5f9', cursor: 'not-allowed', color: '#334155', fontWeight: 600 } : {}}
+              required
+            >
+              {isTechnician && currentUser ? (
+                <option value={String(currentUser.id)}>{currentUser.name} (Você)</option>
+              ) : (
+                <>
+                  <option value="">Selecione o técnico</option>
+                  {activeTechnicians.map(technician => (
+                    <option key={technician.id} value={technician.id}>{technician.name}</option>
+                  ))}
+                </>
+              )}
+            </select>
+          </label>
+
           {selectedAppointment && (
             isNonTechnicalAppointment(selectedAppointment) ? (
               <div className="operations-notice is-error" style={{ margin: '0.5rem 0' }}>
                 Agendamentos não técnicos (Sobreaviso, Exame, Aniversário, Revisão, Treinamento, etc.) não permitem reserva de padrões.
               </div>
             ) : (
-              <div className="reservation-form__context"><CalendarDays size={15} /><span>{formatDate(selectedAppointment.appointment_date)} às {selectedAppointment.appointment_time || '--:--'}</span><strong>{checklist?.requiredAnalyzerTypes?.length ? `${checklist.requiredAnalyzerTypes.length} tipo(s) exigido(s)` : 'Sem restrição de tipo'}</strong></div>
+              <div className="reservation-form__context">
+                <CalendarDays size={15} />
+                <span>{formatDate(selectedAppointment.appointment_date)} às {selectedAppointment.appointment_time || '--:--'}</span>
+                <strong>{checklist?.requiredAnalyzerTypes?.length ? `${checklist.requiredAnalyzerTypes.length} tipo(s) exigido(s)` : 'Sem restrição de tipo'}</strong>
+              </div>
             )
           )}
+
           <fieldset className="analyzer-picker" disabled={!selectedAppointment || saving}>
             <legend>Selecionar padrões</legend>
             <p>Pesquise por patrimônio, nome, tipo ou modelo e adicione quantos forem necessários.</p>
             <label className="analyzer-picker__search">
               <Search size={17} aria-hidden="true" />
-              <input type="search" aria-label="Buscar padrão disponível" placeholder={selectedAppointment ? 'Buscar padrão disponível' : 'Escolha um atendimento primeiro'} value={analyzerSearch} onChange={event => setAnalyzerSearch(event.target.value)} />
+              <input
+                type="search"
+                aria-label="Buscar padrão disponível"
+                placeholder={selectedAppointment ? 'Buscar padrão disponível' : 'Escolha um atendimento primeiro'}
+                value={analyzerSearch}
+                onChange={event => setAnalyzerSearch(event.target.value)}
+              />
               {analyzerSearch && <button type="button" onClick={() => setAnalyzerSearch('')} aria-label="Limpar pesquisa"><X size={16} /></button>}
             </label>
             <div className="analyzer-picker__results" role="list" aria-label="Padrões disponíveis">
               {filteredAvailableAnalyzers.map(analyzer => (
                 <article key={analyzer.id} className="analyzer-picker__item" role="listitem">
-                  <div><strong>{analyzer.asset_tag}</strong><span>{analyzer.name || 'Padrão sem nome'}</span><small>{analyzer.type || 'Sem tipo'}{analyzer.brand_model ? ` · ${analyzer.brand_model}` : ''}</small></div>
-                  <button className="btn btn-secondary btn-sm" type="button" onClick={() => setSelectedAnalyzerIds(ids => [...ids, Number(analyzer.id)])}><Plus size={15} /> Adicionar</button>
+                  <div>
+                    <strong>{analyzer.asset_tag}</strong>
+                    <span>{analyzer.name || 'Padrão sem nome'}</span>
+                    <small>{analyzer.type || 'Sem tipo'}{analyzer.brand_model ? ` · ${analyzer.brand_model}` : ''}</small>
+                  </div>
+                  <button
+                    className="btn btn-secondary btn-sm"
+                    type="button"
+                    onClick={() => setSelectedAnalyzerIds(ids => [...ids, Number(analyzer.id)])}
+                  >
+                    <Plus size={15} /> Adicionar
+                  </button>
                 </article>
               ))}
-              {selectedAppointment && !filteredAvailableAnalyzers.length && <div className="analyzer-picker__empty">Nenhum padrão disponível corresponde à busca.</div>}
+              {selectedAppointment && !filteredAvailableAnalyzers.length && (
+                <div className="analyzer-picker__empty">Nenhum padrão disponível corresponde à busca.</div>
+              )}
             </div>
           </fieldset>
+
           <section className="selected-analyzers" aria-live="polite">
-            <div className="selected-analyzers__head"><div><strong>Padrões adicionados</strong><span>Revise os itens antes de confirmar.</span></div><b>{selectedAnalyzers.length}</b></div>
+            <div className="selected-analyzers__head">
+              <div>
+                <strong>Padrões adicionados</strong>
+                <span>Revise os itens antes de confirmar.</span>
+              </div>
+              <b>{selectedAnalyzers.length}</b>
+            </div>
             <div className="selected-analyzers__list">
               {selectedAnalyzers.map((analyzer: any) => (
                 <article key={analyzer.id}>
-                  <div><strong>{analyzer.asset_tag}</strong><span>{analyzer.name || 'Padrão sem nome'} · {analyzer.type || 'Sem tipo'}</span></div>
-                  <button type="button" onClick={() => setSelectedAnalyzerIds(ids => ids.filter(id => id !== Number(analyzer.id)))} aria-label={`Remover ${analyzer.asset_tag}`}><X size={16} /><span>Remover</span></button>
+                  <div>
+                    <strong>{analyzer.asset_tag}</strong>
+                    <span>{analyzer.name || 'Padrão sem nome'} · {analyzer.type || 'Sem tipo'}</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setSelectedAnalyzerIds(ids => ids.filter(id => id !== Number(analyzer.id)))}
+                    aria-label={`Remover ${analyzer.asset_tag}`}
+                  >
+                    <X size={16} />
+                    <span>Remover</span>
+                  </button>
                 </article>
               ))}
               {!selectedAnalyzers.length && <div className="selected-analyzers__empty">Nenhum padrão adicionado.</div>}
             </div>
           </section>
-          <button className="btn btn-primary" disabled={saving || !selectedAnalyzerIds.length}>{saving ? <LoaderCircle className="spin" size={17} /> : <CheckCircle2 size={17} />}{saving ? `Reservando ${selectedAnalyzerIds.length} item(ns)…` : selectedAnalyzerIds.length ? `Confirmar ${selectedAnalyzerIds.length} ${selectedAnalyzerIds.length === 1 ? 'reserva' : 'reservas'}` : 'Adicione ao menos um padrão'}</button>
+
+          <button className="btn btn-primary" disabled={saving || !selectedAnalyzerIds.length}>
+            {saving ? <LoaderCircle className="spin" size={17} /> : <CheckCircle2 size={17} />}
+            {saving
+              ? `Reservando ${selectedAnalyzerIds.length} item(ns)…`
+              : selectedAnalyzerIds.length
+              ? `Confirmar ${selectedAnalyzerIds.length} ${selectedAnalyzerIds.length === 1 ? 'reserva' : 'reservas'}`
+              : 'Adicione ao menos um padrão'}
+          </button>
         </form>
 
-        <div className="glass-panel portal-access-card">
-          <div className="operations-section-heading"><span><UserRound size={19} /></span><div><h3>Acesso do técnico</h3><p>Gere e copie o link individual de acesso ao portal do técnico.</p></div></div>
-          <label><span>Técnico</span><select value={portalTechnicianId} onChange={event => { setPortalTechnicianId(event.target.value); setPortalLink(''); }}><option value="">Selecione o técnico</option>{activeTechnicians.map(technician => <option key={technician.id} value={technician.id}>{technician.name} · {hasUsablePhone(technician.phone) ? technician.phone : 'celular pendente'}</option>)}</select></label>
-          <button className="btn btn-primary" type="button" disabled={!portalTechnicianId || generatingLink} onClick={() => void generatePortalLink()}>{generatingLink ? <LoaderCircle className="spin" size={17} /> : <Clipboard size={17} />}{generatingLink ? 'Gerando…' : 'Gerar e copiar link'}</button>
-          {portalLink && (
-            <div className="portal-link-result" style={{ flexDirection: 'column', gap: '8px' }}>
-              <div style={{ display: 'flex', width: '100%', gap: '8px' }}>
-                <input readOnly value={portalLink} aria-label="Link do Portal do Técnico" style={{ flex: 1 }} />
-                <a href={portalLink} target="_blank" rel="noreferrer" aria-label="Abrir Portal do Técnico"><ExternalLink size={17} /></a>
+        {/* Portal Access Link Box (Admin only) or Technician Info Card */}
+        {isAdmin ? (
+          <div className="glass-panel portal-access-card">
+            <div className="operations-section-heading">
+              <span><UserRound size={19} /></span>
+              <div>
+                <h3>Acesso do técnico</h3>
+                <p>Gere e copie o link individual de acesso ao portal do técnico.</p>
               </div>
-              <button
-                type="button"
-                className="btn btn-secondary btn-sm"
-                style={{ width: '100%', gap: '6px', justifyContent: 'center' }}
-                onClick={async () => {
-                  const tech = activeTechnicians.find(t => String(t.id) === String(portalTechnicianId));
-                  const msg = `🚨 AVISO DE ACESSO AO PORTAL DO TÉCNICO - ATEM FIELD\nOlá ${tech?.name || 'Técnico'}! Aqui está o seu link de acesso individual:\n\n🔗 ${portalLink}\n\n(Válido por 72 horas)`;
-                  await navigator.clipboard.writeText(msg);
-                  setNotice(`Mensagem formatada para ${tech?.name} copiada para a área de transferência!`);
-                }}
-              >
-                <MessageCircleMore size={15} /> Copiar mensagem formatada
-              </button>
             </div>
-          )}
-          <div className="whatsapp-plan"><MessageCircleMore size={20} /><div><strong>Envio por WhatsApp ou E-mail</strong><p>Copie o link individual ou a mensagem formatada acima e envie diretamente para o técnico.</p></div><span>Cópia rápida</span></div>
-        </div>
-      </section>
-
-      <section className="operations-snapshot-grid" aria-label="Overview da agenda e dos analisadores">
-        <article className="glass-panel operations-snapshot">
-          <div className="operations-section-heading"><span><CalendarDays size={19} /></span><div><h3>Próximos atendimentos</h3><p>Agenda operacional a partir de hoje.</p></div></div>
-          <div className="operations-agenda-list">
-            {upcomingAppointments.slice(0, 6).map(appointment => (
-              <div key={appointment.id} className="operations-agenda-item">
-                <time><strong>{String(appointment.appointment_date || '').slice(8, 10)}</strong><span>{new Intl.DateTimeFormat('pt-BR', { month: 'short' }).format(new Date(`${appointment.appointment_date}T12:00:00`)).replace('.', '')}</span></time>
-                <div><strong>{appointment.client_name || appointment.title || 'Atendimento'}</strong><span>{appointment.appointment_time || 'Dia inteiro'} · {appointment.technician_names || appointment.technician_name || 'Equipe não definida'}</span></div>
-                <span>{appointment.reservations?.filter((reservation: any) => ACTIVE_STATUSES.has(reservation.status)).length || 0} reserva(s)</span>
+            <label>
+              <span>Técnico</span>
+              <select
+                value={portalTechnicianId}
+                onChange={event => { setPortalTechnicianId(event.target.value); setPortalLink(''); }}
+              >
+                <option value="">Selecione o técnico</option>
+                {activeTechnicians.map(technician => (
+                  <option key={technician.id} value={technician.id}>
+                    {technician.name} · {hasUsablePhone(technician.phone) ? technician.phone : 'celular pendente'}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <button
+              className="btn btn-primary"
+              type="button"
+              disabled={!portalTechnicianId || generatingLink}
+              onClick={() => void generatePortalLink()}
+            >
+              {generatingLink ? <LoaderCircle className="spin" size={17} /> : <Clipboard size={17} />}
+              {generatingLink ? 'Gerando…' : 'Gerar e copiar link'}
+            </button>
+            {portalLink && (
+              <div className="portal-link-result" style={{ flexDirection: 'column', gap: '8px' }}>
+                <div style={{ display: 'flex', width: '100%', gap: '8px' }}>
+                  <input readOnly value={portalLink} aria-label="Link do Portal do Técnico" style={{ flex: 1 }} />
+                  <a href={portalLink} target="_blank" rel="noreferrer" aria-label="Abrir Portal do Técnico"><ExternalLink size={17} /></a>
+                </div>
+                <button
+                  type="button"
+                  className="btn btn-secondary btn-sm"
+                  style={{ width: '100%', gap: '6px', justifyContent: 'center' }}
+                  onClick={async () => {
+                    const tech = activeTechnicians.find(t => String(t.id) === String(portalTechnicianId));
+                    const msg = `🚨 AVISO DE ACESSO AO PORTAL DO TÉCNICO - ATEM FIELD\nOlá ${tech?.name || 'Técnico'}! Aqui está o seu link de acesso individual:\n\n🔗 ${portalLink}\n\n(Válido por 72 horas)`;
+                    await navigator.clipboard.writeText(msg);
+                    setNotice(`Mensagem formatada para ${tech?.name} copiada para a área de transferência!`);
+                  }}
+                >
+                  <MessageCircleMore size={15} /> Copiar mensagem formatada
+                </button>
               </div>
-            ))}
-            {!upcomingAppointments.length && <div className="operations-empty">Nenhum atendimento futuro sincronizado.</div>}
+            )}
+            <div className="whatsapp-plan">
+              <MessageCircleMore size={20} />
+              <div>
+                <strong>Envio por WhatsApp ou E-mail</strong>
+                <p>Copie o link individual ou a mensagem formatada acima e envie diretamente para o técnico.</p>
+              </div>
+              <span>Cópia rápida</span>
+            </div>
           </div>
-        </article>
-
-        <article className="glass-panel operations-snapshot">
-          <div className="operations-section-heading"><span><Wrench size={19} /></span><div><h3>Panorama dos analisadores</h3><p>Distribuição atual dos patrimônios importados.</p></div></div>
-          <div className="analyzer-status-grid">
-            {analyzerOverview.statuses.map(item => <div key={item.label} className={`analyzer-status analyzer-status--${item.tone}`}><strong>{item.value}</strong><span>{item.label}</span></div>)}
+        ) : (
+          <div className="glass-panel portal-access-card" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+            <div className="operations-section-heading">
+              <span><ShieldCheck size={19} /></span>
+              <div>
+                <h3>Perfil de Técnico Conectado</h3>
+                <p>Você está autenticado como <strong>{currentUser?.name}</strong>.</p>
+              </div>
+            </div>
+            <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '12px', padding: '16px', fontSize: '0.88rem', color: '#475569', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              <div>📱 <strong>Telefone:</strong> {currentUser?.phone || 'Não cadastrado'}</div>
+              <div>📧 <strong>E-mail:</strong> {currentUser?.email || 'Não cadastrado'}</div>
+              <div>🔒 <strong>Permissões:</strong> Reserva restrita em nome próprio, registro de retiradas (Check-out) e devoluções (Check-in).</div>
+            </div>
           </div>
-          <div className="analyzer-types">
-            <strong>Principais tipos</strong>
-            {analyzerOverview.types.map(([type, count]) => <div key={type}><span title={type}>{type}</span><strong>{count}</strong></div>)}
-            {!analyzerOverview.types.length && <p>Nenhum patrimônio cadastrado.</p>}
-          </div>
-        </article>
+        )}
       </section>
 
       <section className="glass-panel reservations-overview">
@@ -485,8 +637,8 @@ export function OperationsAdminView({
           <div className="operations-section-heading">
             <span><Clock3 size={19} /></span>
             <div>
-              <h3>Overview das reservas</h3>
-              <p>{filteredReservations.length} registro(s) nos filtros atuais.</p>
+              <h3>{isTechnician ? 'Minhas Reservas Ativas e em Campo' : 'Overview das reservas'}</h3>
+              <p>{filteredReservations.length} registro(s) exibido(s).</p>
             </div>
           </div>
           <div className="reservations-filters">
@@ -517,7 +669,7 @@ export function OperationsAdminView({
                   <th>Data</th>
                   <th>Status</th>
                   <th>Ações de Campo</th>
-                  <th>Gerenciamento (Admin)</th>
+                  {isAdmin && <th>Gerenciamento (Admin)</th>}
                 </tr>
               </thead>
               <tbody>
@@ -551,40 +703,42 @@ export function OperationsAdminView({
                         <span className="reservation-closed">Concluída</span>
                       )}
                     </td>
-                    <td data-label="Gerenciamento (Admin)">
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                        <button
-                          type="button"
-                          onClick={() => handleOpenEditReservation(reservation)}
-                          title="Editar Reserva (Admin)"
-                          style={{
-                            background: '#eff6ff',
-                            border: '1px solid #bfdbfe',
-                            borderRadius: '6px',
-                            color: '#1d4ed8',
-                            padding: '5px 8px',
-                            cursor: 'pointer'
-                          }}
-                        >
-                          <Edit2 size={14} />
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => handleDeleteReservation(reservation.id)}
-                          title="Apagar Reserva do Banco (Admin)"
-                          style={{
-                            background: '#fef2f2',
-                            border: '1px solid #fecaca',
-                            borderRadius: '6px',
-                            color: '#dc2626',
-                            padding: '5px 8px',
-                            cursor: 'pointer'
-                          }}
-                        >
-                          <Trash2 size={14} />
-                        </button>
-                      </div>
-                    </td>
+                    {isAdmin && (
+                      <td data-label="Gerenciamento (Admin)">
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                          <button
+                            type="button"
+                            onClick={() => handleOpenEditReservation(reservation)}
+                            title="Editar Reserva (Admin)"
+                            style={{
+                              background: '#eff6ff',
+                              border: '1px solid #bfdbfe',
+                              borderRadius: '6px',
+                              color: '#1d4ed8',
+                              padding: '5px 8px',
+                              cursor: 'pointer'
+                            }}
+                          >
+                            <Edit2 size={14} />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteReservation(reservation.id)}
+                            title="Apagar Reserva do Banco (Admin)"
+                            style={{
+                              background: '#fef2f2',
+                              border: '1px solid #fecaca',
+                              borderRadius: '6px',
+                              color: '#dc2626',
+                              padding: '5px 8px',
+                              cursor: 'pointer'
+                            }}
+                          >
+                            <Trash2 size={14} />
+                          </button>
+                        </div>
+                      </td>
+                    )}
                   </tr>
                 ))}
               </tbody>
@@ -595,7 +749,7 @@ export function OperationsAdminView({
       </section>
 
       {/* MODAL DE EDIÇÃO DE RESERVA (ADMIN) */}
-      {editReservationModal && (
+      {isAdmin && editReservationModal && (
         <div style={{
           position: 'fixed',
           top: 0, left: 0, right: 0, bottom: 0,

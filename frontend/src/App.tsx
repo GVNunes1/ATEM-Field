@@ -8,6 +8,8 @@ import { TechniciansView } from './pages/TechniciansView';
 import { OperationsAdminView } from './pages/OperationsAdminView';
 import { ReservationHistoryView } from './pages/ReservationHistoryView';
 import { TabletKioskView } from './pages/TabletKioskView';
+import { LoginView } from './pages/LoginView';
+import { AuthUser } from './types/auth';
 import { safeFetchJson } from './lib/api';
 
 const noCacheFetchOptions: RequestInit = {
@@ -31,6 +33,15 @@ function getInitialTab(): string {
 }
 
 export function App() {
+  const [currentUser, setCurrentUser] = useState<AuthUser | null>(() => {
+    try {
+      const saved = localStorage.getItem('atem.auth.user');
+      return saved ? JSON.parse(saved) : null;
+    } catch {
+      return null;
+    }
+  });
+
   const [activeTab, setActiveTab] = useState(getInitialTab);
   const [stats, setStats] = useState<any>(null);
   const [recentReservations, setRecentReservations] = useState<any[]>([]);
@@ -41,6 +52,24 @@ export function App() {
   const [selectedAppointmentForReservation, setSelectedAppointmentForReservation] = useState<number | string | null>(null);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState('');
+
+  const handleLoginSuccess = (user: AuthUser) => {
+    setCurrentUser(user);
+    try {
+      localStorage.setItem('atem.auth.user', JSON.stringify(user));
+    } catch {
+      // Ignore
+    }
+  };
+
+  const handleLogout = () => {
+    setCurrentUser(null);
+    try {
+      localStorage.removeItem('atem.auth.user');
+    } catch {
+      // Ignore
+    }
+  };
 
   const handleTabChange = (tab: string) => {
     setActiveTab(tab);
@@ -151,9 +180,24 @@ export function App() {
     );
   }
 
+  // Se não estiver logado, exibe a tela de login
+  if (!currentUser) {
+    return (
+      <LoginView
+        technicians={technicians}
+        onLoginSuccess={handleLoginSuccess}
+      />
+    );
+  }
+
   return (
     <div className="app-layout">
-      <Navigation activeTab={activeTab} setActiveTab={handleTabChange} />
+      <Navigation
+        activeTab={activeTab}
+        setActiveTab={handleTabChange}
+        currentUser={currentUser}
+        onLogout={handleLogout}
+      />
       <div className="app-content-wrapper">
         <main className="app-main">
           {loadError && (
@@ -177,7 +221,7 @@ export function App() {
                 <DashboardView stats={stats} recentReservations={recentReservations} onNavigate={handleTabChange} />
               )}
               {activeTab === 'inventory' && (
-                <InventoryView analyzers={analyzers} onRefresh={fetchAllData} />
+                <InventoryView analyzers={analyzers} onRefresh={fetchAllData} currentUser={currentUser} />
               )}
               {activeTab === 'appointments' && (
                 <AppointmentsView appointments={appointments} onOpenChecklistModal={handleOpenReservationForAppointment} />
@@ -195,6 +239,7 @@ export function App() {
                   technicians={technicians}
                   onRefresh={fetchAllData}
                   initialAppointmentId={selectedAppointmentForReservation}
+                  currentUser={currentUser}
                 />
               )}
               {activeTab === 'history' && (
