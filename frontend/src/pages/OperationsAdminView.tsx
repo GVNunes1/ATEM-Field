@@ -408,7 +408,7 @@ export function OperationsAdminView({
       {notice && <div className="operations-notice is-success" role="status"><p>{notice}</p><button type="button" onClick={() => setNotice('')} aria-label="Fechar aviso"><X size={15} /></button></div>}
       {error && <div className="operations-notice is-error" role="alert"><p>{error}</p><button type="button" onClick={() => setError('')} aria-label="Fechar erro"><X size={15} /></button></div>}
 
-      <section className="operations-metrics-grid" aria-label="Métricas da operação">
+      <section className="operations-metrics" aria-label="Métricas da operação">
         <article><span><PackageCheck size={20} /></span><div><strong>{metrics.active}</strong><small>{isTechnician ? 'minhas reservas ativas' : 'reservas ativas'}</small></div></article>
         <article><span><Activity size={20} /></span><div><strong>{metrics.inUse}</strong><small>{isTechnician ? 'comigo em campo' : 'em campo'}</small></div></article>
         <article><span><Wrench size={20} /></span><div><strong>{metrics.available}</strong><small>padrões disponíveis</small></div></article>
