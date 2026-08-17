@@ -191,7 +191,7 @@ export function OperationsAdminView({
       .filter(reservation => ACTIVE_STATUSES.has(reservation.status))
       .map(reservation => reservation.analyzer_id));
     return analyzers
-      .filter(analyzer => analyzer.status !== 'Em Uso' && !/manuten|indispon|baixado/i.test(analyzer.status || ''))
+      .filter(analyzer => !/manuten|indispon|baixado|inativ/i.test(analyzer.status || ''))
       .filter(analyzer => !conflicts.has(analyzer.id) && !alreadyReserved.has(analyzer.id))
       .sort((left, right) => String(left.asset_tag).localeCompare(String(right.asset_tag), 'pt-BR', { numeric: true }));
   }, [analyzers, reservations, selectedAppointment]);

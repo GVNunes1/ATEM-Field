@@ -208,16 +208,17 @@ export const TabletKioskView: React.FC<TabletKioskViewProps> = ({
     }
   };
 
-  // Padrões disponíveis para reserva
+  // Padrões disponíveis para reserva (permite reservar para datas futuras se não houver conflito naquele dia)
   const availableAnalyzers = useMemo(() => {
     if (!reserveModalAppt) return [];
+    const targetDate = reserveModalAppt.appointment_date;
     const conflicts = new Set(
       reservations
-        .filter(r => r.reserved_date === reserveModalAppt.appointment_date && ['Reservado', 'Em Uso'].includes(r.status))
+        .filter(r => r.reserved_date === targetDate && ['Reservado', 'Em Uso'].includes(r.status))
         .map(r => r.analyzer_id)
     );
     return (analyzers || [])
-      .filter(a => a.status === 'Disponível' && !conflicts.has(a.id))
+      .filter(a => !/manuten|inativ|baixad|descartad/i.test(a.status || '') && !conflicts.has(a.id))
       .sort((a, b) => String(a.asset_tag).localeCompare(String(b.asset_tag), 'pt-BR', { numeric: true }));
   }, [reserveModalAppt, reservations, analyzers]);
 

@@ -1361,10 +1361,13 @@ router.post('/reservations', async (req: Request, res: Response) => {
 
     if (insertErr) throw insertErr;
 
-    await supabaseAdmin
-      .from('analyzers')
-      .update({ status: 'Reservado' })
-      .eq('id', Number(analyzer_id));
+    // Se o analisador não estiver atualmente em campo ('Em Uso'), atualiza status para 'Reservado'
+    if (analyzer.status !== 'Em Uso') {
+      await supabaseAdmin
+        .from('analyzers')
+        .update({ status: 'Reservado' })
+        .eq('id', Number(analyzer_id));
+    }
 
     res.json({
       success: true,
@@ -1391,6 +1394,33 @@ router.post('/reservations/:id/checkout', async (req: Request, res: Response) =>
       return res.status(404).json({ success: false, error: 'Reserva não encontrada.' });
     }
 
+    if (!reservation.analyzer_id) {
+      return res.status(400).json({ success: false, error: 'Reserva sem padrão associado.' });
+    }
+
+    // REGRA DE OURO: Verificar se o analisador está fisicamente com outro técnico neste momento ('Em Uso')
+    const { data: activeUsage } = await supabaseAdmin
+      .from('reservations')
+      .select('id, technician_id')
+      .eq('analyzer_id', reservation.analyzer_id)
+      .eq('status', 'Em Uso')
+      .neq('id', resId)
+      .maybeSingle();
+
+    if (activeUsage) {
+      const { data: activeTech } = await supabaseAdmin
+        .from('technicians')
+        .select('name')
+        .eq('id', Number(activeUsage.technician_id))
+        .maybeSingle();
+
+      const techName = activeTech?.name || 'outro técnico';
+      return res.status(400).json({
+        success: false,
+        error: `Não é possível retirar este padrão agora pois ele ainda está em campo com ${techName}. Aguarde a devolução para realizar a saída.`
+      });
+    }
+
     const { error: updateErr } = await supabaseAdmin
       .from('reservations')
       .update({ status: 'Em Uso', checkout_at: new Date().toISOString() })
@@ -1398,12 +1428,10 @@ router.post('/reservations/:id/checkout', async (req: Request, res: Response) =>
 
     if (updateErr) throw updateErr;
 
-    if (reservation.analyzer_id) {
-      await supabaseAdmin
-        .from('analyzers')
-        .update({ status: 'Em Uso' })
-        .eq('id', reservation.analyzer_id);
-    }
+    await supabaseAdmin
+      .from('analyzers')
+      .update({ status: 'Em Uso' })
+      .eq('id', reservation.analyzer_id);
 
     res.json({ success: true, message: 'Check-out de retirada registrado com sucesso!' });
   } catch (err: any) {
@@ -1433,10 +1461,21 @@ router.post('/reservations/:id/checkin', async (req: Request, res: Response) => 
     if (updateErr) throw updateErr;
 
     if (reservation.analyzer_id) {
-      await supabaseAdmin
-        .from('analyzers')
-        .update({ status: 'Disponível' })
-        .eq('id', reservation.analyzer_id);
+      // Verificar se há outra reserva em posse ativa ('Em Uso')
+      const { data: otherInUse } = await supabaseAdmin
+        .from('reservations')
+        .select('id')
+        .eq('analyzer_id', reservation.analyzer_id)
+        .eq('status', 'Em Uso')
+        .neq('id', resId)
+        .maybeSingle();
+
+      if (!otherInUse) {
+        await supabaseAdmin
+          .from('analyzers')
+          .update({ status: 'Disponível' })
+          .eq('id', reservation.analyzer_id);
+      }
     }
 
     res.json({ success: true, message: 'Check-in de devolução concluído. Patrimônio liberado!' });
