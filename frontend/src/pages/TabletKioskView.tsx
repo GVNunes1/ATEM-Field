@@ -69,7 +69,7 @@ export const TabletKioskView: React.FC<TabletKioskViewProps> = ({
   // Timer de inatividade (auto-logout em 90s se estiver dentro de um perfil de técnico)
   useEffect(() => {
     if (!selectedTech) return;
-    let timeoutId: NodeJS.Timeout;
+    let timeoutId: ReturnType<typeof setTimeout>;
 
     const resetTimer = () => {
       clearTimeout(timeoutId);
