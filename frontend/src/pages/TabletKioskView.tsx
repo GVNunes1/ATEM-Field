@@ -1,10 +1,13 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { safeFetchJson } from '../lib/api';
 import {
+  AlertTriangle,
   CalendarClock,
   CalendarDays,
   CheckCircle2,
+  ChevronDown,
   ChevronRight,
+  ChevronUp,
   Clock,
   Delete,
   KeyRound,
@@ -68,12 +71,29 @@ export const TabletKioskView: React.FC<TabletKioskViewProps> = ({
   const [modalSearchAnalyzer, setModalSearchAnalyzer] = useState('');
   const [isSubmittingReservation, setIsSubmittingReservation] = useState(false);
 
+  // Modal de Chamado Espontâneo (Todos os Técnicos)
+  const [showChamadoModal, setShowChamadoModal] = useState(false);
+  const [chamadoClientName, setChamadoClientName] = useState('');
+  const [chamadoSelectedIds, setChamadoSelectedIds] = useState<number[]>([]);
+  const [chamadoSearch, setChamadoSearch] = useState('');
+  const [isSubmittingChamado, setIsSubmittingChamado] = useState(false);
+
   // Modal de Operações Especiais (Calibração e Empréstimo - EQAT)
   const [specialOpType, setSpecialOpType] = useState<'Calibração' | 'Empréstimo' | null>(null);
   const [specialOpNotes, setSpecialOpNotes] = useState('');
   const [specialOpSelectedIds, setSpecialOpSelectedIds] = useState<number[]>([]);
   const [specialOpSearch, setSpecialOpSearch] = useState('');
   const [isSubmittingSpecialOp, setIsSubmittingSpecialOp] = useState(false);
+
+  // Scroll suave para totens / tablets
+  const scrollPage = (delta: number) => {
+    const root = document.querySelector('.tablet-kiosk-root');
+    if (root) {
+      root.scrollBy({ top: delta, behavior: 'smooth' });
+    } else {
+      window.scrollBy({ top: delta, behavior: 'smooth' });
+    }
+  };
 
   // Relógio do Totem
   useEffect(() => {
@@ -327,6 +347,60 @@ export const TabletKioskView: React.FC<TabletKioskViewProps> = ({
     }
   };
 
+  const filteredChamadoAnalyzers = useMemo(() => {
+    const query = chamadoSearch.trim().toLowerCase();
+    if (!query) return availableAnalyzersForSpecialOp;
+    return availableAnalyzersForSpecialOp.filter(a =>
+      [a.asset_tag, a.name, a.type, a.brand_model].some(val => String(val || '').toLowerCase().includes(query))
+    );
+  }, [availableAnalyzersForSpecialOp, chamadoSearch]);
+
+  // Submeter saída direta para Chamado Espontâneo (Todos os Técnicos)
+  const handleSubmitChamado = async () => {
+    if (!selectedTech || !chamadoSelectedIds.length) {
+      setFeedbackError('Selecione ao menos 1 padrão para o chamado.');
+      return;
+    }
+    if (!chamadoClientName.trim()) {
+      setFeedbackError('Informe o hospital / cliente / motivo do chamado.');
+      return;
+    }
+
+    setIsSubmittingChamado(true);
+    setFeedbackNotice('');
+    setFeedbackError('');
+    let count = 0;
+    try {
+      for (const analyzerId of chamadoSelectedIds) {
+        const data = await safeFetchJson('/api/reservations', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            technician_id: Number(selectedTech.id),
+            analyzer_id: analyzerId,
+            operation_type: 'Chamado',
+            reserved_date: todayKey(),
+            direct_checkout: true,
+            notes: chamadoClientName.trim()
+          })
+        });
+        if (data.success) count++;
+        else throw new Error(data.error || 'Falha ao registrar saída para chamado.');
+      }
+      setFeedbackNotice(`🚨 Saída para chamado de ${count} padrão(ões) realizada com sucesso!`);
+      setShowChamadoModal(false);
+      setChamadoSelectedIds([]);
+      setChamadoClientName('');
+      setChamadoSearch('');
+      setActiveTab('checkin');
+      await Promise.all([loadReservations(), onRefresh()]);
+    } catch (err: any) {
+      setFeedbackError(err.message || 'Erro ao registrar saída para chamado.');
+    } finally {
+      setIsSubmittingChamado(false);
+    }
+  };
+
   // =========================================================================
   // VALIDAÇÃO DE PIN DO TÉCNICO NO TOTEM
   // =========================================================================
@@ -554,6 +628,28 @@ export const TabletKioskView: React.FC<TabletKioskViewProps> = ({
           </div>
         )}
 
+        {/* CONTROLES FLUTUANTES DE SCROLL TÁTIL (STANDBY) */}
+        <div className="tablet-floating-scroll-controls" aria-label="Navegação por toque">
+          <button
+            type="button"
+            className="tablet-scroll-nav-btn up"
+            onClick={() => scrollPage(-450)}
+            title="Rolar para cima"
+          >
+            <ChevronUp size={24} />
+            <span>Subir</span>
+          </button>
+          <button
+            type="button"
+            className="tablet-scroll-nav-btn down"
+            onClick={() => scrollPage(450)}
+            title="Rolar para baixo"
+          >
+            <ChevronDown size={24} />
+            <span>Descer</span>
+          </button>
+        </div>
+
         {onExitKiosk && (
           <footer className="tablet-kiosk-footer">
             <button type="button" onClick={onExitKiosk} className="tablet-exit-btn">
@@ -585,6 +681,18 @@ export const TabletKioskView: React.FC<TabletKioskViewProps> = ({
         <div className="tablet-header-actions">
           <button
             type="button"
+            className="tablet-btn-chamado"
+            onClick={() => {
+              setShowChamadoModal(true);
+              setChamadoClientName('');
+              setChamadoSelectedIds([]);
+              setChamadoSearch('');
+            }}
+          >
+            <AlertTriangle size={18} /> Retirar para Chamado
+          </button>
+          <button
+            type="button"
             onClick={() => {
               void Promise.all([loadReservations(), onRefresh()]);
               setFeedbackNotice('Dados atualizados!');
@@ -603,7 +711,7 @@ export const TabletKioskView: React.FC<TabletKioskViewProps> = ({
             }}
             className="tablet-btn-logout"
           >
-            <LogOut size={18} /> Sair / Trocar Técnico
+            <LogOut size={18} /> Sair
           </button>
         </div>
       </header>
@@ -621,6 +729,44 @@ export const TabletKioskView: React.FC<TabletKioskViewProps> = ({
           <button type="button" onClick={() => setFeedbackError('')}><X size={18} /></button>
         </div>
       )}
+
+      {/* BANNER DE CHAMADO ESPONTÂNEO (TODOS OS TÉCNICOS) */}
+      <div style={{
+        background: 'linear-gradient(135deg, #fff7ed 0%, #ffedd5 100%)',
+        border: '1.5px solid #fdba74',
+        borderRadius: '16px',
+        padding: '14px 20px',
+        margin: '0 24px 16px 24px',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        flexWrap: 'wrap',
+        gap: '12px',
+        boxShadow: '0 4px 12px rgba(234, 88, 12, 0.08)'
+      }}>
+        <div>
+          <strong style={{ color: '#c2410c', fontSize: '1rem', display: 'flex', alignItems: 'center', gap: '6px' }}>
+            🚨 Atendimento de Chamado Espontâneo / Emergencial
+          </strong>
+          <p style={{ margin: '3px 0 0 0', color: '#9a3412', fontSize: '0.84rem' }}>
+            Precisa retirar padrões para um chamado não planejado ou de emergência fora da agenda? Retire diretamente aqui.
+          </p>
+        </div>
+        <div>
+          <button
+            type="button"
+            className="tablet-btn-chamado"
+            onClick={() => {
+              setShowChamadoModal(true);
+              setChamadoClientName('');
+              setChamadoSelectedIds([]);
+              setChamadoSearch('');
+            }}
+          >
+            <AlertTriangle size={18} /> Abrir Chamado & Retirar
+          </button>
+        </div>
+      </div>
 
       {/* BANNER DE OPERAÇÕES ESPECIAIS EQAT */}
       {selectedTech?.name?.trim().toUpperCase() === 'EQAT' && (
@@ -783,6 +929,11 @@ export const TabletKioskView: React.FC<TabletKioskViewProps> = ({
                     <div className="tablet-action-info">
                       <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
                         <span className="tablet-tag-pill">{res.asset_tag}</span>
+                        {res.operation_type === 'Chamado' && (
+                          <span style={{ background: '#ffedd5', color: '#c2410c', fontSize: '0.72rem', fontWeight: 800, padding: '2px 6px', borderRadius: '4px' }}>
+                            🚨 CHAMADO
+                          </span>
+                        )}
                         {res.operation_type === 'Calibração' && (
                           <span style={{ background: '#fef3c7', color: '#92400e', fontSize: '0.72rem', fontWeight: 800, padding: '2px 6px', borderRadius: '4px' }}>
                             🔬 CALIBRAÇÃO
@@ -846,7 +997,24 @@ export const TabletKioskView: React.FC<TabletKioskViewProps> = ({
                   </div>
 
                   <div className="tablet-action-info">
-                    <span className="tablet-tag-pill">{res.asset_tag}</span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap', marginBottom: '4px' }}>
+                      <span className="tablet-tag-pill">{res.asset_tag}</span>
+                      {res.operation_type === 'Chamado' && (
+                        <span style={{ background: '#ffedd5', color: '#c2410c', fontSize: '0.72rem', fontWeight: 800, padding: '2px 6px', borderRadius: '4px' }}>
+                          🚨 CHAMADO
+                        </span>
+                      )}
+                      {res.operation_type === 'Calibração' && (
+                        <span style={{ background: '#fef3c7', color: '#92400e', fontSize: '0.72rem', fontWeight: 800, padding: '2px 6px', borderRadius: '4px' }}>
+                          🔬 CALIBRAÇÃO
+                        </span>
+                      )}
+                      {res.operation_type === 'Empréstimo' && (
+                        <span style={{ background: '#e0e7ff', color: '#3730a3', fontSize: '0.72rem', fontWeight: 800, padding: '2px 6px', borderRadius: '4px' }}>
+                          🤝 EMPRÉSTIMO
+                        </span>
+                      )}
+                    </div>
                     <strong>{res.analyzer_name}</strong>
                     <p className="tablet-action-sub">
                       Tipo: <strong>{res.analyzer_type || 'Analisador'}</strong> · Atendimento: <strong>{res.client_name || 'Agendamento Técnico'}</strong>
@@ -877,6 +1045,28 @@ export const TabletKioskView: React.FC<TabletKioskViewProps> = ({
         )}
       </main>
 
+      {/* CONTROLES FLUTUANTES DE SCROLL TÁTIL (DASHBOARD) */}
+      <div className="tablet-floating-scroll-controls" aria-label="Navegação por toque">
+        <button
+          type="button"
+          className="tablet-scroll-nav-btn up"
+          onClick={() => scrollPage(-450)}
+          title="Rolar para cima"
+        >
+          <ChevronUp size={24} />
+          <span>Subir</span>
+        </button>
+        <button
+          type="button"
+          className="tablet-scroll-nav-btn down"
+          onClick={() => scrollPage(450)}
+          title="Rolar para baixo"
+        >
+          <ChevronDown size={24} />
+          <span>Descer</span>
+        </button>
+      </div>
+
       {/* MODAL DE RESERVA TÁTIL DE PADRÕES */}
       {reserveModalAppt && (
         <div className="tablet-modal-overlay">
@@ -903,6 +1093,34 @@ export const TabletKioskView: React.FC<TabletKioskViewProps> = ({
                 value={modalSearchAnalyzer}
                 onChange={e => setModalSearchAnalyzer(e.target.value)}
               />
+            </div>
+
+            <div className="tablet-modal-scroll-bar">
+              <span style={{ fontSize: '0.82rem', color: '#64748b' }}>Padrões disponíveis para seleção:</span>
+              <div style={{ display: 'flex', gap: '6px' }}>
+                <button
+                  type="button"
+                  className="tablet-mini-scroll-btn"
+                  onClick={(e) => {
+                    const grid = e.currentTarget.closest('.tablet-modal-box')?.querySelector('.tablet-modal-grid');
+                    grid?.scrollBy({ top: -220, behavior: 'smooth' });
+                  }}
+                  title="Subir lista"
+                >
+                  <ChevronUp size={16} /> Subir
+                </button>
+                <button
+                  type="button"
+                  className="tablet-mini-scroll-btn"
+                  onClick={(e) => {
+                    const grid = e.currentTarget.closest('.tablet-modal-box')?.querySelector('.tablet-modal-grid');
+                    grid?.scrollBy({ top: 220, behavior: 'smooth' });
+                  }}
+                  title="Descer lista"
+                >
+                  <ChevronDown size={16} /> Descer
+                </button>
+              </div>
             </div>
 
             <div className="tablet-modal-grid">
@@ -956,6 +1174,131 @@ export const TabletKioskView: React.FC<TabletKioskViewProps> = ({
         </div>
       )}
 
+      {/* MODAL DE CHAMADO ESPONTÂNEO (TODOS OS TÉCNICOS) */}
+      {showChamadoModal && (
+        <div className="tablet-modal-overlay">
+          <div className="tablet-modal-box">
+            <div className="tablet-modal-header">
+              <div>
+                <h3 style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <AlertTriangle size={22} color="#ea580c" /> Saída para Chamado Espontâneo
+                </h3>
+                <p>Técnico: <strong>{selectedTech?.name}</strong> · Retirada imediata sem agendamento prévio</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowChamadoModal(false)}
+                className="tablet-modal-close"
+              >
+                <X size={24} />
+              </button>
+            </div>
+
+            <div style={{ padding: '0 24px 14px 24px' }}>
+              <label style={{ fontSize: '0.84rem', fontWeight: 700, color: '#334155', display: 'block', marginBottom: '6px' }}>
+                Hospital / Cliente / Motivo do Chamado *
+              </label>
+              <input
+                type="text"
+                className="input-field"
+                style={{ width: '100%', padding: '10px 14px', borderRadius: '10px', border: '1.5px solid #fdba74', fontSize: '0.94rem', outline: 'none' }}
+                placeholder="Ex: Hospital Regional - Emergência Ventilador"
+                value={chamadoClientName}
+                onChange={e => setChamadoClientName(e.target.value)}
+                autoFocus
+              />
+            </div>
+
+            <div className="tablet-modal-search">
+              <Search size={20} />
+              <input
+                type="text"
+                placeholder="Buscar padrão disponível..."
+                value={chamadoSearch}
+                onChange={e => setChamadoSearch(e.target.value)}
+              />
+            </div>
+
+            <div className="tablet-modal-scroll-bar">
+              <span style={{ fontSize: '0.82rem', color: '#64748b' }}>Padrões disponíveis para chamado:</span>
+              <div style={{ display: 'flex', gap: '6px' }}>
+                <button
+                  type="button"
+                  className="tablet-mini-scroll-btn"
+                  onClick={(e) => {
+                    const grid = e.currentTarget.closest('.tablet-modal-box')?.querySelector('.tablet-modal-grid');
+                    grid?.scrollBy({ top: -220, behavior: 'smooth' });
+                  }}
+                  title="Subir lista"
+                >
+                  <ChevronUp size={16} /> Subir
+                </button>
+                <button
+                  type="button"
+                  className="tablet-mini-scroll-btn"
+                  onClick={(e) => {
+                    const grid = e.currentTarget.closest('.tablet-modal-box')?.querySelector('.tablet-modal-grid');
+                    grid?.scrollBy({ top: 220, behavior: 'smooth' });
+                  }}
+                  title="Descer lista"
+                >
+                  <ChevronDown size={16} /> Descer
+                </button>
+              </div>
+            </div>
+
+            <div className="tablet-modal-grid">
+              {filteredChamadoAnalyzers.map(analyzer => {
+                const isSelected = chamadoSelectedIds.includes(Number(analyzer.id));
+
+                return (
+                  <div
+                    key={analyzer.id}
+                    onClick={() => {
+                      setChamadoSelectedIds(prev =>
+                        isSelected
+                          ? prev.filter(id => id !== Number(analyzer.id))
+                          : [...prev, Number(analyzer.id)]
+                      );
+                    }}
+                    className={`tablet-analyzer-select-card ${isSelected ? 'selected' : ''}`}
+                  >
+                    <span className="tablet-analyzer-tag">{analyzer.asset_tag}</span>
+                    <strong>{analyzer.name}</strong>
+                    <span>{analyzer.type} · {analyzer.brand_model || 'Padrão Oficial'}</span>
+                  </div>
+                );
+              })}
+
+              {!filteredChamadoAnalyzers.length && (
+                <div style={{ gridColumn: '1 / -1', textAlign: 'center', padding: '30px', color: '#64748b' }}>
+                  Nenhum padrão disponível encontrado para a busca.
+                </div>
+              )}
+            </div>
+
+            <div className="tablet-modal-footer">
+              <button
+                type="button"
+                onClick={() => setShowChamadoModal(false)}
+                className="tablet-btn-secondary"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                disabled={isSubmittingChamado || !chamadoSelectedIds.length || !chamadoClientName.trim()}
+                onClick={handleSubmitChamado}
+                className="tablet-btn-primary"
+                style={{ background: '#ea580c', borderColor: '#c2410c' }}
+              >
+                {isSubmittingChamado ? 'Registrando Saída...' : `Confirmar e Retirar (${chamadoSelectedIds.length})`}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* MODAL DE OPERAÇÕES ESPECIAIS (CALIBRAÇÃO / EMPRÉSTIMO) */}
       {specialOpType && (
         <div className="tablet-modal-overlay">
@@ -996,6 +1339,34 @@ export const TabletKioskView: React.FC<TabletKioskViewProps> = ({
                 value={specialOpSearch}
                 onChange={e => setSpecialOpSearch(e.target.value)}
               />
+            </div>
+
+            <div className="tablet-modal-scroll-bar">
+              <span style={{ fontSize: '0.82rem', color: '#64748b' }}>Padrões disponíveis para seleção:</span>
+              <div style={{ display: 'flex', gap: '6px' }}>
+                <button
+                  type="button"
+                  className="tablet-mini-scroll-btn"
+                  onClick={(e) => {
+                    const grid = e.currentTarget.closest('.tablet-modal-box')?.querySelector('.tablet-modal-grid');
+                    grid?.scrollBy({ top: -220, behavior: 'smooth' });
+                  }}
+                  title="Subir lista"
+                >
+                  <ChevronUp size={16} /> Subir
+                </button>
+                <button
+                  type="button"
+                  className="tablet-mini-scroll-btn"
+                  onClick={(e) => {
+                    const grid = e.currentTarget.closest('.tablet-modal-box')?.querySelector('.tablet-modal-grid');
+                    grid?.scrollBy({ top: 220, behavior: 'smooth' });
+                  }}
+                  title="Descer lista"
+                >
+                  <ChevronDown size={16} /> Descer
+                </button>
+              </div>
             </div>
 
             <div className="tablet-modal-grid">

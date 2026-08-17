@@ -21,13 +21,13 @@ const supabaseAnonKey = requiredEnv('SUPABASE_ANON_KEY');
 const supabaseServiceRoleKey = requiredEnv('SUPABASE_SERVICE_ROLE_KEY');
 
 // Cliente público / anon (respeita RLS)
-export const supabase = createClient<Database>(
+export const supabase = createClient<any>(
   supabaseUrl,
   supabaseAnonKey
 );
 
 // Cliente Admin (Service Role - somente no backend)
-export const supabaseAdmin = createClient<Database>(
+export const supabaseAdmin = createClient<any>(
   supabaseUrl,
   supabaseServiceRoleKey
 );

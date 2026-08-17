@@ -1283,3 +1283,124 @@
     padding: 2px 6px;
   }
 }
+
+/* ==========================================================================
+   FLOATING TACTILE SCROLL CONTROLS (UP / DOWN)
+   ========================================================================== */
+.tablet-floating-scroll-controls {
+  position: fixed;
+  right: 24px;
+  bottom: 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  z-index: 999;
+  pointer-events: auto;
+}
+
+.tablet-scroll-nav-btn {
+  background: rgba(15, 23, 42, 0.88);
+  color: #ffffff;
+  border: 2px solid rgba(255, 255, 255, 0.25);
+  backdrop-filter: blur(12px);
+  width: 58px;
+  height: 58px;
+  border-radius: 18px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  cursor: pointer;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.35), 0 0 0 1px rgba(255, 255, 255, 0.1);
+  transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+  user-select: none;
+  touch-action: manipulation;
+}
+
+.tablet-scroll-nav-btn span {
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  line-height: 1;
+}
+
+.tablet-scroll-nav-btn:hover {
+  background: #1e293b;
+  border-color: #3b82f6;
+  transform: translateY(-2px) scale(1.04);
+  box-shadow: 0 14px 28px rgba(37, 99, 235, 0.4);
+}
+
+.tablet-scroll-nav-btn:active {
+  transform: scale(0.94);
+  background: #2563eb;
+  border-color: #ffffff;
+}
+
+/* Modal Internal Scroll Bar */
+.tablet-modal-scroll-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #f8fafc;
+  padding: 8px 12px;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  margin-bottom: 12px;
+}
+
+.tablet-mini-scroll-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  padding: 6px 12px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #334155;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  touch-action: manipulation;
+}
+
+.tablet-mini-scroll-btn:hover {
+  background: #eff6ff;
+  border-color: #3b82f6;
+  color: #1d4ed8;
+}
+
+.tablet-mini-scroll-btn:active {
+  background: #dbeafe;
+  transform: scale(0.95);
+}
+
+/* Chamado Button in Dashboard */
+.tablet-btn-chamado {
+  background: linear-gradient(135deg, #ea580c 0%, #c2410c 100%);
+  color: #ffffff;
+  border: none;
+  border-radius: 14px;
+  padding: 10px 18px;
+  font-size: 0.92rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(234, 88, 12, 0.3);
+  transition: all 0.2s ease;
+  touch-action: manipulation;
+}
+
+.tablet-btn-chamado:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(234, 88, 12, 0.4);
+}
+
+.tablet-btn-chamado:active {
+  transform: scale(0.96);
+}

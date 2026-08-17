@@ -71,8 +71,8 @@ export function OperationsAdminView({
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
 
-  // Modos de Operação: Atendimento / Calibração / Empréstimo
-  const [operationType, setOperationType] = useState<'Atendimento' | 'Calibração' | 'Empréstimo'>('Atendimento');
+  // Modos de Operação: Atendimento / Chamado / Calibração / Empréstimo
+  const [operationType, setOperationType] = useState<'Atendimento' | 'Chamado' | 'Calibração' | 'Empréstimo'>('Atendimento');
   const [directDate, setDirectDate] = useState<string>(todayKey());
   const [directNotes, setDirectNotes] = useState<string>('');
   const [directCheckout, setDirectCheckout] = useState<boolean>(false);
@@ -483,45 +483,64 @@ export function OperationsAdminView({
           <div className="operations-section-heading">
             <span><PackageCheck size={19} /></span>
             <div>
-              <h3>{operationType === 'Calibração' ? 'Saída para Calibração de Padrão' : operationType === 'Empréstimo' ? 'Empréstimo de Equipamento' : (isTechnician ? 'Reservar Padrão para Atendimento' : 'Nova reserva administrativa')}</h3>
-              <p>{operationType !== 'Atendimento' ? (isEqat && !isAdmin ? 'Solicitação da EQAT sujeita à aprovação do Administrador Geral.' : 'Registro direto de saída/reserva sem agendamento.') : (isTechnician ? 'A reserva será vinculada estritamente ao seu perfil.' : 'Vincule atendimento, técnico e patrimônio.')}</p>
+              <h3>
+                {operationType === 'Chamado' ? '🚨 Saída para Chamado Espontâneo' :
+                 operationType === 'Calibração' ? '🔬 Saída para Calibração de Padrão' :
+                 operationType === 'Empréstimo' ? '🤝 Empréstimo de Equipamento' :
+                 (isTechnician ? '📋 Reservar Padrão para Atendimento' : 'Nova reserva administrativa')}
+              </h3>
+              <p>
+                {operationType === 'Chamado' ? 'Atendimento espontâneo de emergência / sem agendamento prévio na agenda.' :
+                 operationType !== 'Atendimento' ? (isEqat && !isAdmin ? 'Solicitação da EQAT sujeita à aprovação do Administrador Geral.' : 'Registro direto de saída/reserva sem agendamento.') :
+                 (isTechnician ? 'A reserva será vinculada estritamente ao seu perfil.' : 'Vincule atendimento, técnico e patrimônio.')}
+              </p>
             </div>
           </div>
 
-          {/* SELETOR DE MODO: ATENDIMENTO / CALIBRAÇÃO / EMPRÉSTIMO */}
-          {canSpecialOps && (
-            <div style={{ marginBottom: '14px' }}>
-              <span style={{ fontSize: '0.8rem', fontWeight: 700, color: '#334155', display: 'block', marginBottom: '6px' }}>
-                Finalidade da Operação
-              </span>
-              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                <button
-                  type="button"
-                  className={`btn btn-sm ${operationType === 'Atendimento' ? 'btn-primary' : 'btn-secondary'}`}
-                  style={{ fontSize: '0.8rem', padding: '6px 12px' }}
-                  onClick={() => { setOperationType('Atendimento'); setSelectedAnalyzerIds([]); }}
-                >
-                  📋 Atendimento
-                </button>
-                <button
-                  type="button"
-                  className={`btn btn-sm ${operationType === 'Calibração' ? 'btn-primary' : 'btn-secondary'}`}
-                  style={{ fontSize: '0.8rem', padding: '6px 12px' }}
-                  onClick={() => { setOperationType('Calibração'); setSelectedAnalyzerIds([]); }}
-                >
-                  🔬 Calibração
-                </button>
-                <button
-                  type="button"
-                  className={`btn btn-sm ${operationType === 'Empréstimo' ? 'btn-primary' : 'btn-secondary'}`}
-                  style={{ fontSize: '0.8rem', padding: '6px 12px' }}
-                  onClick={() => { setOperationType('Empréstimo'); setSelectedAnalyzerIds([]); }}
-                >
-                  🤝 Empréstimo
-                </button>
-              </div>
+          {/* SELETOR DE MODO: ATENDIMENTO / CHAMADO / CALIBRAÇÃO / EMPRÉSTIMO */}
+          <div style={{ marginBottom: '14px' }}>
+            <span style={{ fontSize: '0.8rem', fontWeight: 700, color: '#334155', display: 'block', marginBottom: '6px' }}>
+              Finalidade da Operação
+            </span>
+            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+              <button
+                type="button"
+                className={`btn btn-sm ${operationType === 'Atendimento' ? 'btn-primary' : 'btn-secondary'}`}
+                style={{ fontSize: '0.8rem', padding: '6px 12px' }}
+                onClick={() => { setOperationType('Atendimento'); setSelectedAnalyzerIds([]); }}
+              >
+                📋 Atendimento da Agenda
+              </button>
+              <button
+                type="button"
+                className={`btn btn-sm ${operationType === 'Chamado' ? 'btn-primary' : 'btn-secondary'}`}
+                style={{ fontSize: '0.8rem', padding: '6px 12px', background: operationType === 'Chamado' ? '#ea580c' : undefined, borderColor: operationType === 'Chamado' ? '#c2410c' : undefined }}
+                onClick={() => { setOperationType('Chamado'); setSelectedAnalyzerIds([]); }}
+              >
+                🚨 Chamado Espontâneo
+              </button>
+              {canSpecialOps && (
+                <>
+                  <button
+                    type="button"
+                    className={`btn btn-sm ${operationType === 'Calibração' ? 'btn-primary' : 'btn-secondary'}`}
+                    style={{ fontSize: '0.8rem', padding: '6px 12px' }}
+                    onClick={() => { setOperationType('Calibração'); setSelectedAnalyzerIds([]); }}
+                  >
+                    🔬 Calibração
+                  </button>
+                  <button
+                    type="button"
+                    className={`btn btn-sm ${operationType === 'Empréstimo' ? 'btn-primary' : 'btn-secondary'}`}
+                    style={{ fontSize: '0.8rem', padding: '6px 12px' }}
+                    onClick={() => { setOperationType('Empréstimo'); setSelectedAnalyzerIds([]); }}
+                  >
+                    🤝 Empréstimo
+                  </button>
+                </>
+              )}
             </div>
-          )}
+          </div>
 
           {operationType === 'Atendimento' ? (
             <label>
@@ -549,14 +568,15 @@ export function OperationsAdminView({
                 />
               </label>
               <label>
-                <span>{operationType === 'Calibração' ? 'Laboratório / Motivo' : 'Destino / Solicitante'}</span>
+                <span>{operationType === 'Chamado' ? 'Hospital / Cliente / Motivo do Chamado *' : operationType === 'Calibração' ? 'Laboratório / Motivo' : 'Destino / Solicitante'}</span>
                 <input
                   type="text"
                   className="input-field"
                   style={{ padding: '8px 12px', borderRadius: '8px', border: '1px solid #cbd5e1' }}
-                  placeholder={operationType === 'Calibração' ? 'Ex: Calibração Anual Fluke' : 'Ex: Empréstimo Filial RJ'}
+                  placeholder={operationType === 'Chamado' ? 'Ex: Hospital Regional - Emergência Ventilador' : operationType === 'Calibração' ? 'Ex: Calibração Anual Fluke' : 'Ex: Empréstimo Filial RJ'}
                   value={directNotes}
                   onChange={e => setDirectNotes(e.target.value)}
+                  required={operationType === 'Chamado'}
                 />
               </label>
             </div>
@@ -823,7 +843,9 @@ export function OperationsAdminView({
                     </td>
                     <td data-label="Atendimento">
                       <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '2px' }}>
-                        {reservation.operation_type === 'Calibração' ? (
+                        {reservation.operation_type === 'Chamado' ? (
+                          <span style={{ background: '#ffedd5', color: '#c2410c', border: '1px solid #fed7aa', fontSize: '0.65rem', fontWeight: 800, padding: '1px 5px', borderRadius: '4px' }}>🚨 CHAMADO</span>
+                        ) : reservation.operation_type === 'Calibração' ? (
                           <span style={{ background: '#fef3c7', color: '#92400e', border: '1px solid #fde68a', fontSize: '0.65rem', fontWeight: 800, padding: '1px 5px', borderRadius: '4px' }}>🔬 CALIBRAÇÃO</span>
                         ) : reservation.operation_type === 'Empréstimo' ? (
                           <span style={{ background: '#e0e7ff', color: '#3730a3', border: '1px solid #c7d2fe', fontSize: '0.65rem', fontWeight: 800, padding: '1px 5px', borderRadius: '4px' }}>🤝 EMPRÉSTIMO</span>

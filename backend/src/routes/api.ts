@@ -1273,7 +1273,12 @@ router.get('/reservations', async (req: Request, res: Response) => {
       const appt = r.appointment_id ? apptMap.get(r.appointment_id) : null;
       const opType = r.operation_type || (r.appointment_id ? 'Atendimento' : 'Uso Interno');
 
-      let clientDisplay = appt ? appt.client_name : (opType === 'Calibração' ? '[Calibração de Padrão]' : opType === 'Empréstimo' ? '[Empréstimo de Equipamento]' : '[Operação Interna]');
+      let clientDisplay = appt ? appt.client_name : (
+        opType === 'Calibração' ? '[Calibração de Padrão]' :
+        opType === 'Empréstimo' ? '[Empréstimo de Equipamento]' :
+        opType === 'Chamado' ? (r.notes ? `[Chamado] ${r.notes}` : '[Chamado Técnico Espontâneo]') :
+        '[Operação Interna]'
+      );
 
       return {
         ...r,
@@ -1321,9 +1326,11 @@ router.post('/reservations', async (req: Request, res: Response) => {
       return res.status(404).json({ success: false, error: 'Técnico/Responsável não encontrado.' });
     }
 
-    const isSpecialOp = operation_type === 'Calibração' || operation_type === 'Empréstimo' || !appointment_id;
+    const isSpecialOp = operation_type === 'Calibração' || operation_type === 'Empréstimo';
+    const isChamado = operation_type === 'Chamado';
 
-    // REGRA DE PERMISSÃO: Apenas Administrador Geral e EQAT podem solicitar/retirar para Calibração e Empréstimo
+    // REGRA DE PERMISSÃO: Apenas Administrador Geral e EQAT podem solicitar/retirar para Calibração e Empréstimo.
+    // Chamado pode ser solicitado/retirado por QUALQUER técnico.
     if (isSpecialOp) {
       const isEqat = tech.name?.trim().toUpperCase() === 'EQAT';
       const isAdmin = tech.role === 'admin' || (req as any).user?.role === 'admin' || req.headers['x-admin-token'];
@@ -1369,7 +1376,8 @@ router.post('/reservations', async (req: Request, res: Response) => {
 
     // REGRA DE APROVAÇÃO:
     // Se a EQAT solicitar Calibração/Empréstimo, fica 'Aguardando Aprovação' até o Administrador aprovar.
-    // Se o Administrador criar, já entra aprovado ('Reservado' ou 'Em Uso' se for direct_checkout).
+    // Se for Chamado ou Atendimento, entra como 'Reservado' ou 'Em Uso' (se direct_checkout).
+    // Se o Administrador criar, entra aprovado.
     const isCreatedByAdmin = req.headers['x-admin-token'] || (req as any).user?.role === 'admin' || tech.role === 'admin';
     const isEqat = tech.name?.trim().toUpperCase() === 'EQAT';
 
@@ -1385,6 +1393,8 @@ router.post('/reservations', async (req: Request, res: Response) => {
       if (direct_checkout) {
         initialStatus = 'Em Uso';
       }
+    } else if (isChamado && direct_checkout) {
+      initialStatus = 'Em Uso';
     }
 
     // Se for saída imediata, verificar se outro técnico está usando no momento
@@ -1441,7 +1451,12 @@ router.post('/reservations', async (req: Request, res: Response) => {
         approved_at: approvedAt,
         checkout_at: initialStatus === 'Em Uso' ? new Date().toISOString() : null,
         checkin_at: null,
-        notes: notes || (operation_type === 'Calibração' ? 'Saída/Reserva para Calibração de Padrão' : operation_type === 'Empréstimo' ? 'Empréstimo de equipamento' : 'Reserva efetuada pelo sistema')
+        notes: notes || (
+          operation_type === 'Calibração' ? 'Saída/Reserva para Calibração de Padrão' :
+          operation_type === 'Empréstimo' ? 'Empréstimo de equipamento' :
+          operation_type === 'Chamado' ? 'Chamado Técnico Espontâneo' :
+          'Reserva efetuada pelo sistema'
+        )
       })
       .select('id')
       .single();
