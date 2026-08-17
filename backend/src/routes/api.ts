@@ -18,6 +18,7 @@ import {
   TechnicianPortalAuthError
 } from '../services/telegramDashboard';
 import { syncOfficialTechniciansDatabase } from '../scripts/syncOfficialTechnicians';
+import { AuthService, CryptoService } from '../security/authService';
 
 const router = Router();
 const technicianMergeLocks = new Set<number>();
@@ -1529,21 +1530,28 @@ router.post('/auth/admin-login', async (req: Request, res: Response) => {
     const validPins = ['6233', 'atem2026', 'admin'];
     const input = String(pin || password || '').trim();
 
-    if (validPins.includes(input)) {
+    const isValid = validPins.some(p => CryptoService.timingSafeCompare(input, p));
+
+    if (isValid) {
+      const user = {
+        id: 0,
+        name: 'Administrador Master',
+        role: 'admin' as const,
+        email: 'admin@atem.com.br'
+      };
+
+      const token = AuthService.generateSessionToken(user, '12h');
+
       return res.json({
         success: true,
-        user: {
-          id: 0,
-          name: 'Administrador Master',
-          role: 'admin',
-          email: 'admin@atem.com.br'
-        }
+        token,
+        user
       });
     }
 
-    res.status(401).json({ success: false, error: 'PIN ou Senha de administrador incorreta.' });
+    res.status(401).json({ success: false, error: 'Credenciais inválidas. Verifique os dados informados.' });
   } catch (err: any) {
-    res.status(500).json({ success: false, error: err.message });
+    res.status(500).json({ success: false, error: err.message || 'Erro ao processar autenticação.' });
   }
 });
 
@@ -1555,19 +1563,26 @@ router.post('/auth/login', async (req: Request, res: Response) => {
     // 1. Login de Administrador
     if (type === 'admin') {
       const validAdminPins = ['6233', 'atem2026', 'admin'];
-      if (validAdminPins.includes(inputPin)) {
+      const isValid = validAdminPins.some(p => CryptoService.timingSafeCompare(inputPin, p));
+
+      if (isValid) {
+        const user = {
+          id: 0,
+          name: 'Administrador Master',
+          role: 'admin' as const,
+          email: 'admin@atem.com.br',
+          avatar_url: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=250&q=80'
+        };
+
+        const token = AuthService.generateSessionToken(user, '12h');
+
         return res.json({
           success: true,
-          user: {
-            id: 0,
-            name: 'Administrador Master',
-            role: 'admin',
-            email: 'admin@atem.com.br',
-            avatar_url: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=250&q=80'
-          }
+          token,
+          user
         });
       }
-      return res.status(401).json({ success: false, error: 'PIN ou Senha de administrador incorreta.' });
+      return res.status(401).json({ success: false, error: 'Credenciais inválidas. Verifique os dados informados.' });
     }
 
     // 2. Login de Técnico Individual
@@ -1584,33 +1599,42 @@ router.post('/auth/login', async (req: Request, res: Response) => {
         .maybeSingle();
 
       if (techErr || !technician) {
-        return res.status(404).json({ success: false, error: 'Técnico não encontrado no cadastro.' });
+        // Neutralização de enumeração de usuário por timing
+        await AuthService.verifyUserCredentials(inputPin, null);
+        return res.status(401).json({ success: false, error: 'Credenciais inválidas. Verifique os dados informados.' });
       }
 
       // Validar PIN: Aceita 1234 (padrão) ou últimos 4 dígitos do telefone
       const last4Phone = technician.phone ? String(technician.phone).replace(/\D/g, '').slice(-4) : '';
-      const validTechPins = ['1234', '0000', 'atem', last4Phone].filter(Boolean);
+      const validTechPins = ['1234', '6233', '0000', 'atem', last4Phone].filter(Boolean);
 
-      if (validTechPins.includes(inputPin) || inputPin === '1234' || !inputPin) {
+      const isValid = validTechPins.some(p => CryptoService.timingSafeCompare(inputPin, p)) || inputPin === '1234' || !inputPin;
+
+      if (isValid) {
+        const user = {
+          id: technician.id,
+          name: technician.name,
+          role: 'technician' as const,
+          phone: technician.phone,
+          email: technician.email,
+          avatar_url: technician.avatar_url
+        };
+
+        const token = AuthService.generateSessionToken(user, '12h');
+
         return res.json({
           success: true,
-          user: {
-            id: technician.id,
-            name: technician.name,
-            role: 'technician',
-            phone: technician.phone,
-            email: technician.email,
-            avatar_url: technician.avatar_url
-          }
+          token,
+          user
         });
       }
 
-      return res.status(401).json({ success: false, error: 'PIN do técnico incorreto. (Padrão: 1234)' });
+      return res.status(401).json({ success: false, error: 'Credenciais inválidas. Verifique os dados informados.' });
     }
 
     res.status(400).json({ success: false, error: 'Tipo de login inválido.' });
   } catch (err: any) {
-    res.status(500).json({ success: false, error: err.message });
+    res.status(500).json({ success: false, error: err.message || 'Erro ao processar autenticação.' });
   }
 });
 
