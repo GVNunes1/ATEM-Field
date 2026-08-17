@@ -85,13 +85,20 @@ export const TabletKioskView: React.FC<TabletKioskViewProps> = ({
   const [specialOpSearch, setSpecialOpSearch] = useState('');
   const [isSubmittingSpecialOp, setIsSubmittingSpecialOp] = useState(false);
 
-  // Scroll suave para totens / tablets
+  // Scroll suave universal para totens / tablets
   const scrollPage = (delta: number) => {
-    const root = document.querySelector('.tablet-kiosk-root');
-    if (root) {
-      root.scrollBy({ top: delta, behavior: 'smooth' });
-    } else {
+    try {
       window.scrollBy({ top: delta, behavior: 'smooth' });
+      document.documentElement.scrollBy({ top: delta, behavior: 'smooth' });
+      document.body.scrollBy({ top: delta, behavior: 'smooth' });
+      const root = document.querySelector('.tablet-kiosk-root');
+      if (root) root.scrollBy({ top: delta, behavior: 'smooth' });
+      const content = document.querySelector('.tablet-content-area');
+      if (content) content.scrollBy({ top: delta, behavior: 'smooth' });
+      const standby = document.querySelector('.tablet-standby-main');
+      if (standby) standby.scrollBy({ top: delta, behavior: 'smooth' });
+    } catch {
+      window.scrollBy(0, delta);
     }
   };
 
@@ -730,43 +737,7 @@ export const TabletKioskView: React.FC<TabletKioskViewProps> = ({
         </div>
       )}
 
-      {/* BANNER DE CHAMADO ESPONTÂNEO (TODOS OS TÉCNICOS) */}
-      <div style={{
-        background: 'linear-gradient(135deg, #fff7ed 0%, #ffedd5 100%)',
-        border: '1.5px solid #fdba74',
-        borderRadius: '16px',
-        padding: '14px 20px',
-        margin: '0 24px 16px 24px',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        flexWrap: 'wrap',
-        gap: '12px',
-        boxShadow: '0 4px 12px rgba(234, 88, 12, 0.08)'
-      }}>
-        <div>
-          <strong style={{ color: '#c2410c', fontSize: '1rem', display: 'flex', alignItems: 'center', gap: '6px' }}>
-            🚨 Atendimento de Chamado Espontâneo / Emergencial
-          </strong>
-          <p style={{ margin: '3px 0 0 0', color: '#9a3412', fontSize: '0.84rem' }}>
-            Precisa retirar padrões para um chamado não planejado ou de emergência fora da agenda? Retire diretamente aqui.
-          </p>
-        </div>
-        <div>
-          <button
-            type="button"
-            className="tablet-btn-chamado"
-            onClick={() => {
-              setShowChamadoModal(true);
-              setChamadoClientName('');
-              setChamadoSelectedIds([]);
-              setChamadoSearch('');
-            }}
-          >
-            <AlertTriangle size={18} /> Abrir Chamado & Retirar
-          </button>
-        </div>
-      </div>
+
 
       {/* BANNER DE OPERAÇÕES ESPECIAIS EQAT */}
       {selectedTech?.name?.trim().toUpperCase() === 'EQAT' && (
