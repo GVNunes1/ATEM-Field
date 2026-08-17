@@ -11,8 +11,7 @@ import {
   Search,
   SlidersHorizontal,
   UserRound,
-  UsersRound,
-  Wrench
+  UsersRound
 } from 'lucide-react';
 
 interface AppointmentsViewProps {
@@ -158,7 +157,6 @@ export function AppointmentsView({ appointments, onOpenChecklistModal }: Appoint
                     const technicianList = technicianNames.split(',').map(name => name.trim()).filter(Boolean);
                     const displayTitle = appointment.client_name || appointment.title || 'Atendimento';
                     const hasSubtitle = appointment.title && appointment.title !== displayTitle;
-                    const equipment = appointment.equipments?.[0];
                     const reservationCount = appointment.reservations?.length || 0;
 
                     const isNonTech = isNonTechnicalAppointment(appointment);
@@ -188,10 +186,11 @@ export function AppointmentsView({ appointments, onOpenChecklistModal }: Appoint
                             </button>
                           )}
                         </div>
-                        {!isNonTech && equipment && (
+                        {!isNonTech && (
                           <div className="agenda-appointment-card__equipment">
-                            <div><Wrench size={15} /><span>{equipment.category_name || 'Equipamento'}</span><strong>{equipment.model}</strong></div>
-                            <span className={reservationCount ? 'is-reserved' : ''}>{reservationCount} analisador(es) reservado(s)</span>
+                            <span className={reservationCount ? 'is-reserved' : ''}>
+                              {reservationCount} {reservationCount === 1 ? 'padrão reservado' : 'padrões reservados'}
+                            </span>
                           </div>
                         )}
                       </div>
