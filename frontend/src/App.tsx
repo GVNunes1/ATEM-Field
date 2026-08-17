@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Header } from './components/Header';
 import { Navigation } from './components/Navigation';
 import { DashboardView } from './pages/DashboardView';
 import { InventoryView } from './pages/InventoryView';
@@ -39,7 +38,6 @@ export function App() {
   const [technicians, setTechnicians] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState('');
-  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
 
   const handleTabChange = (tab: string) => {
     setActiveTab(tab);
@@ -89,7 +87,6 @@ export function App() {
       if (apptsRes.success) setAppointments(apptsRes.appointments || []);
       if (catRes.success) setCategories(catRes.categories || []);
       if (techRes.success) setTechnicians(techRes.technicians || []);
-      setLastUpdated(new Date());
     } catch (error) {
       console.error('Erro ao carregar dados da API:', error);
       setLoadError(error instanceof Error ? error.message : 'Não foi possível carregar os dados.');
@@ -111,7 +108,6 @@ export function App() {
       }
       if (analyzersRes.success) setAnalyzers(analyzersRes.analyzers || []);
       if (appointmentsRes.success) setAppointments(appointmentsRes.appointments || []);
-      setLastUpdated(new Date());
     } catch (error) {
       console.warn('Atualização automática da agenda indisponível:', error);
     }
@@ -139,14 +135,6 @@ export function App() {
     <div className="app-layout">
       <Navigation activeTab={activeTab} setActiveTab={handleTabChange} />
       <div className="app-content-wrapper">
-        <Header
-          activeTab={activeTab}
-          setActiveTab={handleTabChange}
-          onRefresh={fetchAllData}
-          analyzerCount={analyzers.length}
-          lastUpdated={lastUpdated}
-        />
-
         <main className="app-main">
           {loadError && (
             <div className="load-error" role="alert">
