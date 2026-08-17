@@ -1,9 +1,11 @@
-import { FormEvent, useMemo, useState } from 'react';
+import { FormEvent, useEffect, useMemo, useState } from 'react';
 import {
   ArrowRightLeft,
   Check,
   CheckCircle2,
+  KeyRound,
   Link2,
+  Lock,
   Mail,
   MessageCircleMore,
   MoreVertical,
@@ -12,6 +14,7 @@ import {
   Plus,
   Search,
   ShieldAlert,
+  ShieldCheck,
   Trash2,
   UserRound,
   Users,
@@ -33,6 +36,7 @@ interface Technician {
   role: string;
   avatar_url?: string | null;
   status: string;
+  pin?: string | null;
 }
 
 interface TechnicianForm {
@@ -41,6 +45,20 @@ interface TechnicianForm {
   email: string;
   role: string;
   status: string;
+  pin: string;
+}
+
+interface AppCredential {
+  id: number;
+  user_type: string;
+  technician_id: number | null;
+  username: string;
+  display_name: string;
+  pin: string;
+  role: string;
+  status: string;
+  created_at: string;
+  updated_at: string;
 }
 
 const defaultForm: TechnicianForm = {
@@ -48,7 +66,8 @@ const defaultForm: TechnicianForm = {
   phone: '',
   email: '',
   role: 'Técnico Especialista em Assistência Técnica',
-  status: 'Ativo'
+  status: 'Ativo',
+  pin: '3247'
 };
 
 function hasValue(value: unknown) {
@@ -101,7 +120,8 @@ function profileFromTechnicians(source: Technician, target: Technician): Technic
     phone: preferred(target.phone, source.phone),
     email: preferred(target.email, source.email),
     role: preferred(target.role, source.role) || 'Técnico de Campo',
-    status: target.status === 'Inativo' && source.status !== 'Inativo' ? 'Ativo' : target.status
+    status: target.status === 'Inativo' && source.status !== 'Inativo' ? 'Ativo' : target.status,
+    pin: target.pin || source.pin || '3247'
   };
 }
 
@@ -137,8 +157,106 @@ export function TechniciansView({ technicians, onRefresh }: TechniciansViewProps
   const [showLinkModal, setShowLinkModal] = useState(false);
   const [linkTechId, setLinkTechId] = useState<number | null>(null);
 
+  // Estados para o Gerenciador de PINs e Credenciais do Banco
+  const [showPinManager, setShowPinManager] = useState(false);
+  const [credentials, setCredentials] = useState<AppCredential[]>([]);
+  const [loadingCreds, setLoadingCreds] = useState(false);
+  const [editingCred, setEditingCred] = useState<AppCredential | null>(null);
+  const [credPinInput, setCredPinInput] = useState('');
+  const [showNewCredModal, setShowNewCredModal] = useState(false);
+  const [newCredForm, setNewCredForm] = useState({
+    display_name: '',
+    username: '',
+    pin: '3247',
+    role: 'Técnico de Campo',
+    user_type: 'technician'
+  });
+
   const activeCount = technicians.filter(tech => tech.status !== 'Inativo').length;
   const phoneCount = technicians.filter(tech => hasValue(tech.phone)).length;
+
+  const fetchCredentials = async () => {
+    setLoadingCreds(true);
+    try {
+      const response = await fetch(apiUrl('/api/credentials'));
+      const data = await readApiResponse(response);
+      if (data.success) {
+        setCredentials(data.credentials || []);
+      }
+    } catch {
+      // ignore
+    } finally {
+      setLoadingCreds(false);
+    }
+  };
+
+  const handleUpdateCredPin = async (credId: number, pin: string) => {
+    setSaving(true);
+    try {
+      const response = await fetch(apiUrl(`/api/credentials/${credId}`), {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ pin: pin.trim() })
+      });
+      const data = await readApiResponse(response);
+      if (!response.ok || !data.success) throw new Error(data.error || 'Erro ao alterar PIN.');
+      setNotice('PIN atualizado no banco de dados com sucesso!');
+      setEditingCred(null);
+      fetchCredentials();
+      onRefresh();
+    } catch (err: any) {
+      setModalError(err.message || 'Erro ao salvar PIN');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleCreateCred = async (e: FormEvent) => {
+    e.preventDefault();
+    setSaving(true);
+    setModalError('');
+    try {
+      const response = await fetch(apiUrl('/api/credentials'), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newCredForm)
+      });
+      const data = await readApiResponse(response);
+      if (!response.ok || !data.success) throw new Error(data.error || 'Erro ao criar credencial.');
+      setNotice(`Usuário ${newCredForm.display_name} criado no banco com PIN ${newCredForm.pin}!`);
+      setShowNewCredModal(false);
+      setNewCredForm({
+        display_name: '',
+        username: '',
+        pin: '3247',
+        role: 'Técnico de Campo',
+        user_type: 'technician'
+      });
+      fetchCredentials();
+      onRefresh();
+    } catch (err: any) {
+      setModalError(err.message || 'Erro ao criar usuário');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleDeleteCred = async (credId: number) => {
+    if (!confirm('Deseja realmente excluir este usuário e seu PIN de acesso?')) return;
+    setSaving(true);
+    try {
+      const response = await fetch(apiUrl(`/api/credentials/${credId}`), { method: 'DELETE' });
+      const data = await readApiResponse(response);
+      if (!response.ok || !data.success) throw new Error(data.error || 'Erro ao excluir.');
+      setNotice('Credencial excluída com sucesso.');
+      fetchCredentials();
+      onRefresh();
+    } catch (err: any) {
+      alert(err.message);
+    } finally {
+      setSaving(false);
+    }
+  };
 
   const filteredTechnicians = useMemo(() => {
     const query = search.trim().toLocaleLowerCase('pt-BR');
@@ -190,7 +308,8 @@ export function TechniciansView({ technicians, onRefresh }: TechniciansViewProps
       phone: technician.phone || '',
       email: technician.email || '',
       role: technician.role || 'Técnico de Campo',
-      status: technician.status || 'Ativo'
+      status: technician.status || 'Ativo',
+      pin: technician.pin || '3247'
     });
     setEditingTechnician(technician);
     setOpenMenuId(null);
@@ -236,7 +355,7 @@ export function TechniciansView({ technicians, onRefresh }: TechniciansViewProps
       });
       const data = await readApiResponse(response);
       if (!response.ok || !data.success) throw new Error(data.error || 'Não foi possível salvar o técnico.');
-      setNotice(isEditing ? 'Cadastro atualizado com sucesso.' : 'Técnico cadastrado com sucesso.');
+      setNotice(isEditing ? 'Cadastro atualizado com sucesso no banco de dados.' : 'Técnico cadastrado com sucesso no banco.');
       setModalMode(null);
       setEditingTechnician(null);
       setFormData(defaultForm);
@@ -296,10 +415,17 @@ export function TechniciansView({ technicians, onRefresh }: TechniciansViewProps
       <div className="page-hero technicians-hero">
         <div className="page-hero__copy">
           <span className="eyebrow"><Users size={15} /> Gestão da equipe</span>
-          <h2>Técnicos de campo</h2>
-          <p>Edite contatos, elimine cadastros duplicados com segurança e prepare o acesso individual ao portal de reservas.</p>
+          <h2>Técnicos & Acessos</h2>
+          <p>Gerencie contatos, permissões e altere os PINs de login e totem de cada profissional diretamente no banco de dados.</p>
         </div>
         <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+          <button
+            onClick={() => { setShowPinManager(true); fetchCredentials(); }}
+            className="btn btn-secondary"
+            style={{ background: '#f0fdf4', borderColor: '#86efac', color: '#166534', fontWeight: 600 }}
+          >
+            <KeyRound size={17} /> Gerenciar PINs & Acessos
+          </button>
           <button onClick={() => { setLinkTechId(null); setShowLinkModal(true); }} className="btn btn-secondary">
             <Link2 size={17} /> Gerar link de acesso
           </button>
@@ -329,54 +455,43 @@ export function TechniciansView({ technicians, onRefresh }: TechniciansViewProps
           <span className="summary-card__icon summary-card__icon--cyan"><MessageCircleMore size={20} /></span>
           <div><strong>{phoneCount}</strong><span>WhatsApp cadastrado</span></div>
         </div>
-        <label className="technician-search">
+      </div>
+
+      <div className="technicians-toolbar">
+        <label className="technicians-search" aria-label="Buscar técnicos">
           <Search size={18} />
-          <input
-            value={search}
-            onChange={event => setSearch(event.target.value)}
-            placeholder="Buscar por nome, cargo ou contato"
-            aria-label="Buscar técnicos"
-          />
-          {search && <button type="button" onClick={() => setSearch('')} aria-label="Limpar busca"><X size={16} /></button>}
+          <input value={search} onChange={event => setSearch(event.target.value)} placeholder="Buscar por nome, cargo, telefone ou e-mail" />
+          {search && (
+            <button type="button" onClick={() => setSearch('')} aria-label="Limpar busca">
+              <X size={16} />
+            </button>
+          )}
         </label>
       </div>
 
-      <div className="technicians-results-head">
-        <div>
-          <h3>Equipe cadastrada</h3>
-          <p>{filteredTechnicians.length} {filteredTechnicians.length === 1 ? 'profissional encontrado' : 'profissionais encontrados'}</p>
-        </div>
-      </div>
-
-      {filteredTechnicians.length > 0 ? (
+      {filteredTechnicians.length ? (
         <div className="technicians-grid">
           {filteredTechnicians.map(tech => {
-            const isActive = tech.status !== 'Inativo';
             const phoneConfigured = hasValue(tech.phone);
             const emailConfigured = hasValue(tech.email);
+            const isActive = tech.status !== 'Inativo';
+            const techPin = tech.pin || '3247';
 
             return (
-              <article key={tech.id} className="technician-card">
-                <div className="technician-card__top">
-                  <div className="technician-avatar" aria-hidden="true">
-                    <span>{initials(tech.name || '')}</span>
-                    {tech.avatar_url && (
-                      <img
-                        src={tech.avatar_url}
-                        alt=""
-                        onError={event => { event.currentTarget.style.display = 'none'; }}
-                      />
-                    )}
+              <article key={tech.id} className={`technician-card ${isActive ? '' : 'technician-card--inactive'}`}>
+                <div className="technician-card__header">
+                  <div className="technician-avatar">
+                    <span>{initials(tech.name)}</span>
                   </div>
-                  <div className="technician-identity">
-                    <h3 title={tech.name}>{tech.name || 'Técnico sem nome'}</h3>
-                    <p>{hasValue(tech.role) ? tech.role : 'Técnico de campo'}</p>
-                  </div>
-                  <div className="technician-card__controls">
-                    <span className={`status-pill ${isActive ? 'status-pill--active' : 'status-pill--inactive'}`}>
-                      <span /> {isActive ? 'Ativo' : 'Inativo'}
-                    </span>
-                    <div className="technician-menu" onClick={event => event.stopPropagation()}>
+                  <div className="technician-card__meta">
+                    <div className="technician-title-row">
+                      <h3>{tech.name}</h3>
+                      <span className={`status-badge status-badge--${isActive ? 'active' : 'inactive'}`}>
+                        {isActive ? 'Ativo' : 'Inativo'}
+                      </span>
+                    </div>
+                    <p>{tech.role || 'Técnico de Campo'}</p>
+                    <div className="technician-card__actions">
                       <button
                         className="icon-button technician-menu__trigger"
                         type="button"
@@ -389,7 +504,7 @@ export function TechniciansView({ technicians, onRefresh }: TechniciansViewProps
                       {openMenuId === tech.id && (
                         <div className="technician-menu__popover" role="menu">
                           <button type="button" role="menuitem" onClick={() => openEditModal(tech)}>
-                            <Pencil size={16} /><span><strong>Editar cadastro</strong><small>Alterar dados e status</small></span>
+                            <Pencil size={16} /><span><strong>Editar cadastro</strong><small>Alterar dados e PIN</small></span>
                           </button>
                           <button type="button" role="menuitem" onClick={() => openMergeModal(tech)}>
                             <ArrowRightLeft size={16} /><span><strong>Mesclar usuário</strong><small>Unir com outro cadastro</small></span>
@@ -404,6 +519,24 @@ export function TechniciansView({ technicians, onRefresh }: TechniciansViewProps
                 </div>
 
                 <div className="technician-contact-list">
+                  <div className="contact-row" style={{ background: '#f8fafc', padding: '6px 10px', borderRadius: '8px', border: '1px solid #e2e8f0', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <span className="contact-row__icon" style={{ color: '#0284c7' }}><KeyRound size={16} /></span>
+                      <div>
+                        <span style={{ fontSize: '0.72rem', color: '#64748b', display: 'block' }}>PIN de Acesso</span>
+                        <strong style={{ fontSize: '0.95rem', letterSpacing: '2px', color: '#0f172a' }}>{techPin}</strong>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      className="btn btn-secondary btn-sm"
+                      style={{ padding: '3px 8px', fontSize: '0.75rem', height: '28px' }}
+                      onClick={() => openEditModal(tech)}
+                    >
+                      Alterar PIN
+                    </button>
+                  </div>
+
                   <div className="contact-row">
                     <span className="contact-row__icon"><Phone size={16} /></span>
                     <div><span>Celular</span><strong>{phoneConfigured ? tech.phone : 'Não informado'}</strong></div>
@@ -445,6 +578,7 @@ export function TechniciansView({ technicians, onRefresh }: TechniciansViewProps
         </div>
       )}
 
+      {/* MODAL DE CRIAÇÃO / EDIÇÃO DE TÉCNICO COM PIN */}
       {modalMode && (
         <div className="modal-overlay" role="presentation" onMouseDown={event => {
           if (event.currentTarget === event.target) closeProfileModal();
@@ -454,7 +588,7 @@ export function TechniciansView({ technicians, onRefresh }: TechniciansViewProps
               <div>
                 <span className="eyebrow">{modalMode === 'edit' ? 'Editar cadastro' : 'Novo cadastro'}</span>
                 <h3 id="technician-modal-title">{modalMode === 'edit' ? formData.name : 'Adicionar técnico de campo'}</h3>
-                <p>{modalMode === 'edit' ? 'Revise os dados do profissional e salve as alterações.' : 'Preencha os dados essenciais para agenda, reservas e futuro envio por WhatsApp.'}</p>
+                <p>{modalMode === 'edit' ? 'Revise os dados e defina o PIN de acesso do profissional.' : 'Preencha os dados essenciais e defina o PIN de acesso.'}</p>
               </div>
               <button className="icon-button" type="button" onClick={closeProfileModal} aria-label="Fechar modal"><X size={19} /></button>
             </div>
@@ -466,18 +600,35 @@ export function TechniciansView({ technicians, onRefresh }: TechniciansViewProps
                 <span>Nome completo *</span>
                 <input required className="input-field" value={formData.name} onChange={event => setFormData({ ...formData, name: event.target.value })} placeholder="Ex.: Carlos Eduardo Silva" />
               </label>
+
+              <label className="form-field">
+                <span>PIN de Acesso (Login / Totem) *</span>
+                <input
+                  required
+                  maxLength={8}
+                  className="input-field"
+                  style={{ letterSpacing: '3px', fontWeight: 700 }}
+                  value={formData.pin}
+                  onChange={event => setFormData({ ...formData, pin: event.target.value.replace(/\D/g, '') })}
+                  placeholder="3247"
+                />
+              </label>
+
               <label className="form-field">
                 <span>Celular com DDD {modalMode === 'create' ? '*' : ''}</span>
                 <input required={modalMode === 'create'} className="input-field" value={formData.phone} onChange={event => setFormData({ ...formData, phone: event.target.value })} placeholder="(11) 98765-4321" />
               </label>
+
               <label className="form-field form-field--full">
                 <span>E-mail institucional</span>
                 <input type="email" className="input-field" value={formData.email} onChange={event => setFormData({ ...formData, email: event.target.value })} placeholder="nome@empresa.com.br" />
               </label>
+
               <label className="form-field">
                 <span>Cargo ou especialidade</span>
                 <input className="input-field" value={formData.role} onChange={event => setFormData({ ...formData, role: event.target.value })} />
               </label>
+
               <label className="form-field">
                 <span>Status</span>
                 <select className="input-field" value={formData.status} onChange={event => setFormData({ ...formData, status: event.target.value })}>
@@ -485,9 +636,222 @@ export function TechniciansView({ technicians, onRefresh }: TechniciansViewProps
                   <option value="Inativo">Inativo</option>
                 </select>
               </label>
+
               <div className="modal-actions form-field--full">
                 <button type="button" onClick={closeProfileModal} className="btn btn-secondary">Cancelar</button>
-                <button type="submit" disabled={saving} className="btn btn-primary">{saving ? 'Salvando…' : 'Salvar cadastro'}</button>
+                <button type="submit" disabled={saving} className="btn btn-primary">{saving ? 'Salvando…' : 'Salvar no Banco'}</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL GERENCIADOR DE PINS E ACESSOS DO BANCO DE DADOS */}
+      {showPinManager && (
+        <div className="modal-overlay" role="presentation" onMouseDown={event => {
+          if (event.currentTarget === event.target) setShowPinManager(false);
+        }}>
+          <div className="modal-content" style={{ maxWidth: '680px', width: '95%' }} role="dialog" aria-modal="true">
+            <div className="modal-heading">
+              <div>
+                <span className="eyebrow" style={{ color: '#16a34a' }}><KeyRound size={15} /> Banco de Credenciais</span>
+                <h3>Gerenciador de PINs de Login</h3>
+                <p>Altere os PINs ou crie novos acessos diretamente no banco de dados Supabase.</p>
+              </div>
+              <button className="icon-button" type="button" onClick={() => setShowPinManager(false)} aria-label="Fechar modal"><X size={19} /></button>
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+              <span style={{ fontSize: '0.85rem', color: '#64748b' }}>
+                {credentials.length} credenciais cadastradas no sistema
+              </span>
+              <button
+                type="button"
+                onClick={() => setShowNewCredModal(true)}
+                className="btn btn-primary btn-sm"
+                style={{ gap: '6px' }}
+              >
+                <Plus size={15} /> Novo Usuário / PIN
+              </button>
+            </div>
+
+            {loadingCreds ? (
+              <p style={{ textAlign: 'center', padding: '20px', color: '#64748b' }}>Carregando dados do banco…</p>
+            ) : (
+              <div style={{ maxHeight: '380px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                {credentials.map(cred => (
+                  <div
+                    key={cred.id}
+                    style={{
+                      background: cred.username === 'admin' ? '#eff6ff' : '#f8fafc',
+                      border: `1px solid ${cred.username === 'admin' ? '#bfdbfe' : '#e2e8f0'}`,
+                      borderRadius: '10px',
+                      padding: '12px 16px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      gap: '12px'
+                    }}
+                  >
+                    <div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <strong style={{ fontSize: '0.95rem', color: '#0f172a' }}>{cred.display_name}</strong>
+                        <span style={{
+                          fontSize: '0.7rem',
+                          fontWeight: 600,
+                          padding: '2px 6px',
+                          borderRadius: '4px',
+                          background: cred.role === 'admin' ? '#3b82f6' : '#64748b',
+                          color: '#ffffff'
+                        }}>
+                          {cred.role.toUpperCase()}
+                        </span>
+                      </div>
+                      <small style={{ color: '#64748b' }}>Usuário: @{cred.username}</small>
+                    </div>
+
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                      {editingCred?.id === cred.id ? (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                          <input
+                            type="text"
+                            maxLength={8}
+                            value={credPinInput}
+                            onChange={e => setCredPinInput(e.target.value.replace(/\D/g, ''))}
+                            placeholder="Novo PIN"
+                            style={{
+                              width: '80px',
+                              padding: '4px 8px',
+                              borderRadius: '6px',
+                              border: '2px solid #0284c7',
+                              fontWeight: 700,
+                              letterSpacing: '2px',
+                              textAlign: 'center'
+                            }}
+                          />
+                          <button
+                            type="button"
+                            className="btn btn-primary btn-sm"
+                            style={{ padding: '4px 8px' }}
+                            onClick={() => handleUpdateCredPin(cred.id, credPinInput)}
+                          >
+                            <Check size={15} />
+                          </button>
+                          <button
+                            type="button"
+                            className="btn btn-secondary btn-sm"
+                            style={{ padding: '4px 8px' }}
+                            onClick={() => setEditingCred(null)}
+                          >
+                            <X size={15} />
+                          </button>
+                        </div>
+                      ) : (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <div style={{
+                            background: '#ffffff',
+                            border: '1px solid #cbd5e1',
+                            padding: '4px 10px',
+                            borderRadius: '6px',
+                            fontWeight: 700,
+                            letterSpacing: '2px',
+                            fontSize: '0.95rem'
+                          }}>
+                            {cred.pin}
+                          </div>
+                          <button
+                            type="button"
+                            className="btn btn-secondary btn-sm"
+                            style={{ padding: '4px 8px', fontSize: '0.75rem' }}
+                            onClick={() => { setEditingCred(cred); setCredPinInput(cred.pin); }}
+                          >
+                            Editar
+                          </button>
+                          {cred.username !== 'admin' && (
+                            <button
+                              type="button"
+                              className="btn btn-danger btn-sm"
+                              style={{ padding: '4px 8px' }}
+                              onClick={() => handleDeleteCred(cred.id)}
+                            >
+                              <Trash2 size={14} />
+                            </button>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            <div className="modal-actions" style={{ marginTop: '16px' }}>
+              <button type="button" onClick={() => setShowPinManager(false)} className="btn btn-secondary">Fechar</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL CRIAR NOVO USUÁRIO / CREDENCIAL */}
+      {showNewCredModal && (
+        <div className="modal-overlay" role="presentation" onMouseDown={event => {
+          if (event.currentTarget === event.target) setShowNewCredModal(false);
+        }}>
+          <div className="modal-content" style={{ maxWidth: '480px', width: '95%' }} role="dialog" aria-modal="true">
+            <div className="modal-heading">
+              <div>
+                <span className="eyebrow" style={{ color: '#0284c7' }}><Plus size={15} /> Novo Acesso</span>
+                <h3>Cadastrar Usuário & PIN</h3>
+                <p>Crie um novo login com PIN personalizado para o banco de dados.</p>
+              </div>
+              <button className="icon-button" type="button" onClick={() => setShowNewCredModal(false)} aria-label="Fechar modal"><X size={19} /></button>
+            </div>
+
+            <form onSubmit={handleCreateCred} className="technician-form">
+              <label className="form-field form-field--full">
+                <span>Nome do Profissional / Usuário *</span>
+                <input
+                  required
+                  className="input-field"
+                  value={newCredForm.display_name}
+                  onChange={e => setNewCredForm({ ...newCredForm, display_name: e.target.value })}
+                  placeholder="Ex.: Lucas Mendes"
+                />
+              </label>
+
+              <label className="form-field">
+                <span>Tipo de Acesso</span>
+                <select
+                  className="input-field"
+                  value={newCredForm.role}
+                  onChange={e => {
+                    const role = e.target.value;
+                    setNewCredForm({ ...newCredForm, role, user_type: role === 'admin' ? 'admin' : 'technician' });
+                  }}
+                >
+                  <option value="Técnico de Campo">Técnico de Campo</option>
+                  <option value="admin">Administrador</option>
+                </select>
+              </label>
+
+              <label className="form-field">
+                <span>PIN de Login (4 a 8 dígitos) *</span>
+                <input
+                  required
+                  maxLength={8}
+                  className="input-field"
+                  style={{ letterSpacing: '3px', fontWeight: 700 }}
+                  value={newCredForm.pin}
+                  onChange={e => setNewCredForm({ ...newCredForm, pin: e.target.value.replace(/\D/g, '') })}
+                  placeholder="3247"
+                />
+              </label>
+
+              <div className="modal-actions form-field--full">
+                <button type="button" onClick={() => setShowNewCredModal(false)} className="btn btn-secondary">Cancelar</button>
+                <button type="submit" disabled={saving} className="btn btn-primary">
+                  {saving ? 'Criando…' : 'Salvar no Banco'}
+                </button>
               </div>
             </form>
           </div>

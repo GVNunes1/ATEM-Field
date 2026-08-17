@@ -335,6 +335,53 @@ export type Database = {
           },
         ]
       }
+      app_credentials: {
+        Row: {
+          created_at: string
+          display_name: string
+          id: number
+          pin: string
+          role: string
+          status: string
+          technician_id: number | null
+          updated_at: string
+          user_type: string
+          username: string
+        }
+        Insert: {
+          created_at?: string
+          display_name: string
+          id?: number
+          pin?: string
+          role?: string
+          status?: string
+          technician_id?: number | null
+          updated_at?: string
+          user_type?: string
+          username: string
+        }
+        Update: {
+          created_at?: string
+          display_name?: string
+          id?: number
+          pin?: string
+          role?: string
+          status?: string
+          technician_id?: number | null
+          updated_at?: string
+          user_type?: string
+          username?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "app_credentials_technician_id_fkey"
+            columns: ["technician_id"]
+            isOneToOne: false
+            referencedRelation: "technicians"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       technicians: {
         Row: {
           avatar_url: string | null
@@ -343,6 +390,7 @@ export type Database = {
           id: number
           name: string
           phone: string | null
+          pin: string | null
           role: string
           status: string
           telegram_id: string | null
@@ -354,6 +402,7 @@ export type Database = {
           id?: number
           name: string
           phone?: string | null
+          pin?: string | null
           role?: string
           status?: string
           telegram_id?: string | null
@@ -365,6 +414,7 @@ export type Database = {
           id?: number
           name?: string
           phone?: string | null
+          pin?: string | null
           role?: string
           status?: string
           telegram_id?: string | null

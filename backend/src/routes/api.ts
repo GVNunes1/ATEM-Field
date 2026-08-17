@@ -1527,10 +1527,17 @@ router.delete('/reservations/:id', async (req: Request, res: Response) => {
 router.post('/auth/admin-login', async (req: Request, res: Response) => {
   try {
     const { pin, password } = req.body;
-    const validPins = ['3247', '6233', 'atem2026', 'admin'];
     const input = String(pin || password || '').trim();
 
-    const isValid = validPins.some(p => CryptoService.timingSafeCompare(input, p));
+    // Consultar PIN do Administrador dinamicamente no banco de dados
+    const { data: adminCred } = await supabaseAdmin
+      .from('app_credentials')
+      .select('pin')
+      .eq('username', 'admin')
+      .maybeSingle();
+
+    const validPins = [adminCred?.pin, '3247', '6233', 'atem2026', 'admin'].filter(Boolean);
+    const isValid = validPins.some(p => CryptoService.timingSafeCompare(input, p!));
 
     if (isValid) {
       const user = {
@@ -1562,8 +1569,14 @@ router.post('/auth/login', async (req: Request, res: Response) => {
 
     // 1. Login de Administrador
     if (type === 'admin') {
-      const validAdminPins = ['3247', '6233', 'atem2026', 'admin'];
-      const isValid = validAdminPins.some(p => CryptoService.timingSafeCompare(inputPin, p));
+      const { data: adminCred } = await supabaseAdmin
+        .from('app_credentials')
+        .select('pin')
+        .eq('username', 'admin')
+        .maybeSingle();
+
+      const validAdminPins = [adminCred?.pin, '3247', '6233', 'atem2026', 'admin'].filter(Boolean);
+      const isValid = validAdminPins.some(p => CryptoService.timingSafeCompare(inputPin, p!));
 
       if (isValid) {
         const user = {
@@ -1604,11 +1617,11 @@ router.post('/auth/login', async (req: Request, res: Response) => {
         return res.status(401).json({ success: false, error: 'Credenciais inválidas. Verifique os dados informados.' });
       }
 
-      // Validar PIN: Aceita 3247 (padrão oficial), 1234, 6233 ou últimos 4 dígitos do telefone
+      // Validar PIN: Aceita PIN do banco de dados, 3247, 1234, 6233 ou últimos 4 dígitos do telefone
       const last4Phone = technician.phone ? String(technician.phone).replace(/\D/g, '').slice(-4) : '';
-      const validTechPins = ['3247', '1234', '6233', '0000', 'atem', last4Phone].filter(Boolean);
+      const validTechPins = [technician.pin, '3247', '1234', '6233', '0000', 'atem', last4Phone].filter(Boolean);
 
-      const isValid = validTechPins.some(p => CryptoService.timingSafeCompare(inputPin, p)) || inputPin === '3247' || inputPin === '1234' || !inputPin;
+      const isValid = validTechPins.some(p => CryptoService.timingSafeCompare(inputPin, p!)) || inputPin === '3247' || inputPin === '1234' || !inputPin;
 
       if (isValid) {
         const user = {
@@ -1635,6 +1648,136 @@ router.post('/auth/login', async (req: Request, res: Response) => {
     res.status(400).json({ success: false, error: 'Tipo de login inválido.' });
   } catch (err: any) {
     res.status(500).json({ success: false, error: err.message || 'Erro ao processar autenticação.' });
+  }
+});
+
+// ==========================================================================
+// GERENCIADOR DE CREDENCIAIS E PINS (DATABASE CRUD)
+// ==========================================================================
+router.get('/credentials', async (req: Request, res: Response) => {
+  try {
+    const { data, error } = await supabaseAdmin
+      .from('app_credentials')
+      .select('*')
+      .order('id', { ascending: true });
+    if (error) throw error;
+    res.json({ success: true, credentials: data || [] });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+router.post('/credentials', async (req: Request, res: Response) => {
+  try {
+    const { display_name, username, pin, role, user_type } = req.body;
+    if (!display_name || !pin) {
+      return res.status(400).json({ success: false, error: 'Nome e PIN são obrigatórios.' });
+    }
+
+    const cleanPin = String(pin).trim();
+    const cleanUser = username ? String(username).trim().toLowerCase() : `user_${Date.now()}`;
+    const cleanType = user_type || role || 'technician';
+
+    let techId: number | null = null;
+    if (cleanType === 'technician' || role === 'technician') {
+      const { data: tech, error: techErr } = await supabaseAdmin
+        .from('technicians')
+        .insert({
+          name: display_name,
+          role: 'Técnico de Campo',
+          status: 'Ativo',
+          pin: cleanPin
+        })
+        .select('id')
+        .single();
+      if (!techErr && tech) {
+        techId = tech.id;
+      }
+    }
+
+    const { data, error } = await supabaseAdmin
+      .from('app_credentials')
+      .insert({
+        user_type: cleanType,
+        technician_id: techId,
+        username: cleanUser,
+        display_name,
+        pin: cleanPin,
+        role: role || cleanType,
+        status: 'Ativo'
+      })
+      .select('*')
+      .single();
+
+    if (error) throw error;
+    res.json({ success: true, credential: data });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+router.patch('/credentials/:id', async (req: Request, res: Response) => {
+  try {
+    const credId = Number(req.params.id);
+    const { pin, display_name, role, status } = req.body;
+    const updates: any = { updated_at: new Date().toISOString() };
+    if (pin !== undefined) updates.pin = String(pin).trim();
+    if (display_name !== undefined) updates.display_name = String(display_name).trim();
+    if (role !== undefined) updates.role = role;
+    if (status !== undefined) updates.status = status;
+
+    const { data: updated, error } = await supabaseAdmin
+      .from('app_credentials')
+      .update(updates)
+      .eq('id', credId)
+      .select('*')
+      .single();
+
+    if (error) throw error;
+
+    // Se for técnico, sincronizar também na tabela technicians
+    if (updated.technician_id) {
+      const techUpdates: any = {};
+      if (pin !== undefined) techUpdates.pin = String(pin).trim();
+      if (display_name !== undefined) techUpdates.name = String(display_name).trim();
+      if (status !== undefined) techUpdates.status = status;
+
+      if (Object.keys(techUpdates).length > 0) {
+        await supabaseAdmin
+          .from('technicians')
+          .update(techUpdates)
+          .eq('id', updated.technician_id);
+      }
+    }
+
+    res.json({ success: true, credential: updated });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+router.delete('/credentials/:id', async (req: Request, res: Response) => {
+  try {
+    const credId = Number(req.params.id);
+    const { data: cred } = await supabaseAdmin
+      .from('app_credentials')
+      .select('*')
+      .eq('id', credId)
+      .maybeSingle();
+
+    if (cred && cred.username === 'admin') {
+      return res.status(400).json({ success: false, error: 'O Administrador Master não pode ser excluído.' });
+    }
+
+    const { error } = await supabaseAdmin
+      .from('app_credentials')
+      .delete()
+      .eq('id', credId);
+
+    if (error) throw error;
+    res.json({ success: true, message: 'Credencial excluída com sucesso.' });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message });
   }
 });
 
