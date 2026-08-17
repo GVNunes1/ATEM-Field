@@ -1,4 +1,4 @@
-﻿param(
+param(
     [String]$ConfigPath = '',
     [Switch]$DryRun,
     [Switch]$TestConnection,
@@ -27,6 +27,6 @@ try {
     exit $LASTEXITCODE
 }
 catch {
-    Write-Error $_.Exception.Message
+    Write-Error (Get-ATEMErrorDetails $_)
     exit 1
 }

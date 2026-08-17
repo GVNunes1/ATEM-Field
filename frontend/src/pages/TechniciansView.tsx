@@ -3,6 +3,8 @@ import {
   ArrowRightLeft,
   Check,
   CheckCircle2,
+  Eye,
+  EyeOff,
   KeyRound,
   Link2,
   Lock,
@@ -171,6 +173,18 @@ export function TechniciansView({ technicians, onRefresh }: TechniciansViewProps
     role: 'Técnico de Campo',
     user_type: 'technician'
   });
+
+  // Visibilidade de PINs (ocultos por padrão)
+  const [revealedPins, setRevealedPins] = useState<Record<string | number, boolean>>({});
+  const [revealedModalPins, setRevealedModalPins] = useState<Record<string | number, boolean>>({});
+
+  const togglePinVisibility = (techId: string | number) => {
+    setRevealedPins(prev => ({ ...prev, [techId]: !prev[techId] }));
+  };
+
+  const toggleModalPinVisibility = (credId: string | number) => {
+    setRevealedModalPins(prev => ({ ...prev, [credId]: !prev[credId] }));
+  };
 
   const activeCount = technicians.filter(tech => tech.status !== 'Inativo').length;
   const phoneCount = technicians.filter(tech => hasValue(tech.phone)).length;
@@ -479,38 +493,46 @@ export function TechniciansView({ technicians, onRefresh }: TechniciansViewProps
 
             return (
               <article key={tech.id} className={`technician-card ${isActive ? '' : 'technician-card--inactive'}`}>
-                <div className="technician-card__header">
+                {/* TOP: Avatar, Nome, Cargo, Status, Menu */}
+                <div className="technician-card__top">
                   <div className="technician-avatar">
-                    <span>{initials(tech.name)}</span>
+                    {tech.avatar_url ? (
+                      <img src={tech.avatar_url} alt={tech.name} />
+                    ) : (
+                      <span>{initials(tech.name)}</span>
+                    )}
                   </div>
-                  <div className="technician-card__meta">
-                    <div className="technician-title-row">
+                  <div className="technician-identity">
+                    <div className="technician-identity-name-row">
                       <h3>{tech.name}</h3>
-                      <span className={`status-badge status-badge--${isActive ? 'active' : 'inactive'}`}>
+                      <span className={`tech-status-badge tech-status-badge--${isActive ? 'active' : 'inactive'}`}>
+                        <span className="tech-status-dot" />
                         {isActive ? 'Ativo' : 'Inativo'}
                       </span>
                     </div>
                     <p>{tech.role || 'Técnico de Campo'}</p>
-                    <div className="technician-card__actions">
+                  </div>
+                  <div className="technician-card__controls">
+                    <div className="technician-menu">
                       <button
                         className="icon-button technician-menu__trigger"
                         type="button"
-                        onClick={() => setOpenMenuId(openMenuId === tech.id ? null : tech.id)}
+                        onClick={(e) => { e.stopPropagation(); setOpenMenuId(openMenuId === tech.id ? null : tech.id); }}
                         aria-label={`Ações de ${tech.name}`}
                         aria-expanded={openMenuId === tech.id}
                       >
-                        <MoreVertical size={18} />
+                        <MoreVertical size={17} />
                       </button>
                       {openMenuId === tech.id && (
-                        <div className="technician-menu__popover" role="menu">
-                          <button type="button" role="menuitem" onClick={() => openEditModal(tech)}>
-                            <Pencil size={16} /><span><strong>Editar cadastro</strong><small>Alterar dados e PIN</small></span>
+                        <div className="technician-menu__popover" role="menu" onClick={e => e.stopPropagation()}>
+                          <button type="button" role="menuitem" onClick={() => { setOpenMenuId(null); openEditModal(tech); }}>
+                            <Pencil size={15} /><span><strong>Editar cadastro</strong><small>Alterar dados e PIN</small></span>
                           </button>
-                          <button type="button" role="menuitem" onClick={() => openMergeModal(tech)}>
-                            <ArrowRightLeft size={16} /><span><strong>Mesclar usuário</strong><small>Unir com outro cadastro</small></span>
+                          <button type="button" role="menuitem" onClick={() => { setOpenMenuId(null); openMergeModal(tech); }}>
+                            <ArrowRightLeft size={15} /><span><strong>Mesclar usuário</strong><small>Unir com outro cadastro</small></span>
                           </button>
-                          <button className="technician-menu__delete" type="button" role="menuitem" onClick={() => openDeleteModal(tech)}>
-                            <Trash2 size={16} /><span><strong>Apagar usuário</strong><small>Excluir cadastro sem vínculos</small></span>
+                          <button className="technician-menu__delete" type="button" role="menuitem" onClick={() => { setOpenMenuId(null); openDeleteModal(tech); }}>
+                            <Trash2 size={15} /><span><strong>Apagar usuário</strong><small>Excluir cadastro sem vínculos</small></span>
                           </button>
                         </div>
                       )}
@@ -518,54 +540,70 @@ export function TechniciansView({ technicians, onRefresh }: TechniciansViewProps
                   </div>
                 </div>
 
-                <div className="technician-contact-list">
-                  <div className="contact-row" style={{ background: '#f8fafc', padding: '6px 10px', borderRadius: '8px', border: '1px solid #e2e8f0', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <span className="contact-row__icon" style={{ color: '#0284c7' }}><KeyRound size={16} /></span>
-                      <div>
-                        <span style={{ fontSize: '0.72rem', color: '#64748b', display: 'block' }}>PIN de Acesso</span>
-                        <strong style={{ fontSize: '0.95rem', letterSpacing: '2px', color: '#0f172a' }}>{techPin}</strong>
-                      </div>
+                {/* PIN BAR / CREDENCIAIS (OCULTO POR PADRÃO) */}
+                <div className="technician-pin-box">
+                  <div className="technician-pin-info">
+                    <span className="technician-pin-icon"><Lock size={15} /></span>
+                    <div>
+                      <span style={{ fontSize: '0.68rem', color: '#64748b', display: 'block', fontWeight: 600 }}>PIN de Acesso</span>
+                      <strong className="technician-pin-val">
+                        {revealedPins[tech.id] ? techPin : '••••'}
+                      </strong>
                     </div>
+                  </div>
+                  <div className="technician-pin-actions">
+                    <button
+                      type="button"
+                      className="pin-eye-btn"
+                      onClick={() => togglePinVisibility(tech.id)}
+                      title={revealedPins[tech.id] ? "Ocultar PIN" : "Visualizar PIN"}
+                      aria-label={revealedPins[tech.id] ? "Ocultar PIN" : "Visualizar PIN"}
+                    >
+                      {revealedPins[tech.id] ? <EyeOff size={16} /> : <Eye size={16} />}
+                    </button>
                     <button
                       type="button"
                       className="btn btn-secondary btn-sm"
-                      style={{ padding: '3px 8px', fontSize: '0.75rem', height: '28px' }}
+                      style={{ padding: '3px 8px', fontSize: '0.72rem', height: '26px' }}
                       onClick={() => openEditModal(tech)}
                     >
-                      Alterar PIN
+                      Alterar
                     </button>
                   </div>
+                </div>
 
-                  <div className="contact-row">
-                    <span className="contact-row__icon"><Phone size={16} /></span>
-                    <div><span>Celular</span><strong>{phoneConfigured ? tech.phone : 'Não informado'}</strong></div>
+                {/* CONTATOS ORGANIZADOS */}
+                <div className="technician-contacts-grid">
+                  <div className="tech-contact-item">
+                    <div className="tech-contact-icon"><Phone size={13} /></div>
+                    <span>Celular</span>
+                    <strong>{phoneConfigured ? tech.phone : <em style={{ color: '#94a3b8', fontStyle: 'normal' }}>Não informado</em>}</strong>
                   </div>
-                  <div className="contact-row">
-                    <span className="contact-row__icon"><Mail size={16} /></span>
-                    <div><span>E-mail</span><strong>{emailConfigured ? tech.email : 'Não informado'}</strong></div>
-                  </div>
-                  <div className="contact-row">
-                    <span className="contact-row__icon"><Link2 size={16} /></span>
-                    <div><span>Portal de reservas</span><strong>{isActive ? 'Acesso disponível no painel Reservas' : 'Indisponível para cadastro inativo'}</strong></div>
+                  <div className="tech-contact-item">
+                    <div className="tech-contact-icon"><Mail size={13} /></div>
+                    <span>E-mail</span>
+                    <strong>{emailConfigured ? tech.email : <em style={{ color: '#94a3b8', fontStyle: 'normal' }}>Não informado</em>}</strong>
                   </div>
                 </div>
 
-                <div className={`notification-state ${phoneConfigured && isActive ? 'notification-state--ready' : ''}`}>
-                  {phoneConfigured && isActive ? <CheckCircle2 size={16} /> : <MessageCircleMore size={16} />}
-                  <span>{phoneConfigured && isActive ? 'Pronto para receber o link' : 'Cadastre um celular e mantenha o técnico ativo'}</span>
-                </div>
+                {/* RODAPÉ DO CARD: Status e Botão de Link */}
+                <div className="technician-card-footer">
+                  <div className={`notification-state ${phoneConfigured && isActive ? 'notification-state--ready' : ''}`}>
+                    {phoneConfigured && isActive ? <CheckCircle2 size={15} /> : <MessageCircleMore size={15} />}
+                    <span>{phoneConfigured && isActive ? 'WhatsApp pronto para envio' : 'Cadastre um celular para ativar WhatsApp'}</span>
+                  </div>
 
-                {isActive && (
-                  <button
-                    type="button"
-                    className="btn btn-secondary btn-sm"
-                    style={{ width: '100%', marginTop: '10px', gap: '6px', justifyContent: 'center' }}
-                    onClick={() => { setLinkTechId(tech.id); setShowLinkModal(true); }}
-                  >
-                    <Link2 size={15} /> Gerar e copiar link do portal
-                  </button>
-                )}
+                  {isActive && (
+                    <button
+                      type="button"
+                      className="btn btn-secondary btn-sm"
+                      style={{ width: '100%', gap: '6px', justifyContent: 'center', height: '32px' }}
+                      onClick={() => { setLinkTechId(tech.id); setShowLinkModal(true); }}
+                    >
+                      <Link2 size={14} /> Link do portal de reservas
+                    </button>
+                  )}
+                </div>
               </article>
             );
           })}
@@ -754,11 +792,20 @@ export function TechniciansView({ technicians, onRefresh }: TechniciansViewProps
                             padding: '4px 10px',
                             borderRadius: '6px',
                             fontWeight: 700,
-                            letterSpacing: '2px',
-                            fontSize: '0.95rem'
+                            letterSpacing: '2.5px',
+                            fontSize: '0.95rem',
+                            fontFamily: 'monospace'
                           }}>
-                            {cred.pin}
+                            {revealedModalPins[cred.id] ? cred.pin : '••••'}
                           </div>
+                          <button
+                            type="button"
+                            className="pin-eye-btn"
+                            onClick={() => toggleModalPinVisibility(cred.id)}
+                            title={revealedModalPins[cred.id] ? "Ocultar PIN" : "Visualizar PIN"}
+                          >
+                            {revealedModalPins[cred.id] ? <EyeOff size={16} /> : <Eye size={16} />}
+                          </button>
                           <button
                             type="button"
                             className="btn btn-secondary btn-sm"

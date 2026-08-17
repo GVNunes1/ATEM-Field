@@ -68,6 +68,13 @@ export const TabletKioskView: React.FC<TabletKioskViewProps> = ({
   const [modalSearchAnalyzer, setModalSearchAnalyzer] = useState('');
   const [isSubmittingReservation, setIsSubmittingReservation] = useState(false);
 
+  // Modal de Operações Especiais (Calibração e Empréstimo - EQAT)
+  const [specialOpType, setSpecialOpType] = useState<'Calibração' | 'Empréstimo' | null>(null);
+  const [specialOpNotes, setSpecialOpNotes] = useState('');
+  const [specialOpSelectedIds, setSpecialOpSelectedIds] = useState<number[]>([]);
+  const [specialOpSearch, setSpecialOpSearch] = useState('');
+  const [isSubmittingSpecialOp, setIsSubmittingSpecialOp] = useState(false);
+
   // Relógio do Totem
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);
@@ -150,11 +157,11 @@ export const TabletKioskView: React.FC<TabletKioskViewProps> = ({
       .sort((a, b) => String(a.appointment_date).localeCompare(String(b.appointment_date)) || String(a.appointment_time || '').localeCompare(String(b.appointment_time || '')));
   }, [selectedTech, appointments]);
 
-  // Reservas pendentes de saída para o técnico (Status = 'Reservado')
+  // Reservas pendentes de saída para o técnico (Status = 'Reservado' ou 'Aguardando Aprovação')
   const techReadyForCheckout = useMemo(() => {
     if (!selectedTech) return [];
     const techId = Number(selectedTech.id);
-    return reservations.filter(r => Number(r.technician_id) === techId && r.status === 'Reservado');
+    return reservations.filter(r => Number(r.technician_id) === techId && ['Reservado', 'Aguardando Aprovação'].includes(r.status));
   }, [selectedTech, reservations]);
 
   // Padrões atualmente em posse do técnico (Status = 'Em Uso')
@@ -230,6 +237,27 @@ export const TabletKioskView: React.FC<TabletKioskViewProps> = ({
     );
   }, [availableAnalyzers, modalSearchAnalyzer]);
 
+  // Padrões disponíveis para Calibração / Empréstimo (hoje)
+  const availableAnalyzersForSpecialOp = useMemo(() => {
+    const today = todayKey();
+    const conflicts = new Set(
+      reservations
+        .filter(r => r.reserved_date === today && ['Reservado', 'Em Uso', 'Aguardando Aprovação'].includes(r.status))
+        .map(r => r.analyzer_id)
+    );
+    return (analyzers || [])
+      .filter(a => !/manuten|inativ|baixad|descartad/i.test(a.status || '') && !conflicts.has(a.id))
+      .sort((a, b) => String(a.asset_tag).localeCompare(String(b.asset_tag), 'pt-BR', { numeric: true }));
+  }, [reservations, analyzers]);
+
+  const filteredSpecialOpAnalyzers = useMemo(() => {
+    const query = specialOpSearch.trim().toLowerCase();
+    if (!query) return availableAnalyzersForSpecialOp;
+    return availableAnalyzersForSpecialOp.filter(a =>
+      [a.asset_tag, a.name, a.type, a.brand_model].some(val => String(val || '').toLowerCase().includes(query))
+    );
+  }, [availableAnalyzersForSpecialOp, specialOpSearch]);
+
   // Submeter reservas rápidas pelo Totem
   const handleSubmitReserveModal = async () => {
     if (!reserveModalAppt || !selectedTech || !modalSelectedAnalyzerIds.length) return;
@@ -260,6 +288,42 @@ export const TabletKioskView: React.FC<TabletKioskViewProps> = ({
       setFeedbackError(err.message || 'Erro ao realizar reservas no totem.');
     } finally {
       setIsSubmittingReservation(false);
+    }
+  };
+
+  // Submeter solicitação especial de Calibração / Empréstimo pelo Totem (EQAT)
+  const handleSubmitSpecialOp = async () => {
+    if (!specialOpType || !selectedTech || !specialOpSelectedIds.length) return;
+    setIsSubmittingSpecialOp(true);
+    setFeedbackNotice('');
+    setFeedbackError('');
+    let count = 0;
+    try {
+      for (const analyzerId of specialOpSelectedIds) {
+        const data = await safeFetchJson('/api/reservations', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            technician_id: Number(selectedTech.id),
+            analyzer_id: analyzerId,
+            operation_type: specialOpType,
+            reserved_date: todayKey(),
+            notes: specialOpNotes || `Solicitação autônoma de ${specialOpType} pela EQAT no Totem`
+          })
+        });
+        if (data.success) count++;
+      }
+      setFeedbackNotice(`⏳ Solicitação de ${specialOpType} de ${count} padrão(ões) enviada! Aguarde a aprovação do Administrador Geral.`);
+      setSpecialOpType(null);
+      setSpecialOpSelectedIds([]);
+      setSpecialOpNotes('');
+      setSpecialOpSearch('');
+      setActiveTab('checkout');
+      await Promise.all([loadReservations(), onRefresh()]);
+    } catch (err: any) {
+      setFeedbackError(err.message || 'Erro ao registrar solicitação.');
+    } finally {
+      setIsSubmittingSpecialOp(false);
     }
   };
 
@@ -558,6 +622,50 @@ export const TabletKioskView: React.FC<TabletKioskViewProps> = ({
         </div>
       )}
 
+      {/* BANNER DE OPERAÇÕES ESPECIAIS EQAT */}
+      {selectedTech?.name?.trim().toUpperCase() === 'EQAT' && (
+        <div style={{
+          background: 'linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%)',
+          border: '1.5px solid #93c5fd',
+          borderRadius: '16px',
+          padding: '14px 20px',
+          margin: '0 24px 16px 24px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          flexWrap: 'wrap',
+          gap: '12px',
+          boxShadow: '0 4px 12px rgba(2, 132, 199, 0.08)'
+        }}>
+          <div>
+            <strong style={{ color: '#1e40af', fontSize: '1rem', display: 'flex', alignItems: 'center', gap: '6px' }}>
+              🔧 Operações Autônomas EQAT (Sem Agendamento)
+            </strong>
+            <p style={{ margin: '3px 0 0 0', color: '#2563eb', fontSize: '0.84rem' }}>
+              Solicite a retirada de padrões para calibração ou empréstimo. A saída física será liberada após aprovação do Administrador.
+            </p>
+          </div>
+          <div style={{ display: 'flex', gap: '10px' }}>
+            <button
+              type="button"
+              className="btn btn-primary"
+              style={{ background: '#d97706', borderColor: '#b45309', gap: '6px', fontSize: '0.88rem', padding: '8px 14px', borderRadius: '10px' }}
+              onClick={() => { setSpecialOpType('Calibração'); setSpecialOpSelectedIds([]); setSpecialOpNotes(''); setSpecialOpSearch(''); }}
+            >
+              🔬 Solicitar Calibração
+            </button>
+            <button
+              type="button"
+              className="btn btn-primary"
+              style={{ background: '#4338ca', borderColor: '#3730a3', gap: '6px', fontSize: '0.88rem', padding: '8px 14px', borderRadius: '10px' }}
+              onClick={() => { setSpecialOpType('Empréstimo'); setSpecialOpSelectedIds([]); setSpecialOpNotes(''); setSpecialOpSearch(''); }}
+            >
+              🤝 Solicitar Empréstimo
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Navigation Tabs */}
       <div className="tablet-nav-tabs">
         <button
@@ -663,31 +771,53 @@ export const TabletKioskView: React.FC<TabletKioskViewProps> = ({
             </div>
 
             <div className="tablet-card-list">
-              {techReadyForCheckout.map(res => (
-                <div key={res.id} className="tablet-action-card">
-                  <div className="tablet-action-icon checkout">
-                    <Truck size={28} />
-                  </div>
+              {techReadyForCheckout.map(res => {
+                const isPendingApproval = res.status === 'Aguardando Aprovação';
 
-                  <div className="tablet-action-info">
-                    <span className="tablet-tag-pill">{res.asset_tag}</span>
-                    <strong>{res.analyzer_name}</strong>
-                    <p className="tablet-action-sub">
-                      Tipo: <strong>{res.analyzer_type || 'Analisador'}</strong> · Atendimento: <strong>{res.client_name || 'Agendamento Técnico'}</strong>
-                    </p>
-                  </div>
+                return (
+                  <div key={res.id} className="tablet-action-card">
+                    <div className="tablet-action-icon checkout">
+                      <Truck size={28} />
+                    </div>
 
-                  <button
-                    type="button"
-                    disabled={actionLoading === res.id}
-                    onClick={() => handleCheckout(res.id)}
-                    className="tablet-btn-action checkout-btn"
-                  >
-                    <Truck size={20} />
-                    <span>{actionLoading === res.id ? 'Registrando...' : 'Registrar Saída (Check-out)'}</span>
-                  </button>
-                </div>
-              ))}
+                    <div className="tablet-action-info">
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                        <span className="tablet-tag-pill">{res.asset_tag}</span>
+                        {res.operation_type === 'Calibração' && (
+                          <span style={{ background: '#fef3c7', color: '#92400e', fontSize: '0.72rem', fontWeight: 800, padding: '2px 6px', borderRadius: '4px' }}>
+                            🔬 CALIBRAÇÃO
+                          </span>
+                        )}
+                        {res.operation_type === 'Empréstimo' && (
+                          <span style={{ background: '#e0e7ff', color: '#3730a3', fontSize: '0.72rem', fontWeight: 800, padding: '2px 6px', borderRadius: '4px' }}>
+                            🤝 EMPRÉSTIMO
+                          </span>
+                        )}
+                      </div>
+                      <strong>{res.analyzer_name}</strong>
+                      <p className="tablet-action-sub">
+                        Tipo: <strong>{res.analyzer_type || 'Analisador'}</strong> · Atendimento: <strong>{res.client_name || 'Agendamento Técnico'}</strong>
+                      </p>
+                      {isPendingApproval && (
+                        <div style={{ background: '#fffbeb', border: '1px solid #fde68a', color: '#b45309', padding: '4px 8px', borderRadius: '6px', fontSize: '0.76rem', fontWeight: 700, marginTop: '4px' }}>
+                          ⏳ Aguardando Aprovação do Administrador Geral
+                        </div>
+                      )}
+                    </div>
+
+                    <button
+                      type="button"
+                      disabled={actionLoading === res.id || isPendingApproval}
+                      onClick={() => handleCheckout(res.id)}
+                      className="tablet-btn-action checkout-btn"
+                      style={isPendingApproval ? { opacity: 0.6, cursor: 'not-allowed', background: '#94a3b8' } : {}}
+                    >
+                      <Truck size={20} />
+                      <span>{actionLoading === res.id ? 'Registrando...' : isPendingApproval ? 'Aguardando Aprovação' : 'Registrar Saída (Check-out)'}</span>
+                    </button>
+                  </div>
+                );
+              })}
 
               {!techReadyForCheckout.length && (
                 <div className="tablet-empty-box">
@@ -704,8 +834,8 @@ export const TabletKioskView: React.FC<TabletKioskViewProps> = ({
         {activeTab === 'checkin' && (
           <div>
             <div className="tablet-section-intro">
-              <h3>Padrões Atualmente em sua Posse</h3>
-              <p>Ao devolver o padrão ao setor, toque em <strong>"Devolver ao Setor"</strong> para liberar o patrimônio para a equipe.</p>
+              <h3>Padrões em Campo (Em Uso)</h3>
+              <p>Ao retornar os analisadores para o almoxarifado, toque em <strong>"Registrar Devolução"</strong> para liberar o padrão para outros técnicos.</p>
             </div>
 
             <div className="tablet-card-list">
@@ -716,10 +846,10 @@ export const TabletKioskView: React.FC<TabletKioskViewProps> = ({
                   </div>
 
                   <div className="tablet-action-info">
-                    <span className="tablet-tag-pill warning">{res.asset_tag}</span>
+                    <span className="tablet-tag-pill">{res.asset_tag}</span>
                     <strong>{res.analyzer_name}</strong>
                     <p className="tablet-action-sub">
-                      Status: <strong>Em Campo / Em Uso</strong> · Atendimento: <strong>{res.client_name || 'Agendamento'}</strong>
+                      Tipo: <strong>{res.analyzer_type || 'Analisador'}</strong> · Atendimento: <strong>{res.client_name || 'Agendamento Técnico'}</strong>
                     </p>
                   </div>
 
@@ -729,8 +859,8 @@ export const TabletKioskView: React.FC<TabletKioskViewProps> = ({
                     onClick={() => handleCheckin(res.id)}
                     className="tablet-btn-action checkin-btn"
                   >
-                    <CheckCircle2 size={20} />
-                    <span>{actionLoading === res.id ? 'Liberando...' : 'Devolver ao Setor (Check-in)'}</span>
+                    <PackageCheck size={20} />
+                    <span>{actionLoading === res.id ? 'Registrando...' : 'Registrar Devolução (Check-in)'}</span>
                   </button>
                 </div>
               ))}
@@ -820,6 +950,100 @@ export const TabletKioskView: React.FC<TabletKioskViewProps> = ({
                 className="tablet-btn-primary"
               >
                 {isSubmittingReservation ? 'Confirmando...' : `Confirmar ${modalSelectedAnalyzerIds.length} Padrão(ões)`}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL DE OPERAÇÕES ESPECIAIS (CALIBRAÇÃO / EMPRÉSTIMO) */}
+      {specialOpType && (
+        <div className="tablet-modal-overlay">
+          <div className="tablet-modal-box">
+            <div className="tablet-modal-header">
+              <div>
+                <h3>Solicitar Saída para {specialOpType}</h3>
+                <p>Responsável: <strong>{selectedTech?.name}</strong> · Data: <strong>Hoje</strong> (Requer Aprovação do Admin)</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setSpecialOpType(null)}
+                className="tablet-modal-close"
+              >
+                <X size={24} />
+              </button>
+            </div>
+
+            <div style={{ padding: '0 24px 14px 24px' }}>
+              <label style={{ fontSize: '0.84rem', fontWeight: 600, color: '#334155', display: 'block', marginBottom: '6px' }}>
+                {specialOpType === 'Calibração' ? 'Laboratório / Motivo da Calibração' : 'Destino / Solicitante do Empréstimo'}
+              </label>
+              <input
+                type="text"
+                className="input-field"
+                style={{ width: '100%', padding: '10px 14px', borderRadius: '10px', border: '1px solid #cbd5e1', fontSize: '0.92rem' }}
+                placeholder={specialOpType === 'Calibração' ? 'Ex: Calibração Anual Fluke / Rastreado RBC' : 'Ex: Empréstimo Filial RJ'}
+                value={specialOpNotes}
+                onChange={e => setSpecialOpNotes(e.target.value)}
+              />
+            </div>
+
+            <div className="tablet-modal-search">
+              <Search size={20} />
+              <input
+                type="text"
+                placeholder="Buscar padrão disponível..."
+                value={specialOpSearch}
+                onChange={e => setSpecialOpSearch(e.target.value)}
+              />
+            </div>
+
+            <div className="tablet-modal-grid">
+              {filteredSpecialOpAnalyzers.map(analyzer => {
+                const isSelected = specialOpSelectedIds.includes(Number(analyzer.id));
+
+                return (
+                  <div
+                    key={analyzer.id}
+                    onClick={() => {
+                      setSpecialOpSelectedIds(prev =>
+                        isSelected
+                          ? prev.filter(id => id !== Number(analyzer.id))
+                          : [...prev, Number(analyzer.id)]
+                      );
+                    }}
+                    className={`tablet-analyzer-select-card ${isSelected ? 'selected' : ''}`}
+                  >
+                    <span className="tablet-analyzer-tag">{analyzer.asset_tag}</span>
+                    <strong>{analyzer.name}</strong>
+                    <span>{analyzer.type} · {analyzer.brand_model || 'Padrão Oficial'}</span>
+                  </div>
+                );
+              })}
+
+              {!filteredSpecialOpAnalyzers.length && (
+                <div style={{ gridColumn: '1 / -1', textAlign: 'center', padding: '30px', color: '#64748b' }}>
+                  Nenhum padrão disponível encontrado para a busca.
+                </div>
+              )}
+            </div>
+
+            <div className="tablet-modal-footer">
+              <button
+                type="button"
+                onClick={() => setSpecialOpType(null)}
+                className="tablet-btn-secondary"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                disabled={isSubmittingSpecialOp || !specialOpSelectedIds.length}
+                onClick={handleSubmitSpecialOp}
+                className="tablet-btn-primary"
+                style={{ background: specialOpType === 'Calibração' ? '#d97706' : '#4338ca' }}
+              >
+                {isSubmittingSpecialOp ? 'Enviando...' : `Solicitar Saída (${specialOpSelectedIds.length} selecionado(s))`}
               </button>
             </div>
           </div>

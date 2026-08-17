@@ -34,7 +34,7 @@ interface OperationsAdminViewProps {
   currentUser?: AuthUser | null;
 }
 
-const ACTIVE_STATUSES = new Set(['Reservado', 'Em Uso']);
+const ACTIVE_STATUSES = new Set(['Reservado', 'Em Uso', 'Aguardando Aprovação']);
 const todayKey = () => {
   const now = new Date();
   return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
@@ -61,6 +61,8 @@ export function OperationsAdminView({
 }: OperationsAdminViewProps) {
   const isAdmin = currentUser?.role === 'admin';
   const isTechnician = currentUser?.role === 'technician';
+  const isEqat = currentUser?.name?.trim().toUpperCase() === 'EQAT' || (currentUser as any)?.username?.trim().toLowerCase() === 'eqat';
+  const canSpecialOps = isAdmin || isEqat;
 
   const [reservations, setReservations] = useState<any[]>([]);
   const [loadingReservations, setLoadingReservations] = useState(true);
@@ -68,6 +70,13 @@ export function OperationsAdminView({
   const [actionId, setActionId] = useState<number | null>(null);
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
+
+  // Modos de Operação: Atendimento / Calibração / Empréstimo
+  const [operationType, setOperationType] = useState<'Atendimento' | 'Calibração' | 'Empréstimo'>('Atendimento');
+  const [directDate, setDirectDate] = useState<string>(todayKey());
+  const [directNotes, setDirectNotes] = useState<string>('');
+  const [directCheckout, setDirectCheckout] = useState<boolean>(false);
+
   const [selectedAppointmentId, setSelectedAppointmentId] = useState<string>(
     initialAppointmentId ? String(initialAppointmentId) : ''
   );
@@ -180,21 +189,36 @@ export function OperationsAdminView({
   }, [selectedAppointment, activeTechnicians, isTechnician, currentUser]);
 
   const availableAnalyzers = useMemo(() => {
-    if (!selectedAppointment || isNonTechnicalAppointment(selectedAppointment)) return [];
+    let targetDate = '';
+    let apptId = 0;
+    if (operationType === 'Atendimento') {
+      if (!selectedAppointment || isNonTechnicalAppointment(selectedAppointment)) return [];
+      targetDate = selectedAppointment.appointment_date;
+      apptId = Number(selectedAppointment.id);
+    } else {
+      targetDate = directDate || todayKey();
+    }
+
     const conflicts = new Set(reservations
-      .filter(reservation => reservation.reserved_date === selectedAppointment.appointment_date)
+      .filter(reservation => reservation.reserved_date === targetDate)
       .filter(reservation => ACTIVE_STATUSES.has(reservation.status))
-      .filter(reservation => Number(reservation.appointment_id) !== Number(selectedAppointment.id))
+      .filter(reservation => !apptId || Number(reservation.appointment_id) !== apptId)
       .map(reservation => reservation.analyzer_id));
-    const alreadyReserved = new Set(reservations
-      .filter(reservation => Number(reservation.appointment_id) === Number(selectedAppointment.id))
-      .filter(reservation => ACTIVE_STATUSES.has(reservation.status))
-      .map(reservation => reservation.analyzer_id));
+
+    const alreadyReserved = new Set(
+      apptId
+        ? reservations
+            .filter(reservation => Number(reservation.appointment_id) === apptId)
+            .filter(reservation => ACTIVE_STATUSES.has(reservation.status))
+            .map(reservation => reservation.analyzer_id)
+        : []
+    );
+
     return analyzers
       .filter(analyzer => !/manuten|indispon|baixado|inativ/i.test(analyzer.status || ''))
       .filter(analyzer => !conflicts.has(analyzer.id) && !alreadyReserved.has(analyzer.id))
       .sort((left, right) => String(left.asset_tag).localeCompare(String(right.asset_tag), 'pt-BR', { numeric: true }));
-  }, [analyzers, reservations, selectedAppointment]);
+  }, [analyzers, reservations, selectedAppointment, operationType, directDate]);
 
   const selectedAnalyzers = useMemo(() => selectedAnalyzerIds
     .map(id => availableAnalyzers.find(analyzer => Number(analyzer.id) === id))
@@ -213,34 +237,35 @@ export function OperationsAdminView({
     const query = searchTerm.trim().toLocaleLowerCase('pt-BR');
     return reservations
       .filter(reservation => {
-        // Se for técnico, só vê suas próprias reservas
-        if (isTechnician && currentUser) {
+        // Se for técnico, só vê suas próprias reservas (a menos que seja admin ou EQAT)
+        if (isTechnician && currentUser && !isEqat) {
           return Number(reservation.technician_id) === Number(currentUser.id);
         }
         return true;
       })
       .filter(reservation => statusFilter === 'ALL' || (statusFilter === 'ACTIVE' ? ACTIVE_STATUSES.has(reservation.status) : reservation.status === statusFilter))
-      .filter(reservation => !query || [reservation.asset_tag, reservation.analyzer_name, reservation.technician_name, reservation.client_name]
+      .filter(reservation => !query || [reservation.asset_tag, reservation.analyzer_name, reservation.technician_name, reservation.client_name, reservation.operation_type]
         .some(value => String(value || '').toLocaleLowerCase('pt-BR').includes(query)))
       .sort((left, right) => String(right.reserved_date || '').localeCompare(String(left.reserved_date || '')) || Number(right.id) - Number(left.id));
-  }, [reservations, searchTerm, statusFilter, isTechnician, currentUser]);
+  }, [reservations, searchTerm, statusFilter, isTechnician, currentUser, isEqat]);
 
   const metrics = useMemo(() => {
     const current = todayKey();
     const inSevenDays = new Date(`${current}T12:00:00`);
     inSevenDays.setDate(inSevenDays.getDate() + 7);
     const limit = inSevenDays.toISOString().slice(0, 10);
-    const myRes = isTechnician && currentUser
+    const myRes = isTechnician && currentUser && !isEqat
       ? reservations.filter(r => Number(r.technician_id) === Number(currentUser.id))
       : reservations;
 
     return {
       active: myRes.filter(reservation => ACTIVE_STATUSES.has(reservation.status)).length,
       inUse: myRes.filter(reservation => reservation.status === 'Em Uso').length,
+      pendingApproval: reservations.filter(reservation => reservation.status === 'Aguardando Aprovação').length,
       available: analyzers.filter(analyzer => analyzer.status === 'Disponível').length,
       weekAppointments: upcomingAppointments.filter(appointment => appointment.appointment_date <= limit).length
     };
-  }, [analyzers, reservations, upcomingAppointments, isTechnician, currentUser]);
+  }, [analyzers, reservations, upcomingAppointments, isTechnician, currentUser, isEqat]);
 
   const analyzerOverview = useMemo(() => {
     const countStatus = (status: string) => analyzers.filter(analyzer => analyzer.status === status).length;
@@ -264,29 +289,48 @@ export function OperationsAdminView({
   const createReservation = async (event: FormEvent) => {
     event.preventDefault();
     const effectiveTechId = isTechnician && currentUser ? Number(currentUser.id) : Number(selectedTechnicianId);
-    if (!selectedAppointmentId || !effectiveTechId || !selectedAnalyzerIds.length) return;
+    if (!effectiveTechId || !selectedAnalyzerIds.length) return;
+    if (operationType === 'Atendimento' && !selectedAppointmentId) return;
+
     setSaving(true); setError(''); setNotice('');
     let completed = 0;
     try {
       for (const analyzerId of selectedAnalyzerIds) {
+        const payload: any = {
+          technician_id: effectiveTechId,
+          analyzer_id: analyzerId,
+          operation_type: operationType,
+          direct_checkout: isAdmin && directCheckout,
+          notes: operationType === 'Atendimento'
+            ? (isTechnician ? `Reserva efetuada pelo próprio técnico (${currentUser?.name})` : 'Reserva criada pelo painel administrativo')
+            : (directNotes || (operationType === 'Calibração' ? 'Saída/Reserva para Calibração de Padrão' : 'Empréstimo de equipamento'))
+        };
+
+        if (operationType === 'Atendimento') {
+          payload.appointment_id = Number(selectedAppointmentId);
+        } else {
+          payload.reserved_date = directDate || todayKey();
+        }
+
         const data = await safeFetchJson('/api/reservations', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            appointment_id: Number(selectedAppointmentId),
-            technician_id: effectiveTechId,
-            analyzer_id: analyzerId,
-            notes: isTechnician
-              ? `Reserva efetuada pelo próprio técnico (${currentUser?.name})`
-              : 'Reserva criada pelo painel administrativo'
-          })
+          headers: {
+            'Content-Type': 'application/json',
+            ...(isAdmin ? { 'x-admin-token': 'admin-master' } : {})
+          },
+          body: JSON.stringify(payload)
         });
         if (!data.success) throw new Error(data.error || 'Não foi possível criar a reserva.');
         completed += 1;
       }
-      setNotice(`${completed} ${completed === 1 ? 'padrão reservado' : 'padrões reservados'} com sucesso.`);
+      setNotice(
+        operationType !== 'Atendimento' && isEqat && !isAdmin
+          ? `Solicitação de ${operationType} enviada com sucesso! Aguarde aprovação do Administrador Geral para liberação física.`
+          : `${completed} ${completed === 1 ? 'padrão registrado' : 'padrões registrados'} com sucesso.`
+      );
       setSelectedAnalyzerIds([]);
       setAnalyzerSearch('');
+      setDirectNotes('');
       await Promise.all([loadReservations(), onRefresh()]);
     } catch (requestError) {
       if (completed) await Promise.all([loadReservations(), onRefresh()]);
@@ -294,6 +338,25 @@ export function OperationsAdminView({
       setError(completed ? `${completed} reserva(s) concluída(s). O restante não foi salvo: ${message}` : message);
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleApproveReservation = async (reservationId: number) => {
+    setActionId(reservationId);
+    setError('');
+    setNotice('');
+    try {
+      const data = await safeFetchJson(`/api/reservations/${reservationId}/approve`, {
+        method: 'POST',
+        headers: { 'x-admin-token': 'admin-master' }
+      });
+      if (!data.success) throw new Error(data.error || 'Não foi possível aprovar a solicitação.');
+      setNotice(data.message || 'Solicitação aprovada com sucesso! Saída liberada.');
+      await Promise.all([loadReservations(), onRefresh()]);
+    } catch (err: any) {
+      setError(err.message || 'Erro ao aprovar solicitação.');
+    } finally {
+      setActionId(null);
     }
   };
 
@@ -420,39 +483,101 @@ export function OperationsAdminView({
           <div className="operations-section-heading">
             <span><PackageCheck size={19} /></span>
             <div>
-              <h3>{isTechnician ? 'Reservar Padrão para Atendimento' : 'Nova reserva administrativa'}</h3>
-              <p>{isTechnician ? 'A reserva será vinculada estritamente ao seu perfil.' : 'Vincule atendimento, técnico e patrimônio.'}</p>
+              <h3>{operationType === 'Calibração' ? 'Saída para Calibração de Padrão' : operationType === 'Empréstimo' ? 'Empréstimo de Equipamento' : (isTechnician ? 'Reservar Padrão para Atendimento' : 'Nova reserva administrativa')}</h3>
+              <p>{operationType !== 'Atendimento' ? (isEqat && !isAdmin ? 'Solicitação da EQAT sujeita à aprovação do Administrador Geral.' : 'Registro direto de saída/reserva sem agendamento.') : (isTechnician ? 'A reserva será vinculada estritamente ao seu perfil.' : 'Vincule atendimento, técnico e patrimônio.')}</p>
             </div>
           </div>
 
-          <label>
-            <span>Atendimento (Serviços Técnicos)</span>
-            <select value={selectedAppointmentId} onChange={event => setSelectedAppointmentId(event.target.value)} required>
-              <option value="">Selecione o atendimento</option>
-              {upcomingTechnicalAppointments.map(appointment => (
-                <option key={appointment.id} value={appointment.id}>
-                  {formatDate(appointment.appointment_date)} · {appointment.appointment_time || '--:--'} · {appointment.client_name || appointment.title}
-                </option>
-              ))}
-            </select>
-          </label>
+          {/* SELETOR DE MODO: ATENDIMENTO / CALIBRAÇÃO / EMPRÉSTIMO */}
+          {canSpecialOps && (
+            <div style={{ marginBottom: '14px' }}>
+              <span style={{ fontSize: '0.8rem', fontWeight: 700, color: '#334155', display: 'block', marginBottom: '6px' }}>
+                Finalidade da Operação
+              </span>
+              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                <button
+                  type="button"
+                  className={`btn btn-sm ${operationType === 'Atendimento' ? 'btn-primary' : 'btn-secondary'}`}
+                  style={{ fontSize: '0.8rem', padding: '6px 12px' }}
+                  onClick={() => { setOperationType('Atendimento'); setSelectedAnalyzerIds([]); }}
+                >
+                  📋 Atendimento
+                </button>
+                <button
+                  type="button"
+                  className={`btn btn-sm ${operationType === 'Calibração' ? 'btn-primary' : 'btn-secondary'}`}
+                  style={{ fontSize: '0.8rem', padding: '6px 12px' }}
+                  onClick={() => { setOperationType('Calibração'); setSelectedAnalyzerIds([]); }}
+                >
+                  🔬 Calibração
+                </button>
+                <button
+                  type="button"
+                  className={`btn btn-sm ${operationType === 'Empréstimo' ? 'btn-primary' : 'btn-secondary'}`}
+                  style={{ fontSize: '0.8rem', padding: '6px 12px' }}
+                  onClick={() => { setOperationType('Empréstimo'); setSelectedAnalyzerIds([]); }}
+                >
+                  🤝 Empréstimo
+                </button>
+              </div>
+            </div>
+          )}
+
+          {operationType === 'Atendimento' ? (
+            <label>
+              <span>Atendimento (Serviços Técnicos)</span>
+              <select value={selectedAppointmentId} onChange={event => setSelectedAppointmentId(event.target.value)} required>
+                <option value="">Selecione o atendimento</option>
+                {upcomingTechnicalAppointments.map(appointment => (
+                  <option key={appointment.id} value={appointment.id}>
+                    {formatDate(appointment.appointment_date)} · {appointment.appointment_time || '--:--'} · {appointment.client_name || appointment.title}
+                  </option>
+                ))}
+              </select>
+            </label>
+          ) : (
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '8px' }}>
+              <label>
+                <span>Data da Operação *</span>
+                <input
+                  type="date"
+                  className="input-field"
+                  style={{ padding: '8px 12px', borderRadius: '8px', border: '1px solid #cbd5e1' }}
+                  value={directDate}
+                  onChange={e => setDirectDate(e.target.value)}
+                  required
+                />
+              </label>
+              <label>
+                <span>{operationType === 'Calibração' ? 'Laboratório / Motivo' : 'Destino / Solicitante'}</span>
+                <input
+                  type="text"
+                  className="input-field"
+                  style={{ padding: '8px 12px', borderRadius: '8px', border: '1px solid #cbd5e1' }}
+                  placeholder={operationType === 'Calibração' ? 'Ex: Calibração Anual Fluke' : 'Ex: Empréstimo Filial RJ'}
+                  value={directNotes}
+                  onChange={e => setDirectNotes(e.target.value)}
+                />
+              </label>
+            </div>
+          )}
 
           <label>
             <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-              Técnico responsável {isTechnician && <span style={{ color: 'var(--primary)', fontWeight: 700 }}>(Fixo no seu perfil)</span>}
+              Responsável {isTechnician && !isEqat && <span style={{ color: 'var(--primary)', fontWeight: 700 }}>(Fixo no seu perfil)</span>}
             </span>
             <select
-              value={isTechnician && currentUser ? String(currentUser.id) : selectedTechnicianId}
+              value={isTechnician && currentUser && !isEqat ? String(currentUser.id) : selectedTechnicianId}
               onChange={event => setSelectedTechnicianId(event.target.value)}
-              disabled={isTechnician}
-              style={isTechnician ? { background: '#f1f5f9', cursor: 'not-allowed', color: '#334155', fontWeight: 600 } : {}}
+              disabled={isTechnician && !isEqat}
+              style={isTechnician && !isEqat ? { background: '#f1f5f9', cursor: 'not-allowed', color: '#334155', fontWeight: 600 } : {}}
               required
             >
-              {isTechnician && currentUser ? (
+              {isTechnician && currentUser && !isEqat ? (
                 <option value={String(currentUser.id)}>{currentUser.name} (Você)</option>
               ) : (
                 <>
-                  <option value="">Selecione o técnico</option>
+                  <option value="">Selecione o responsável</option>
                   {activeTechnicians.map(technician => (
                     <option key={technician.id} value={technician.id}>{technician.name}</option>
                   ))}
@@ -461,7 +586,24 @@ export function OperationsAdminView({
             </select>
           </label>
 
-          {selectedAppointment && (
+          {isAdmin && operationType !== 'Atendimento' && (
+            <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', margin: '4px 0 8px 0', fontSize: '0.85rem', color: '#1e293b' }}>
+              <input
+                type="checkbox"
+                checked={directCheckout}
+                onChange={e => setDirectCheckout(e.target.checked)}
+              />
+              <strong>Registrar saída imediata ('Em Uso')</strong>
+            </label>
+          )}
+
+          {isEqat && !isAdmin && operationType !== 'Atendimento' && (
+            <div style={{ background: '#fffbeb', border: '1px solid #fde68a', color: '#92400e', padding: '8px 12px', borderRadius: '8px', fontSize: '0.78rem', marginBottom: '8px' }}>
+              ℹ️ Como EQAT, esta solicitação de saída entrará como <strong>Aguardando Aprovação</strong> e será liberada para retirada assim que o Administrador Geral aprovar.
+            </div>
+          )}
+
+          {operationType === 'Atendimento' && selectedAppointment && (
             isNonTechnicalAppointment(selectedAppointment) ? (
               <div className="operations-notice is-error" style={{ margin: '0.5rem 0' }}>
                 Agendamentos não técnicos (Sobreaviso, Exame, Aniversário, Revisão, Treinamento, etc.) não permitem reserva de padrões.
@@ -475,7 +617,7 @@ export function OperationsAdminView({
             )
           )}
 
-          <fieldset className="analyzer-picker" disabled={!selectedAppointment || saving}>
+          <fieldset className="analyzer-picker" disabled={(operationType === 'Atendimento' && !selectedAppointment) || saving}>
             <legend>Selecionar padrões</legend>
             <p>Pesquise por patrimônio, nome, tipo ou modelo e adicione quantos forem necessários.</p>
             <label className="analyzer-picker__search">
@@ -680,6 +822,15 @@ export function OperationsAdminView({
                       <small>{reservation.analyzer_name}</small>
                     </td>
                     <td data-label="Atendimento">
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '2px' }}>
+                        {reservation.operation_type === 'Calibração' ? (
+                          <span style={{ background: '#fef3c7', color: '#92400e', border: '1px solid #fde68a', fontSize: '0.65rem', fontWeight: 800, padding: '1px 5px', borderRadius: '4px' }}>🔬 CALIBRAÇÃO</span>
+                        ) : reservation.operation_type === 'Empréstimo' ? (
+                          <span style={{ background: '#e0e7ff', color: '#3730a3', border: '1px solid #c7d2fe', fontSize: '0.65rem', fontWeight: 800, padding: '1px 5px', borderRadius: '4px' }}>🤝 EMPRÉSTIMO</span>
+                        ) : (
+                          <span style={{ background: '#f1f5f9', color: '#475467', fontSize: '0.65rem', fontWeight: 700, padding: '1px 5px', borderRadius: '4px' }}>📋 ATENDIMENTO</span>
+                        )}
+                      </div>
                       <strong>{reservation.client_name}</strong>
                       <small>{reservation.analyzer_type}</small>
                     </td>
@@ -687,11 +838,24 @@ export function OperationsAdminView({
                     <td data-label="Data">{formatDate(reservation.appointment_date || reservation.reserved_date)}</td>
                     <td data-label="Status">
                       <span className={`reservation-status reservation-status--${String(reservation.status).toLowerCase().replace(/\s/g, '-')}`}>
-                        {reservation.status}
+                        {reservation.status === 'Aguardando Aprovação' ? '⏳ Aguardando Aprovação' : reservation.status}
                       </span>
                     </td>
                     <td data-label="Ações de Campo">
-                      {ACTIVE_STATUSES.has(reservation.status) ? (
+                      {reservation.status === 'Aguardando Aprovação' ? (
+                        isAdmin ? (
+                          <button
+                            className="btn btn-primary btn-sm"
+                            style={{ background: '#16a34a', borderColor: '#16a34a', gap: '4px', fontSize: '0.75rem', padding: '4px 8px' }}
+                            disabled={actionId === reservation.id}
+                            onClick={() => handleApproveReservation(reservation.id)}
+                          >
+                            {actionId === reservation.id ? <LoaderCircle className="spin" size={13} /> : <><CheckCircle2 size={13} /> Aprovar Saída</>}
+                          </button>
+                        ) : (
+                          <span style={{ fontSize: '0.72rem', color: '#b45309', fontWeight: 600 }}>Pendente aprovação do Admin</span>
+                        )
+                      ) : ACTIVE_STATUSES.has(reservation.status) ? (
                         <button
                           className="btn btn-secondary btn-sm"
                           disabled={actionId === reservation.id}

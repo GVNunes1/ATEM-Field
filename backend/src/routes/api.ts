@@ -1271,17 +1271,21 @@ router.get('/reservations', async (req: Request, res: Response) => {
       const analyzer = r.analyzer_id ? analyzerMap.get(r.analyzer_id) : null;
       const tech = r.technician_id ? techMap.get(r.technician_id) : null;
       const appt = r.appointment_id ? apptMap.get(r.appointment_id) : null;
+      const opType = r.operation_type || (r.appointment_id ? 'Atendimento' : 'Uso Interno');
+
+      let clientDisplay = appt ? appt.client_name : (opType === 'Calibração' ? '[Calibração de Padrão]' : opType === 'Empréstimo' ? '[Empréstimo de Equipamento]' : '[Operação Interna]');
 
       return {
         ...r,
+        operation_type: opType,
         asset_tag: analyzer ? analyzer.asset_tag : 'N/A',
         analyzer_name: analyzer ? analyzer.name : 'N/A',
         analyzer_type: analyzer ? analyzer.type : 'N/A',
         brand_model: analyzer ? analyzer.brand_model : 'N/A',
         technician_name: tech ? tech.name : 'N/A',
         technician_phone: tech ? tech.phone : 'N/A',
-        client_name: appt ? appt.client_name : 'N/A',
-        appointment_date: appt ? appt.appointment_date : 'N/A'
+        client_name: clientDisplay,
+        appointment_date: appt ? appt.appointment_date : (r.reserved_date || 'N/A')
       };
     });
 
@@ -1293,27 +1297,64 @@ router.get('/reservations', async (req: Request, res: Response) => {
 
 router.post('/reservations', async (req: Request, res: Response) => {
   try {
-    const { appointment_id, analyzer_id, technician_id, notes } = req.body;
+    const {
+      appointment_id,
+      analyzer_id,
+      technician_id,
+      notes,
+      operation_type = 'Atendimento',
+      reserved_date,
+      direct_checkout = false
+    } = req.body;
 
-    if (!appointment_id || !analyzer_id || !technician_id) {
-      return res.status(400).json({ success: false, error: 'Atendimento, Analisador e Técnico são obrigatórios.' });
+    if (!analyzer_id || !technician_id) {
+      return res.status(400).json({ success: false, error: 'Analisador e Responsável são obrigatórios.' });
     }
 
-    const { data: appt } = await supabaseAdmin
-      .from('appointments')
+    const { data: tech } = await supabaseAdmin
+      .from('technicians')
       .select('*')
-      .eq('id', Number(appointment_id))
+      .eq('id', Number(technician_id))
       .maybeSingle();
 
-    if (!appt) {
-      return res.status(404).json({ success: false, error: 'Atendimento não encontrado.' });
+    if (!tech) {
+      return res.status(404).json({ success: false, error: 'Técnico/Responsável não encontrado.' });
     }
 
-    if (isNonTechnicalAppointment(appt)) {
-      return res.status(400).json({
-        success: false,
-        error: 'Agendamentos não técnicos (Sobreaviso, Exame Periódico, Aniversário, Revisão, Treinamento, etc.) não permitem reserva de padrões.'
-      });
+    const isSpecialOp = operation_type === 'Calibração' || operation_type === 'Empréstimo' || !appointment_id;
+
+    // REGRA DE PERMISSÃO: Apenas Administrador Geral e EQAT podem solicitar/retirar para Calibração e Empréstimo
+    if (isSpecialOp) {
+      const isEqat = tech.name?.trim().toUpperCase() === 'EQAT';
+      const isAdmin = tech.role === 'admin' || (req as any).user?.role === 'admin' || req.headers['x-admin-token'];
+      if (!isEqat && !isAdmin) {
+        return res.status(403).json({
+          success: false,
+          error: 'Apenas o Administrador Geral e a EQAT têm permissão para reservar ou retirar padrões para Calibração ou Empréstimo.'
+        });
+      }
+    }
+
+    let targetDate = reserved_date || new Date().toISOString().slice(0, 10);
+
+    if (appointment_id) {
+      const { data: appt } = await supabaseAdmin
+        .from('appointments')
+        .select('*')
+        .eq('id', Number(appointment_id))
+        .maybeSingle();
+
+      if (!appt) {
+        return res.status(404).json({ success: false, error: 'Atendimento não encontrado.' });
+      }
+
+      if (isNonTechnicalAppointment(appt)) {
+        return res.status(400).json({
+          success: false,
+          error: 'Agendamentos não técnicos (Sobreaviso, Exame Periódico, Aniversário, Revisão, Treinamento, etc.) não permitem reserva de padrões.'
+        });
+      }
+      targetDate = appt.appointment_date || targetDate;
     }
 
     const { data: analyzer } = await supabaseAdmin
@@ -1326,20 +1367,63 @@ router.post('/reservations', async (req: Request, res: Response) => {
       return res.status(404).json({ success: false, error: 'Analisador não encontrado.' });
     }
 
-    if (appt.appointment_date) {
-      const { data: existingConflict } = await supabaseAdmin
+    // REGRA DE APROVAÇÃO:
+    // Se a EQAT solicitar Calibração/Empréstimo, fica 'Aguardando Aprovação' até o Administrador aprovar.
+    // Se o Administrador criar, já entra aprovado ('Reservado' ou 'Em Uso' se for direct_checkout).
+    const isCreatedByAdmin = req.headers['x-admin-token'] || (req as any).user?.role === 'admin' || tech.role === 'admin';
+    const isEqat = tech.name?.trim().toUpperCase() === 'EQAT';
+
+    let initialStatus = 'Reservado';
+    let approvedBy = null;
+    let approvedAt = null;
+
+    if (isSpecialOp && isEqat && !isCreatedByAdmin) {
+      initialStatus = 'Aguardando Aprovação';
+    } else if (isSpecialOp && isCreatedByAdmin) {
+      approvedBy = 'Administrador Geral';
+      approvedAt = new Date().toISOString();
+      if (direct_checkout) {
+        initialStatus = 'Em Uso';
+      }
+    }
+
+    // Se for saída imediata, verificar se outro técnico está usando no momento
+    if (initialStatus === 'Em Uso') {
+      const { data: activeUsage } = await supabaseAdmin
+        .from('reservations')
+        .select('id, technician_id, technicians(name)')
+        .eq('analyzer_id', Number(analyzer_id))
+        .eq('status', 'Em Uso')
+        .maybeSingle();
+
+      if (activeUsage) {
+        const activeTechName = (activeUsage as any)?.technicians?.name || 'outro técnico';
+        return res.status(400).json({
+          success: false,
+          error: `Não é possível retirar este padrão agora pois ele ainda está em campo com ${activeTechName}. Aguarde a devolução para realizar a saída.`
+        });
+      }
+    }
+
+    // Checagem de conflito para a data
+    if (targetDate) {
+      let conflictQuery = supabaseAdmin
         .from('reservations')
         .select('id')
         .eq('analyzer_id', Number(analyzer_id))
-        .eq('reserved_date', appt.appointment_date)
-        .in('status', ['Reservado', 'Em Uso'])
-        .neq('appointment_id', Number(appointment_id))
-        .maybeSingle();
+        .eq('reserved_date', targetDate)
+        .in('status', ['Reservado', 'Em Uso', 'Aguardando Aprovação']);
+
+      if (appointment_id) {
+        conflictQuery = conflictQuery.neq('appointment_id', Number(appointment_id));
+      }
+
+      const { data: existingConflict } = await conflictQuery.maybeSingle();
 
       if (existingConflict) {
         return res.status(400).json({
           success: false,
-          error: `O Patrimônio ${analyzer.asset_tag} (${analyzer.name}) já está reservado/em uso para esta data.`
+          error: `O Patrimônio ${analyzer.asset_tag} (${analyzer.name}) já possui reserva/solicitação nesta data.`
         });
       }
     }
@@ -1347,34 +1431,90 @@ router.post('/reservations', async (req: Request, res: Response) => {
     const { data: newRes, error: insertErr } = await supabaseAdmin
       .from('reservations')
       .insert({
-        appointment_id: Number(appointment_id),
+        appointment_id: appointment_id ? Number(appointment_id) : null,
         analyzer_id: Number(analyzer_id),
         technician_id: Number(technician_id),
-        reserved_date: appt.appointment_date,
-        status: 'Reservado',
-        checkout_at: new Date().toISOString(),
+        reserved_date: targetDate,
+        operation_type: operation_type || 'Atendimento',
+        status: initialStatus,
+        approved_by: approvedBy,
+        approved_at: approvedAt,
+        checkout_at: initialStatus === 'Em Uso' ? new Date().toISOString() : null,
         checkin_at: null,
-        notes: notes || 'Reserva efetuada pelo sistema'
+        notes: notes || (operation_type === 'Calibração' ? 'Saída/Reserva para Calibração de Padrão' : operation_type === 'Empréstimo' ? 'Empréstimo de equipamento' : 'Reserva efetuada pelo sistema')
       })
       .select('id')
       .single();
 
     if (insertErr) throw insertErr;
 
-    // Se o analisador não estiver atualmente em campo ('Em Uso'), atualiza status para 'Reservado'
-    if (analyzer.status !== 'Em Uso') {
-      await supabaseAdmin
-        .from('analyzers')
-        .update({ status: 'Reservado' })
-        .eq('id', Number(analyzer_id));
+    if (initialStatus === 'Em Uso') {
+      await supabaseAdmin.from('analyzers').update({ status: 'Em Uso' }).eq('id', Number(analyzer_id));
+    } else if (initialStatus === 'Reservado' && analyzer.status !== 'Em Uso') {
+      await supabaseAdmin.from('analyzers').update({ status: 'Reservado' }).eq('id', Number(analyzer_id));
+    }
+
+    let successMsg = `Reserva do Patrimônio ${analyzer.asset_tag} realizada com sucesso!`;
+    if (initialStatus === 'Aguardando Aprovação') {
+      successMsg = `Solicitação de ${operation_type} do Patrimônio ${analyzer.asset_tag} registrada! Aguarde a aprovação do Administrador Geral para retirar o padrão.`;
+    } else if (initialStatus === 'Em Uso') {
+      successMsg = `Saída de ${operation_type} do Patrimônio ${analyzer.asset_tag} registrada com sucesso!`;
     }
 
     res.json({
       success: true,
       reservationId: newRes.id,
       asset_tag: analyzer.asset_tag,
-      message: `Reserva do Patrimônio ${analyzer.asset_tag} realizada com sucesso!`
+      status: initialStatus,
+      message: successMsg
     });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// APROVAÇÃO DE SAÍDA PELO ADMINISTRADOR
+router.post('/reservations/:id/approve', async (req: Request, res: Response) => {
+  try {
+    const resId = Number(req.params.id);
+
+    const { data: reservation } = await supabaseAdmin
+      .from('reservations')
+      .select('*')
+      .eq('id', resId)
+      .maybeSingle();
+
+    if (!reservation) {
+      return res.status(404).json({ success: false, error: 'Solicitação não encontrada.' });
+    }
+
+    const { error: updateErr } = await supabaseAdmin
+      .from('reservations')
+      .update({
+        status: 'Reservado',
+        approved_by: 'Administrador Geral',
+        approved_at: new Date().toISOString()
+      })
+      .eq('id', resId);
+
+    if (updateErr) throw updateErr;
+
+    if (reservation.analyzer_id) {
+      const { data: currentAnalyzer } = await supabaseAdmin
+        .from('analyzers')
+        .select('status')
+        .eq('id', reservation.analyzer_id)
+        .maybeSingle();
+
+      if (currentAnalyzer && currentAnalyzer.status !== 'Em Uso') {
+        await supabaseAdmin
+          .from('analyzers')
+          .update({ status: 'Reservado' })
+          .eq('id', reservation.analyzer_id);
+      }
+    }
+
+    res.json({ success: true, message: 'Solicitação aprovada pelo Administrador! Saída liberada para retirada.' });
   } catch (err: any) {
     res.status(500).json({ success: false, error: err.message });
   }
@@ -1396,6 +1536,14 @@ router.post('/reservations/:id/checkout', async (req: Request, res: Response) =>
 
     if (!reservation.analyzer_id) {
       return res.status(400).json({ success: false, error: 'Reserva sem padrão associado.' });
+    }
+
+    // REGRA DE APROVAÇÃO: Se estiver aguardando aprovação, bloquear retirada até o Admin aprovar
+    if (reservation.status === 'Aguardando Aprovação') {
+      return res.status(403).json({
+        success: false,
+        error: `Esta solicitação de ${reservation.operation_type || 'Calibração/Empréstimo'} ainda está aguardando aprovação do Administrador Geral para liberação da saída.`
+      });
     }
 
     // REGRA DE OURO: Verificar se o analisador está fisicamente com outro técnico neste momento ('Em Uso')

@@ -282,6 +282,9 @@ export type Database = {
           reserved_date: string | null
           status: string
           technician_id: number | null
+          operation_type: string | null
+          approved_by: string | null
+          approved_at: string | null
         }
         Insert: {
           analyzer_id?: number | null
@@ -296,6 +299,9 @@ export type Database = {
           reserved_date?: string | null
           status?: string
           technician_id?: number | null
+          operation_type?: string | null
+          approved_by?: string | null
+          approved_at?: string | null
         }
         Update: {
           analyzer_id?: number | null
@@ -310,6 +316,9 @@ export type Database = {
           reserved_date?: string | null
           status?: string
           technician_id?: number | null
+          operation_type?: string | null
+          approved_by?: string | null
+          approved_at?: string | null
         }
         Relationships: [
           {

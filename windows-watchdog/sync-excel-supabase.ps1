@@ -1,4 +1,4 @@
-﻿param(
+param(
     [String]$ConfigPath = '',
     [Switch]$DryRun,
     [Switch]$TestConnection,
@@ -510,9 +510,7 @@ try {
     Write-Host (ConvertTo-ATEMJson $result)
 }
 catch {
-    $errorDetails = $_.Exception.Message
-    if (-not (Test-ATEMStringBlank $_.ScriptStackTrace)) { $errorDetails += [Environment]::NewLine + $_.ScriptStackTrace }
-    Write-Error $errorDetails
+    Write-Error (Get-ATEMErrorDetails $_)
     exit 1
 }
 finally {

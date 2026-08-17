@@ -1,4 +1,4 @@
-﻿param(
+param(
     [String]$DetectPath = '',
     [Switch]$DetectOnly
 )
@@ -340,7 +340,7 @@ try {
 }
 catch {
     Write-Host ''
-    Write-Host ('ERRO: ' + $_.Exception.Message) -ForegroundColor Red
+    Write-Host ('ERRO: ' + (Get-ATEMErrorDetails $_)) -ForegroundColor Red
     Write-Host ('Etapa: ' + $installationStage) -ForegroundColor Yellow
     exit 1
 }

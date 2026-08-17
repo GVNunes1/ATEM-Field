@@ -1,4 +1,4 @@
-﻿param(
+param(
     [String]$ConfigPath = ''
 )
 
@@ -120,8 +120,8 @@ try {
 }
 catch {
     $fallbackLog = Join-Path $scriptDirectory 'logs\watchdog.log'
-    try { Write-ATEMLog $fallbackLog $_.Exception.Message 'ERROR' }
-    catch { Write-Error $_.Exception.Message }
+    try { Write-ATEMLog $fallbackLog (Get-ATEMErrorDetails $_) 'ERROR' }
+    catch { Write-Error (Get-ATEMErrorDetails $_) }
     exit 1
 }
 finally {

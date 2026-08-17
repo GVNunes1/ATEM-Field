@@ -1,4 +1,4 @@
-﻿# Compatibilidade: Windows 7 SP1 e PowerShell 2.0.
+# Compatibilidade: Windows 7 SP1 e PowerShell 2.0.
 Set-StrictMode -Version 2.0
 
 function Get-ATEMScriptDirectory {
@@ -10,9 +10,57 @@ function Get-ATEMScriptDirectory {
 }
 
 function Test-ATEMStringBlank {
-    param([AllowNull()][Object]$Value)
+    param([Object]$Value)
     if ($null -eq $Value) { return $true }
     return ([String]$Value).Trim().Length -eq 0
+}
+
+function Get-ATEMErrorDetails {
+    param($ErrorRecord)
+    if ($null -eq $ErrorRecord) { return 'Erro desconhecido.' }
+    $message = ''
+    try {
+        if ($ErrorRecord -is [System.Exception]) {
+            $message = $ErrorRecord.Message
+        }
+        elseif ($null -ne $ErrorRecord.Exception -and -not [String]::IsNullOrEmpty($ErrorRecord.Exception.Message)) {
+            $message = $ErrorRecord.Exception.Message
+        }
+        else {
+            $message = [String]$ErrorRecord
+        }
+    }
+    catch {
+        $message = [String]$ErrorRecord
+    }
+
+    $stack = ''
+    try {
+        if ($ErrorRecord.PSObject.Properties['ScriptStackTrace'] -and $null -ne $ErrorRecord.ScriptStackTrace) {
+            $stack = [String]$ErrorRecord.ScriptStackTrace
+        }
+    } catch { }
+
+    if ([String]::IsNullOrEmpty($stack)) {
+        try {
+            if ($null -ne $ErrorRecord.InvocationInfo -and $null -ne $ErrorRecord.InvocationInfo.PositionMessage) {
+                $stack = [String]$ErrorRecord.InvocationInfo.PositionMessage
+            }
+        } catch { }
+    }
+
+    if ([String]::IsNullOrEmpty($stack)) {
+        try {
+            if ($null -ne $ErrorRecord.Exception -and $null -ne $ErrorRecord.Exception.StackTrace) {
+                $stack = [String]$ErrorRecord.Exception.StackTrace
+            }
+        } catch { }
+    }
+
+    if (-not (Test-ATEMStringBlank $stack)) {
+        return ($message + [Environment]::NewLine + $stack)
+    }
+    return $message
 }
 
 function Get-ATEMExcelMatrixDimensions {
@@ -52,7 +100,7 @@ function ConvertFrom-ATEMJson {
 }
 
 function ConvertTo-ATEMNormalizedKey {
-    param([AllowNull()][Object]$Value)
+    param([Object]$Value)
     if ($null -eq $Value) { return '' }
     $text = ([String]$Value).Trim().ToUpperInvariant().Normalize([Text.NormalizationForm]::FormD)
     $builder = New-Object Text.StringBuilder
