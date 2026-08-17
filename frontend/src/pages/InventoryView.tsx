@@ -1,5 +1,20 @@
 import React, { useMemo, useState } from 'react';
-import { Box, Plus, Search, Filter, CheckCircle2, ArrowRightLeft, ShieldCheck, Tag, UserRoundCheck, RotateCcw } from 'lucide-react';
+import {
+  Box,
+  Plus,
+  Search,
+  Filter,
+  CheckCircle2,
+  ArrowRightLeft,
+  ShieldCheck,
+  Tag,
+  UserRoundCheck,
+  RotateCcw,
+  Edit2,
+  Trash2,
+  X,
+  AlertTriangle
+} from 'lucide-react';
 import { safeFetchJson } from '../lib/api';
 
 interface InventoryViewProps {
@@ -66,6 +81,10 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ analyzers, onRefre
     notes: ''
   });
 
+  // Edit Analyzer modal state
+  const [editItem, setEditItem] = useState<any | null>(null);
+  const [editFormData, setEditFormData] = useState<any>({});
+
   const [loading, setLoading] = useState(false);
   const [msg, setMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
@@ -100,37 +119,43 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ analyzers, onRefre
   }, [analyzers]);
 
   const filtered = useMemo(() => {
-    const normalizedTerm = normalizeSearchText(searchTerm);
+    const normalizedSearch = normalizeSearchText(searchTerm);
 
     return analyzers.filter(item => {
-      const reservationOwner = getReservationOwner(item);
-      const searchableText = normalizeSearchText([
+      if (statusFilter !== 'ALL' && item.status !== statusFilter) return false;
+      if (typeFilter !== 'ALL' && item.type !== typeFilter) return false;
+
+      const owner = getReservationOwner(item);
+      if (reservationOwnerFilter !== 'ALL' && owner !== reservationOwnerFilter) return false;
+
+      if (calibrationFilter !== 'ALL') {
+        const itemCalibrationStatus = getCalibrationFilter(item.calibration_expiry, todayIso, calibrationWarningIso);
+        if (itemCalibrationStatus !== calibrationFilter) return false;
+      }
+
+      if (!normalizedSearch) return true;
+
+      const targetText = [
         item.asset_tag,
         item.name,
-        item.type,
         item.serial_number,
         item.brand_model,
-        reservationOwner,
+        item.type,
+        owner,
+        item.current_location,
         item.notes
-      ].join(' '));
+      ].map(normalizeSearchText).join(' ');
 
-      const matchesSearch = !normalizedTerm || searchableText.includes(normalizedTerm);
-      const matchesStatus = statusFilter === 'ALL' || item.status === statusFilter;
-      const matchesType = typeFilter === 'ALL' || item.type === typeFilter;
-      const matchesReservationOwner = reservationOwnerFilter === 'ALL' || reservationOwner === reservationOwnerFilter;
-      const itemCalibrationFilter = getCalibrationFilter(item.calibration_expiry, todayIso, calibrationWarningIso);
-      const matchesCalibration = calibrationFilter === 'ALL' || itemCalibrationFilter === calibrationFilter;
-
-      return matchesSearch && matchesStatus && matchesType && matchesReservationOwner && matchesCalibration;
+      return targetText.includes(normalizedSearch);
     });
   }, [analyzers, searchTerm, statusFilter, typeFilter, reservationOwnerFilter, calibrationFilter, todayIso, calibrationWarningIso]);
 
   const activeFilterCount = [
-    Boolean(searchTerm.trim()),
     statusFilter !== 'ALL',
     typeFilter !== 'ALL',
     reservationOwnerFilter !== 'ALL',
-    calibrationFilter !== 'ALL'
+    calibrationFilter !== 'ALL',
+    searchTerm.trim().length > 0
   ].filter(Boolean).length;
 
   const clearFilters = () => {
@@ -177,6 +202,70 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ analyzers, onRefre
     }
   };
 
+  const handleOpenEdit = (item: any) => {
+    setEditItem(item);
+    setEditFormData({
+      asset_tag: item.asset_tag || '',
+      name: item.name || '',
+      type: item.type || 'Analisador de Desfibrilador',
+      serial_number: item.serial_number || '',
+      brand_model: item.brand_model || '',
+      status: item.status || 'Disponível',
+      calibration_date: item.calibration_date ? item.calibration_date.slice(0, 10) : '',
+      calibration_expiry: item.calibration_expiry ? item.calibration_expiry.slice(0, 10) : '',
+      current_location: item.current_location || 'Almoxarifado Central',
+      notes: item.notes || ''
+    });
+  };
+
+  const handleUpdate = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editItem) return;
+    setLoading(true);
+    setMsg(null);
+
+    try {
+      const data = await safeFetchJson(`/api/analyzers/${editItem.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(editFormData)
+      });
+      if (data.success) {
+        setMsg({ type: 'success', text: `Patrimônio ${editFormData.asset_tag} atualizado com sucesso!` });
+        setEditItem(null);
+        onRefresh();
+      } else {
+        setMsg({ type: 'error', text: data.error || 'Erro ao atualizar patrimônio.' });
+      }
+    } catch (err: any) {
+      setMsg({ type: 'error', text: err.message });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDelete = async (item: any) => {
+    if (!window.confirm(`⚠️ Tem certeza que deseja excluir o padrão "${item.asset_tag} - ${item.name}" definitivamente do banco de dados?`)) {
+      return;
+    }
+    setLoading(true);
+    try {
+      const data = await safeFetchJson(`/api/analyzers/${item.id}`, {
+        method: 'DELETE'
+      });
+      if (data.success) {
+        setMsg({ type: 'success', text: `Patrimônio ${item.asset_tag} excluído com sucesso!` });
+        onRefresh();
+      } else {
+        setMsg({ type: 'error', text: data.error || 'Falha ao excluir patrimônio.' });
+      }
+    } catch (err: any) {
+      setMsg({ type: 'error', text: err.message });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleCheckin = async (resId: number) => {
     if (!window.confirm('Confirmar a devolução (Check-in) deste patrimônio para o almoxarifado?')) return;
     try {
@@ -205,6 +294,24 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ analyzers, onRefre
   return (
     <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
       
+      {/* Feedback message */}
+      {msg && (
+        <div style={{
+          padding: '12px 18px',
+          borderRadius: '12px',
+          background: msg.type === 'success' ? '#ecfdf5' : '#fef2f2',
+          border: `1px solid ${msg.type === 'success' ? '#a7f3d0' : '#fecaca'}`,
+          color: msg.type === 'success' ? '#065f46' : '#991b1b',
+          fontWeight: 600,
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center'
+        }}>
+          <span>{msg.text}</span>
+          <button type="button" onClick={() => setMsg(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'currentColor' }}><X size={16} /></button>
+        </div>
+      )}
+
       {/* Action & Filter Bar */}
       <section className="glass-panel inventory-control-panel" aria-labelledby="inventory-title">
         <div className="inventory-control-panel__header">
@@ -261,7 +368,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ analyzers, onRefre
           </label>
 
           <label className="filter-field">
-            <span>Reservado por</span>
+            <span>Alocado para</span>
             <select value={reservationOwnerFilter} onChange={event => setReservationOwnerFilter(event.target.value)}>
               <option value="ALL">Todos os responsáveis</option>
               {reservationOwnerOptions.map(([owner, count]) => (
@@ -271,70 +378,140 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ analyzers, onRefre
           </label>
 
           <label className="filter-field">
-            <span>Calibração</span>
+            <span>Validade da calibração</span>
             <select value={calibrationFilter} onChange={event => setCalibrationFilter(event.target.value)}>
               <option value="ALL">Todas as validades</option>
-              <option value="EXPIRED">Vencida</option>
+              <option value="VALID">Válida</option>
               <option value="EXPIRING">Vence em até 30 dias</option>
-              <option value="VALID">Válida por mais de 30 dias</option>
+              <option value="EXPIRED">Vencida</option>
               <option value="NO_DATE">Sem data informada</option>
             </select>
           </label>
+        </div>
 
-          <div className="inventory-filter-actions">
-            <Filter size={16} aria-hidden="true" />
-            <span>{activeFilterCount > 0 ? `${activeFilterCount} ativo${activeFilterCount > 1 ? 's' : ''}` : 'Sem filtros'}</span>
-            <button type="button" className="btn btn-secondary btn-sm" onClick={clearFilters} disabled={activeFilterCount === 0}>
-              <RotateCcw size={14} aria-hidden="true" /> Limpar
+        {activeFilterCount > 0 && (
+          <div className="inventory-active-filters" aria-label="Filtros selecionados">
+            <span className="inventory-active-filters__label">Filtros aplicados:</span>
+            {searchTerm.trim() && (
+              <span className="inventory-filter-chip">
+                Busca: "{searchTerm.trim()}"
+                <button type="button" onClick={() => setSearchTerm('')} aria-label="Remover busca">×</button>
+              </span>
+            )}
+            {statusFilter !== 'ALL' && (
+              <span className="inventory-filter-chip">
+                Status: {statusFilter}
+                <button type="button" onClick={() => setStatusFilter('ALL')} aria-label="Remover filtro de status">×</button>
+              </span>
+            )}
+            {typeFilter !== 'ALL' && (
+              <span className="inventory-filter-chip">
+                Tipo: {typeFilter}
+                <button type="button" onClick={() => setTypeFilter('ALL')} aria-label="Remover filtro de tipo">×</button>
+              </span>
+            )}
+            {reservationOwnerFilter !== 'ALL' && (
+              <span className="inventory-filter-chip">
+                Alocado para: {reservationOwnerFilter}
+                <button type="button" onClick={() => setReservationOwnerFilter('ALL')} aria-label="Remover filtro de alocação">×</button>
+              </span>
+            )}
+            {calibrationFilter !== 'ALL' && (
+              <span className="inventory-filter-chip">
+                Calibração: {calibrationFilter}
+                <button type="button" onClick={() => setCalibrationFilter('ALL')} aria-label="Remover filtro de calibração">×</button>
+              </span>
+            )}
+            <button type="button" className="btn btn-secondary btn-sm inventory-clear-all" onClick={clearFilters}>
+              <RotateCcw size={14} aria-hidden="true" /> Limpar todos
             </button>
           </div>
-        </div>
+        )}
       </section>
 
-      {msg && (
-        <div style={{
-          padding: '12px 16px',
-          borderRadius: '10px',
-          background: msg.type === 'success' ? 'rgba(16, 185, 129, 0.15)' : 'rgba(239, 68, 68, 0.15)',
-          color: msg.type === 'success' ? '#34d399' : '#f87171',
-          border: `1px solid ${msg.type === 'success' ? 'rgba(16, 185, 129, 0.3)' : 'rgba(239, 68, 68, 0.3)'}`
-        }}>
-          {msg.text}
-        </div>
-      )}
-
-      {/* Grid of Analyzer Cards */}
-      <div className="inventory-grid">
-        {filtered.map((item: any) => {
-          const isAvailable = item.status === 'Disponível';
+      {/* Grid of Analyzers */}
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))',
+        gap: '16px'
+      }}>
+        {filtered.map(item => {
           const isReserved = item.status === 'Reservado';
           const isInUse = item.status === 'Em Uso';
-          const calibrationState = getCalibrationFilter(item.calibration_expiry, todayIso, calibrationWarningIso);
+          const isMaintenance = item.status === 'Em Manutenção';
+          const isAvailable = item.status === 'Disponível';
           const reservationOwner = getReservationOwner(item);
+          const calibrationState = getCalibrationFilter(item.calibration_expiry, todayIso, calibrationWarningIso);
 
           return (
             <div key={item.id} className="glass-panel" style={{
-              padding: '20px',
               display: 'flex',
               flexDirection: 'column',
               justifyContent: 'space-between',
-              position: 'relative',
-              overflow: 'hidden'
+              padding: '18px',
+              border: isMaintenance ? '1px solid #fecaca' : isInUse ? '1px solid #fed7aa' : isReserved ? '1px solid #bfdbfe' : '1px solid var(--border-color)',
+              position: 'relative'
             }}>
               <div>
-                {/* Header Asset Tag & Status Badge */}
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <Tag size={16} color="var(--primary)" />
-                    <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 800, fontSize: '1rem', color: 'var(--primary)' }}>
-                      {item.asset_tag}
-                    </span>
-                  </div>
-                  <span className={`badge ${
-                    isAvailable ? 'badge-success' : isReserved ? 'badge-info' : isInUse ? 'badge-purple' : 'badge-warning'
-                  }`}>
-                    {item.status}
+                {/* Header Tag & Status */}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+                  <span style={{
+                    fontSize: '0.85rem',
+                    fontFamily: 'var(--font-mono)',
+                    fontWeight: 700,
+                    background: 'var(--bg-tertiary)',
+                    border: '1px solid var(--border-color)',
+                    padding: '3px 8px',
+                    borderRadius: '6px',
+                    color: 'var(--primary)'
+                  }}>
+                    <Tag size={13} style={{ display: 'inline', marginRight: '4px' }} />
+                    {item.asset_tag}
                   </span>
+
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <span className={`badge ${
+                      isAvailable ? 'badge-success' :
+                      isReserved ? 'badge-warning' :
+                      isInUse ? 'badge-danger' :
+                      'badge-neutral'
+                    }`} style={{ fontSize: '0.75rem', fontWeight: 600 }}>
+                      {item.status}
+                    </span>
+
+                    {/* Admin Actions: Edit & Delete */}
+                    <button
+                      type="button"
+                      onClick={() => handleOpenEdit(item)}
+                      title="Editar Padrão (Admin)"
+                      style={{
+                        background: '#eff6ff',
+                        border: '1px solid #bfdbfe',
+                        borderRadius: '6px',
+                        color: '#1d4ed8',
+                        padding: '4px 6px',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      <Edit2 size={13} />
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => handleDelete(item)}
+                      title="Excluir Padrão do Banco (Admin)"
+                      style={{
+                        background: '#fef2f2',
+                        border: '1px solid #fecaca',
+                        borderRadius: '6px',
+                        color: '#dc2626',
+                        padding: '4px 6px',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      <Trash2 size={13} />
+                    </button>
+                  </div>
                 </div>
 
                 <h3 style={{ fontSize: '1.05rem', fontWeight: 700, marginBottom: '6px' }}>
@@ -352,7 +529,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ analyzers, onRefre
                   <div>Validade Calibração: <span className={`calibration-value calibration-value--${calibrationState.toLowerCase()}`}>{formatCalibrationExpiry(item.calibration_expiry)}</span></div>
                 </div>
 
-                {/* Active Reservation Block if reserved or in use */}
+                {/* Active Reservation Block */}
                 {item.current_reservation && (
                   <div style={{
                     background: 'rgba(59, 130, 246, 0.1)',
@@ -515,6 +692,135 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ analyzers, onRefre
         </div>
       )}
 
+      {/* Edit Analyzer Modal */}
+      {editItem && (
+        <div style={{
+          position: 'fixed',
+          top: 0, left: 0, right: 0, bottom: 0,
+          background: 'rgba(0,0,0,0.75)',
+          backdropFilter: 'blur(8px)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 1000,
+          padding: '20px'
+        }}>
+          <div className="glass-panel" style={{ width: '100%', maxWidth: '560px', padding: '24px', position: 'relative' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+              <h3 style={{ fontSize: '1.25rem', fontWeight: 800, margin: 0, color: '#0f172a' }}>
+                ✏️ Editar Patrimônio (Admin Master)
+              </h3>
+              <button type="button" onClick={() => setEditItem(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#64748b' }}>
+                <X size={20} />
+              </button>
+            </div>
+
+            <form onSubmit={handleUpdate} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                <div>
+                  <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Nº de Patrimônio *</label>
+                  <input
+                    type="text"
+                    required
+                    className="input-field"
+                    value={editFormData.asset_tag}
+                    onChange={e => setEditFormData({ ...editFormData, asset_tag: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Status do Padrão *</label>
+                  <select
+                    className="select-field"
+                    value={editFormData.status}
+                    onChange={e => setEditFormData({ ...editFormData, status: e.target.value })}
+                  >
+                    <option value="Disponível">Disponível</option>
+                    <option value="Reservado">Reservado</option>
+                    <option value="Em Uso">Em Uso</option>
+                    <option value="Em Manutenção">Em Manutenção</option>
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Nome do Padrão / Analisador *</label>
+                <input
+                  type="text"
+                  required
+                  className="input-field"
+                  value={editFormData.name}
+                  onChange={e => setEditFormData({ ...editFormData, name: e.target.value })}
+                />
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                <div>
+                  <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Marca / Modelo</label>
+                  <input
+                    type="text"
+                    className="input-field"
+                    value={editFormData.brand_model}
+                    onChange={e => setEditFormData({ ...editFormData, brand_model: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Nº de Série</label>
+                  <input
+                    type="text"
+                    className="input-field"
+                    value={editFormData.serial_number}
+                    onChange={e => setEditFormData({ ...editFormData, serial_number: e.target.value })}
+                  />
+                </div>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                <div>
+                  <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Data da Calibração</label>
+                  <input
+                    type="date"
+                    className="input-field"
+                    value={editFormData.calibration_date}
+                    onChange={e => setEditFormData({ ...editFormData, calibration_date: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Vencimento da Calibração</label>
+                  <input
+                    type="date"
+                    className="input-field"
+                    value={editFormData.calibration_expiry}
+                    onChange={e => setEditFormData({ ...editFormData, calibration_expiry: e.target.value })}
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Localização no Setor</label>
+                <input
+                  type="text"
+                  className="input-field"
+                  value={editFormData.current_location}
+                  onChange={e => setEditFormData({ ...editFormData, current_location: e.target.value })}
+                />
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '16px' }}>
+                <button type="button" onClick={() => setEditItem(null)} className="btn btn-secondary">
+                  Cancelar
+                </button>
+                <button type="submit" disabled={loading} className="btn btn-primary">
+                  {loading ? 'Salvando...' : 'Salvar Alterações no Banco'}
+                </button>
+              </div>
+            </form>
+
+          </div>
+        </div>
+      )}
+
     </div>
   );
 };
+
+export default InventoryView;

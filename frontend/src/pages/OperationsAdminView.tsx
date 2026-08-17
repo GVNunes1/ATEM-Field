@@ -7,6 +7,7 @@ import {
   CheckCircle2,
   Clipboard,
   Clock3,
+  Edit2,
   ExternalLink,
   LoaderCircle,
   MessageCircleMore,
@@ -15,6 +16,7 @@ import {
   RefreshCw,
   Search,
   ShieldCheck,
+  Trash2,
   UserRound,
   Wrench,
   X
@@ -71,6 +73,14 @@ export function OperationsAdminView({
   const [portalTechnicianId, setPortalTechnicianId] = useState('');
   const [portalLink, setPortalLink] = useState('');
   const [generatingLink, setGeneratingLink] = useState(false);
+
+  // Edit Reservation Modal State
+  const [editReservationModal, setEditReservationModal] = useState<any | null>(null);
+  const [editResForm, setEditResForm] = useState<{
+    technician_id: string;
+    reserved_date: string;
+    status: string;
+  }>({ technician_id: '', reserved_date: '', status: 'Reservado' });
 
   useEffect(() => {
     if (initialAppointmentId) {
@@ -171,9 +181,10 @@ export function OperationsAdminView({
 
   const filteredAvailableAnalyzers = useMemo(() => {
     const query = analyzerSearch.trim().toLocaleLowerCase('pt-BR');
+    if (!query) return availableAnalyzers.filter(analyzer => !selectedAnalyzerIds.includes(Number(analyzer.id)));
     return availableAnalyzers
       .filter(analyzer => !selectedAnalyzerIds.includes(Number(analyzer.id)))
-      .filter(analyzer => !query || [analyzer.asset_tag, analyzer.name, analyzer.type, analyzer.brand_model]
+      .filter(analyzer => [analyzer.asset_tag, analyzer.name, analyzer.type, analyzer.brand_model]
         .some(value => String(value || '').toLocaleLowerCase('pt-BR').includes(query)));
   }, [analyzerSearch, availableAnalyzers, selectedAnalyzerIds]);
 
@@ -266,6 +277,65 @@ export function OperationsAdminView({
     }
   };
 
+  const handleOpenEditReservation = (res: any) => {
+    setEditReservationModal(res);
+    setEditResForm({
+      technician_id: String(res.technician_id || ''),
+      reserved_date: String(res.reserved_date || res.appointment_date || '').slice(0, 10),
+      status: res.status || 'Reservado'
+    });
+  };
+
+  const handleSaveEditReservation = async (e: FormEvent) => {
+    e.preventDefault();
+    if (!editReservationModal) return;
+    setSaving(true); setError(''); setNotice('');
+    try {
+      const data = await safeFetchJson(`/api/reservations/${editReservationModal.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          technician_id: Number(editResForm.technician_id),
+          reserved_date: editResForm.reserved_date,
+          status: editResForm.status
+        })
+      });
+      if (data.success) {
+        setNotice('Reserva editada com sucesso no banco de dados!');
+        setEditReservationModal(null);
+        await Promise.all([loadReservations(), onRefresh()]);
+      } else {
+        setError(data.error || 'Falha ao atualizar reserva.');
+      }
+    } catch (err: any) {
+      setError(err.message || 'Erro de conexão.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleDeleteReservation = async (resId: number) => {
+    if (!window.confirm('⚠️ Tem certeza que deseja apagar esta reserva do banco de dados? O padrão será liberado imediatamente.')) {
+      return;
+    }
+    setActionId(resId); setError(''); setNotice('');
+    try {
+      const data = await safeFetchJson(`/api/reservations/${resId}`, {
+        method: 'DELETE'
+      });
+      if (data.success) {
+        setNotice('Reserva apagada e padrão liberado no banco de dados!');
+        await Promise.all([loadReservations(), onRefresh()]);
+      } else {
+        setError(data.error || 'Falha ao excluir reserva.');
+      }
+    } catch (err: any) {
+      setError(err.message || 'Erro ao apagar reserva.');
+    } finally {
+      setActionId(null);
+    }
+  };
+
   const generatePortalLink = async () => {
     if (!portalTechnicianId) return;
     setGeneratingLink(true); setError(''); setNotice('');
@@ -280,22 +350,26 @@ export function OperationsAdminView({
         setNotice(`Link de ${data.technician.name} gerado. Copie pelo campo abaixo.`);
       }
     } catch (requestError) {
-      setError(requestError instanceof Error ? requestError.message : 'Falha ao gerar o link.');
+      setError(requestError instanceof Error ? requestError.message : 'Falha ao gerar link individual.');
     } finally {
       setGeneratingLink(false);
     }
   };
 
   return (
-    <div className="operations-admin animate-fade-in">
-      <section className="operations-hero">
-        <div><span className="eyebrow"><ShieldCheck size={14} /> CENTRAL ADMINISTRATIVA</span><h2>Reservas e operação de campo</h2><p>Reserve patrimônios para a equipe e acompanhe agenda, disponibilidade e movimentações em um único painel.</p></div>
-        <button className="btn btn-secondary" onClick={() => void Promise.all([loadReservations(), onRefresh()])}><RefreshCw size={17} /> Atualizar visão</button>
-      </section>
+    <div className="operations-admin-view animate-fade-in">
+      <header className="page-hero">
+        <div className="page-hero__copy">
+          <span className="eyebrow"><ShieldCheck size={16} /> Painel de Reservas & Operações</span>
+          <h2>Controle Operacional de Padrões e Saídas</h2>
+          <p>Faça reservas administrativas, registre retiradas e devoluções e envie acessos individuais para os técnicos.</p>
+        </div>
+      </header>
 
-      {(error || notice) && <div className={`operations-notice ${error ? 'is-error' : 'is-success'}`} role={error ? 'alert' : 'status'}>{error || notice}</div>}
+      {notice && <div className="operations-notice is-success" role="status"><p>{notice}</p><button type="button" onClick={() => setNotice('')} aria-label="Fechar aviso"><X size={15} /></button></div>}
+      {error && <div className="operations-notice is-error" role="alert"><p>{error}</p><button type="button" onClick={() => setError('')} aria-label="Fechar erro"><X size={15} /></button></div>}
 
-      <section className="operations-metrics" aria-label="Resumo operacional">
+      <section className="operations-metrics-grid" aria-label="Métricas da operação">
         <article><span><PackageCheck size={20} /></span><div><strong>{metrics.active}</strong><small>reservas ativas</small></div></article>
         <article><span><Activity size={20} /></span><div><strong>{metrics.inUse}</strong><small>em campo</small></div></article>
         <article><span><Wrench size={20} /></span><div><strong>{metrics.available}</strong><small>padrões disponíveis</small></div></article>
@@ -407,11 +481,202 @@ export function OperationsAdminView({
       </section>
 
       <section className="glass-panel reservations-overview">
-        <div className="reservations-overview__head"><div className="operations-section-heading"><span><Clock3 size={19} /></span><div><h3>Overview das reservas</h3><p>{filteredReservations.length} registro(s) nos filtros atuais.</p></div></div><div className="reservations-filters"><label><Search size={16} /><input type="search" placeholder="Patrimônio, técnico ou cliente" value={searchTerm} onChange={event => setSearchTerm(event.target.value)} /></label><select aria-label="Filtrar status" value={statusFilter} onChange={event => setStatusFilter(event.target.value)}><option value="ACTIVE">Reservas ativas</option><option value="ALL">Todos os status</option><option value="Reservado">Reservado</option><option value="Em Uso">Em uso</option><option value="Devolvido">Devolvido</option></select></div></div>
-        {loadingReservations ? <div className="operations-loading"><LoaderCircle className="spin" size={24} /> Carregando reservas…</div> : (
-          <div className="reservations-table-wrap"><table><thead><tr><th>Patrimônio</th><th>Atendimento</th><th>Técnico</th><th>Data</th><th>Status</th><th>Ação</th></tr></thead><tbody>{filteredReservations.map(reservation => <tr key={reservation.id}><td data-label="Patrimônio"><strong className="asset-tag">{reservation.asset_tag}</strong><small>{reservation.analyzer_name}</small></td><td data-label="Atendimento"><strong>{reservation.client_name}</strong><small>{reservation.analyzer_type}</small></td><td data-label="Técnico">{reservation.technician_name}</td><td data-label="Data">{formatDate(reservation.appointment_date || reservation.reserved_date)}</td><td data-label="Status"><span className={`reservation-status reservation-status--${String(reservation.status).toLowerCase().replace(/\s/g, '-')}`}>{reservation.status}</span></td><td data-label="Ação">{ACTIVE_STATUSES.has(reservation.status) ? <button className="btn btn-secondary btn-sm" disabled={actionId === reservation.id} onClick={() => void updateReservationStatus(reservation)}>{actionId === reservation.id ? <LoaderCircle className="spin" size={15} /> : reservation.status === 'Reservado' ? 'Saída' : 'Devolver'}</button> : <span className="reservation-closed">Concluída</span>}</td></tr>)}</tbody></table>{!filteredReservations.length && <div className="operations-empty">Nenhuma reserva encontrada.</div>}</div>
+        <div className="reservations-overview__head">
+          <div className="operations-section-heading">
+            <span><Clock3 size={19} /></span>
+            <div>
+              <h3>Overview das reservas</h3>
+              <p>{filteredReservations.length} registro(s) nos filtros atuais.</p>
+            </div>
+          </div>
+          <div className="reservations-filters">
+            <label>
+              <Search size={16} />
+              <input type="search" placeholder="Patrimônio, técnico ou cliente" value={searchTerm} onChange={event => setSearchTerm(event.target.value)} />
+            </label>
+            <select aria-label="Filtrar status" value={statusFilter} onChange={event => setStatusFilter(event.target.value)}>
+              <option value="ACTIVE">Reservas ativas</option>
+              <option value="ALL">Todos os status</option>
+              <option value="Reservado">Reservado</option>
+              <option value="Em Uso">Em uso</option>
+              <option value="Devolvido">Devolvido</option>
+            </select>
+          </div>
+        </div>
+
+        {loadingReservations ? (
+          <div className="operations-loading"><LoaderCircle className="spin" size={24} /> Carregando reservas…</div>
+        ) : (
+          <div className="reservations-table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Patrimônio</th>
+                  <th>Atendimento</th>
+                  <th>Técnico</th>
+                  <th>Data</th>
+                  <th>Status</th>
+                  <th>Ações de Campo</th>
+                  <th>Gerenciamento (Admin)</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredReservations.map(reservation => (
+                  <tr key={reservation.id}>
+                    <td data-label="Patrimônio">
+                      <strong className="asset-tag">{reservation.asset_tag}</strong>
+                      <small>{reservation.analyzer_name}</small>
+                    </td>
+                    <td data-label="Atendimento">
+                      <strong>{reservation.client_name}</strong>
+                      <small>{reservation.analyzer_type}</small>
+                    </td>
+                    <td data-label="Técnico">{reservation.technician_name}</td>
+                    <td data-label="Data">{formatDate(reservation.appointment_date || reservation.reserved_date)}</td>
+                    <td data-label="Status">
+                      <span className={`reservation-status reservation-status--${String(reservation.status).toLowerCase().replace(/\s/g, '-')}`}>
+                        {reservation.status}
+                      </span>
+                    </td>
+                    <td data-label="Ações de Campo">
+                      {ACTIVE_STATUSES.has(reservation.status) ? (
+                        <button
+                          className="btn btn-secondary btn-sm"
+                          disabled={actionId === reservation.id}
+                          onClick={() => void updateReservationStatus(reservation)}
+                        >
+                          {actionId === reservation.id ? <LoaderCircle className="spin" size={15} /> : reservation.status === 'Reservado' ? 'Saída' : 'Devolver'}
+                        </button>
+                      ) : (
+                        <span className="reservation-closed">Concluída</span>
+                      )}
+                    </td>
+                    <td data-label="Gerenciamento (Admin)">
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <button
+                          type="button"
+                          onClick={() => handleOpenEditReservation(reservation)}
+                          title="Editar Reserva (Admin)"
+                          style={{
+                            background: '#eff6ff',
+                            border: '1px solid #bfdbfe',
+                            borderRadius: '6px',
+                            color: '#1d4ed8',
+                            padding: '5px 8px',
+                            cursor: 'pointer'
+                          }}
+                        >
+                          <Edit2 size={14} />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteReservation(reservation.id)}
+                          title="Apagar Reserva do Banco (Admin)"
+                          style={{
+                            background: '#fef2f2',
+                            border: '1px solid #fecaca',
+                            borderRadius: '6px',
+                            color: '#dc2626',
+                            padding: '5px 8px',
+                            cursor: 'pointer'
+                          }}
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            {!filteredReservations.length && <div className="operations-empty">Nenhuma reserva encontrada.</div>}
+          </div>
         )}
       </section>
+
+      {/* MODAL DE EDIÇÃO DE RESERVA (ADMIN) */}
+      {editReservationModal && (
+        <div style={{
+          position: 'fixed',
+          top: 0, left: 0, right: 0, bottom: 0,
+          background: 'rgba(0,0,0,0.75)',
+          backdropFilter: 'blur(8px)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 1000,
+          padding: '20px'
+        }}>
+          <div className="glass-panel" style={{ width: '100%', maxWidth: '480px', padding: '24px', position: 'relative' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+              <h3 style={{ fontSize: '1.2rem', fontWeight: 800, margin: 0, color: '#0f172a' }}>
+                ✏️ Editar Reserva (Admin Master)
+              </h3>
+              <button type="button" onClick={() => setEditReservationModal(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#64748b' }}>
+                <X size={20} />
+              </button>
+            </div>
+
+            <p style={{ fontSize: '0.85rem', color: '#64748b', marginBottom: '14px' }}>
+              Padrão: <strong>{editReservationModal.asset_tag}</strong> ({editReservationModal.analyzer_name})
+            </p>
+
+            <form onSubmit={handleSaveEditReservation} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+              <label>
+                <span style={{ fontSize: '0.82rem', fontWeight: 600, color: '#475569', display: 'block', marginBottom: '4px' }}>Técnico Atribuído</span>
+                <select
+                  className="select-field"
+                  value={editResForm.technician_id}
+                  onChange={e => setEditResForm({ ...editResForm, technician_id: e.target.value })}
+                  required
+                >
+                  <option value="">Selecione o técnico</option>
+                  {activeTechnicians.map(t => (
+                    <option key={t.id} value={t.id}>{t.name}</option>
+                  ))}
+                </select>
+              </label>
+
+              <label>
+                <span style={{ fontSize: '0.82rem', fontWeight: 600, color: '#475569', display: 'block', marginBottom: '4px' }}>Data da Reserva</span>
+                <input
+                  type="date"
+                  className="input-field"
+                  value={editResForm.reserved_date}
+                  onChange={e => setEditResForm({ ...editResForm, reserved_date: e.target.value })}
+                  required
+                />
+              </label>
+
+              <label>
+                <span style={{ fontSize: '0.82rem', fontWeight: 600, color: '#475569', display: 'block', marginBottom: '4px' }}>Status da Reserva</span>
+                <select
+                  className="select-field"
+                  value={editResForm.status}
+                  onChange={e => setEditResForm({ ...editResForm, status: e.target.value })}
+                  required
+                >
+                  <option value="Reservado">Reservado</option>
+                  <option value="Em Uso">Em Uso</option>
+                  <option value="Devolvido">Devolvido</option>
+                  <option value="Cancelado">Cancelado</option>
+                </select>
+              </label>
+
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '14px' }}>
+                <button type="button" onClick={() => setEditReservationModal(null)} className="btn btn-secondary">
+                  Cancelar
+                </button>
+                <button type="submit" disabled={saving} className="btn btn-primary">
+                  {saving ? 'Salvando...' : 'Salvar Alterações no Banco'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
+
+export default OperationsAdminView;

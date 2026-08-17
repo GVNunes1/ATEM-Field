@@ -959,6 +959,59 @@ router.post('/analyzers', async (req: Request, res: Response) => {
   }
 });
 
+router.patch('/analyzers/:id', async (req: Request, res: Response) => {
+  try {
+    const analyzerId = Number(req.params.id);
+    const { asset_tag, name, type, serial_number, brand_model, status, calibration_date, calibration_expiry, current_location, notes } = req.body;
+
+    const updates: Record<string, any> = {};
+    if (asset_tag !== undefined) updates.asset_tag = asset_tag.toUpperCase().trim();
+    if (name !== undefined) updates.name = name;
+    if (type !== undefined) updates.type = type;
+    if (serial_number !== undefined) updates.serial_number = serial_number;
+    if (brand_model !== undefined) updates.brand_model = brand_model;
+    if (status !== undefined) updates.status = status;
+    if (calibration_date !== undefined) updates.calibration_date = calibration_date || null;
+    if (calibration_expiry !== undefined) updates.calibration_expiry = calibration_expiry || null;
+    if (current_location !== undefined) updates.current_location = current_location;
+    if (notes !== undefined) updates.notes = notes;
+
+    const { data, error } = await supabaseAdmin
+      .from('analyzers')
+      .update(updates as any)
+      .eq('id', analyzerId)
+      .select('*')
+      .single();
+
+    if (error) throw error;
+    res.json({ success: true, analyzer: data });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+router.delete('/analyzers/:id', async (req: Request, res: Response) => {
+  try {
+    const analyzerId = Number(req.params.id);
+
+    // Remove foreign reservations first
+    await supabaseAdmin
+      .from('reservations')
+      .delete()
+      .eq('analyzer_id', analyzerId);
+
+    const { error } = await supabaseAdmin
+      .from('analyzers')
+      .delete()
+      .eq('id', analyzerId);
+
+    if (error) throw error;
+    res.json({ success: true, message: 'Padrão excluído com sucesso do banco de dados.' });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
 // ==========================================
 // 6. APPOINTMENTS & CHECKLIST
 // ==========================================
@@ -1386,6 +1439,109 @@ router.post('/reservations/:id/checkin', async (req: Request, res: Response) => 
     }
 
     res.json({ success: true, message: 'Check-in de devolução concluído. Patrimônio liberado!' });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+router.patch('/reservations/:id', async (req: Request, res: Response) => {
+  try {
+    const resId = Number(req.params.id);
+    const { technician_id, reserved_date, status, analyzer_id, appointment_id, notes } = req.body;
+
+    const updates: Record<string, any> = {};
+    if (technician_id !== undefined) updates.technician_id = technician_id;
+    if (reserved_date !== undefined) updates.reserved_date = reserved_date;
+    if (status !== undefined) updates.status = status;
+    if (analyzer_id !== undefined) updates.analyzer_id = analyzer_id;
+    if (appointment_id !== undefined) updates.appointment_id = appointment_id;
+    if (notes !== undefined) updates.notes = notes;
+
+    const { data: updatedRes, error: updateErr } = await supabaseAdmin
+      .from('reservations')
+      .update(updates as any)
+      .eq('id', resId)
+      .select('*')
+      .single();
+
+    if (updateErr) throw updateErr;
+
+    // Atualiza status do analisador se o status da reserva foi alterado
+    if (status && updatedRes.analyzer_id) {
+      if (status === 'Devolvido' || status === 'Cancelado') {
+        await supabaseAdmin.from('analyzers').update({ status: 'Disponível' }).eq('id', updatedRes.analyzer_id);
+      } else if (status === 'Em Uso') {
+        await supabaseAdmin.from('analyzers').update({ status: 'Em Uso' }).eq('id', updatedRes.analyzer_id);
+      } else if (status === 'Reservado') {
+        await supabaseAdmin.from('analyzers').update({ status: 'Reservado' }).eq('id', updatedRes.analyzer_id);
+      }
+    }
+
+    res.json({ success: true, reservation: updatedRes });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+router.delete('/reservations/:id', async (req: Request, res: Response) => {
+  try {
+    const resId = Number(req.params.id);
+
+    const { data: resData } = await supabaseAdmin
+      .from('reservations')
+      .select('analyzer_id, status')
+      .eq('id', resId)
+      .maybeSingle();
+
+    const { error: delErr } = await supabaseAdmin
+      .from('reservations')
+      .delete()
+      .eq('id', resId);
+
+    if (delErr) throw delErr;
+
+    if (resData?.analyzer_id) {
+      // Verifica se o analisador possui alguma outra reserva ativa antes de liberar
+      const { data: otherActive } = await supabaseAdmin
+        .from('reservations')
+        .select('id')
+        .eq('analyzer_id', resData.analyzer_id)
+        .in('status', ['Reservado', 'Em Uso'])
+        .maybeSingle();
+
+      if (!otherActive) {
+        await supabaseAdmin
+          .from('analyzers')
+          .update({ status: 'Disponível' })
+          .eq('id', resData.analyzer_id);
+      }
+    }
+
+    res.json({ success: true, message: 'Reserva excluída e analisador liberado no banco de dados.' });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+router.post('/auth/admin-login', async (req: Request, res: Response) => {
+  try {
+    const { pin, password } = req.body;
+    const validPins = ['1234', 'atem2026', 'admin', '0000'];
+    const input = String(pin || password || '').trim();
+
+    if (validPins.includes(input)) {
+      return res.json({
+        success: true,
+        user: {
+          id: 1,
+          name: 'Administrador Master',
+          role: 'admin',
+          email: 'admin@atem.com.br'
+        }
+      });
+    }
+
+    res.status(401).json({ success: false, error: 'PIN ou Senha de administrador incorreta.' });
   } catch (err: any) {
     res.status(500).json({ success: false, error: err.message });
   }

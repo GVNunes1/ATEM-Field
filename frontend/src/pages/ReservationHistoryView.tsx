@@ -12,6 +12,7 @@ import {
   PackageCheck,
   RefreshCw,
   Search,
+  Trash2,
   User,
   Users
 } from 'lucide-react';
@@ -94,6 +95,20 @@ export const ReservationHistoryView: React.FC<ReservationHistoryViewProps> = ({
   const handleRefreshAll = () => {
     void fetchReservations();
     onRefresh();
+  };
+
+  const handleDeleteHistoryItem = async (resId: number) => {
+    if (!window.confirm('⚠️ Tem certeza que deseja apagar este registro do histórico definitivamente do banco de dados?')) return;
+    try {
+      const data = await safeFetchJson(`/api/reservations/${resId}`, { method: 'DELETE' });
+      if (data.success) {
+        handleRefreshAll();
+      } else {
+        alert(data.error || 'Falha ao excluir registro.');
+      }
+    } catch (err: any) {
+      alert(err.message || 'Erro de conexão.');
+    }
   };
 
   // Filtered reservations based on active tab, selected entity, search term, and status filter
@@ -405,6 +420,24 @@ export const ReservationHistoryView: React.FC<ReservationHistoryViewProps> = ({
                       {isReservado && <Calendar size={13} />}
                       {res.status}
                     </span>
+
+                    <button
+                      type="button"
+                      onClick={() => handleDeleteHistoryItem(res.id)}
+                      title="Apagar Registro do Banco (Admin)"
+                      style={{
+                        background: '#fef2f2',
+                        border: '1px solid #fecaca',
+                        borderRadius: '6px',
+                        color: '#dc2626',
+                        padding: '4px 6px',
+                        cursor: 'pointer',
+                        display: 'inline-flex',
+                        alignItems: 'center'
+                      }}
+                    >
+                      <Trash2 size={13} />
+                    </button>
                   </div>
                 </div>
 
