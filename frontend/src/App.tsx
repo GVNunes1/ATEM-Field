@@ -93,61 +93,63 @@ export function App() {
   }, [refreshLiveInventory]);
 
   return (
-    <div className="app-shell">
-      <Header
-        activeTab={activeTab}
-        setActiveTab={setActiveTab}
-        onRefresh={fetchAllData}
-        analyzerCount={analyzers.length}
-        lastUpdated={lastUpdated}
-      />
+    <div className="app-layout">
       <Navigation activeTab={activeTab} setActiveTab={setActiveTab} />
+      <div className="app-content-wrapper">
+        <Header
+          activeTab={activeTab}
+          setActiveTab={setActiveTab}
+          onRefresh={fetchAllData}
+          analyzerCount={analyzers.length}
+          lastUpdated={lastUpdated}
+        />
 
-      <main className="app-main">
-        {loadError && (
-          <div className="load-error" role="alert">
-            <span>{loadError}</span>
-            <button className="btn btn-secondary btn-sm" onClick={fetchAllData}>Tentar novamente</button>
-          </div>
-        )}
-
-        {loading ? (
-          <div className="loading-state" aria-live="polite">
-            <span className="loading-spinner" />
-            <div>
-              <strong>Carregando operação</strong>
-              <p>Buscando agenda, equipe e patrimônios.</p>
+        <main className="app-main">
+          {loadError && (
+            <div className="load-error" role="alert">
+              <span>{loadError}</span>
+              <button className="btn btn-secondary btn-sm" onClick={fetchAllData}>Tentar novamente</button>
             </div>
-          </div>
-        ) : (
-          <>
-            {activeTab === 'dashboard' && <DashboardView stats={stats} recentReservations={recentReservations} onNavigate={setActiveTab} />}
-            {activeTab === 'inventory' && <InventoryView analyzers={analyzers} onRefresh={fetchAllData} />}
-            {activeTab === 'appointments' && <AppointmentsView appointments={appointments} onOpenChecklistModal={() => setActiveTab('operations')} />}
-            {activeTab === 'checklist' && <ChecklistView categories={categories} onRefresh={fetchAllData} />}
-            {activeTab === 'technicians' && <TechniciansView technicians={technicians} onRefresh={fetchAllData} />}
-            {activeTab === 'operations' && (
-              <OperationsAdminView
-                appointments={appointments}
-                analyzers={analyzers}
-                technicians={technicians}
-                onRefresh={fetchAllData}
-              />
-            )}
-            {activeTab === 'history' && (
-              <ReservationHistoryView
-                analyzers={analyzers}
-                technicians={technicians}
-                onRefresh={fetchAllData}
-              />
-            )}
-          </>
-        )}
-      </main>
+          )}
 
-      <footer className="app-footer">
-        ATEM Field © 2026 · Operações em campo e controle de patrimônio
-      </footer>
+          {loading ? (
+            <div className="loading-state" aria-live="polite">
+              <span className="loading-spinner" />
+              <div>
+                <strong>Carregando operação</strong>
+                <p>Buscando agenda, equipe e patrimônios.</p>
+              </div>
+            </div>
+          ) : (
+            <>
+              {activeTab === 'dashboard' && <DashboardView stats={stats} recentReservations={recentReservations} onNavigate={setActiveTab} />}
+              {activeTab === 'inventory' && <InventoryView analyzers={analyzers} onRefresh={fetchAllData} />}
+              {activeTab === 'appointments' && <AppointmentsView appointments={appointments} onOpenChecklistModal={() => setActiveTab('operations')} />}
+              {activeTab === 'checklist' && <ChecklistView categories={categories} onRefresh={fetchAllData} />}
+              {activeTab === 'technicians' && <TechniciansView technicians={technicians} onRefresh={fetchAllData} />}
+              {activeTab === 'operations' && (
+                <OperationsAdminView
+                  appointments={appointments}
+                  analyzers={analyzers}
+                  technicians={technicians}
+                  onRefresh={fetchAllData}
+                />
+              )}
+              {activeTab === 'history' && (
+                <ReservationHistoryView
+                  analyzers={analyzers}
+                  technicians={technicians}
+                  onRefresh={fetchAllData}
+                />
+              )}
+            </>
+          )}
+        </main>
+
+        <footer className="app-footer">
+          ATEM Field © 2026 · Operações em campo e controle de patrimônio
+        </footer>
+      </div>
     </div>
   );
 }

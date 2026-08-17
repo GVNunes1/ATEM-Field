@@ -74,51 +74,61 @@ export function Header({ activeTab, setActiveTab, onRefresh, analyzerCount, last
 
   const requiresGoogleAccess = Boolean(googleStatus && (!googleStatus.authenticated || googleStatus.requires_auth));
   const statusText = !googleStatus
-    ? 'Verificando Google Agenda'
+    ? 'Verificando Agenda'
     : googleStatus.running
-      ? 'Google Agenda sincronizando'
+      ? 'Sincronizando…'
       : requiresGoogleAccess
-        ? 'Google Agenda requer acesso'
+        ? 'Requer Acesso Google'
         : googleStatus.automatic
-          ? 'Google Agenda automático'
-          : 'Google Agenda conectado';
+          ? 'Agenda Automática'
+          : 'Google Agenda Conectado';
 
   return (
-    <header className="app-header">
-      <div className="app-header__top">
-        <div className="brand-block">
-          <div className="brand-logo">
-            <img src="/logomarca.png" alt="ATEM Diagnóstico" onError={event => { event.currentTarget.style.display = 'none'; }} />
-          </div>
-          <div className="brand-copy">
-            <div className="brand-title-row">
-              <h1>ATEM Field <span>· Gestão de Campo</span></h1>
-              <span className={`sync-badge${requiresGoogleAccess ? ' sync-badge--warning' : ''}${googleStatus?.running ? ' sync-badge--running' : ''}`} title={googleStatus?.lastError || undefined}>
-                {requiresGoogleAccess ? <ShieldAlert size={14} /> : <ShieldCheck size={14} />} {statusText}
-              </span>
-            </div>
-            <p>Engenharia clínica, equipe técnica e patrimônio em uma única operação.</p>
-          </div>
+    <header className="app-topbar">
+      <div className="topbar-left">
+        <div className="topbar-context-tag">
+          <strong>ATEM Field</strong>
+          <span>· Engenharia Clínica</span>
         </div>
-        <div className="current-date"><Calendar size={17} /><span>{currentDate}</span></div>
+        <span
+          className={`sync-badge${requiresGoogleAccess ? ' sync-badge--warning' : ''}${googleStatus?.running ? ' sync-badge--running' : ''}`}
+          title={googleStatus?.lastError || undefined}
+        >
+          {requiresGoogleAccess ? <ShieldAlert size={13} /> : <ShieldCheck size={13} />} {statusText}
+        </span>
       </div>
 
-      <div className="header-toolbar">
-        <div className="toolbar-context" aria-live="polite">
-          <span><strong>{analyzerCount.toLocaleString('pt-BR')}</strong> patrimônios</span>
-          <span>Atualizado {lastUpdated ? lastUpdated.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : 'agora'}</span>
+      <div className="topbar-right">
+        <div className="topbar-meta">
+          <span className="current-date">
+            <Calendar size={14} />
+            <span>{currentDate}</span>
+          </span>
+          <span className="meta-divider" />
+          <span className="meta-stats">
+            <strong>{analyzerCount.toLocaleString('pt-BR')}</strong> patrimônios
+          </span>
         </div>
-        <div className="header-actions">
+
+        <div className="topbar-actions">
           {requiresGoogleAccess && (
             <button onClick={handleGoogleLogin} disabled={loggingIn} className="btn btn-secondary btn-sm btn-google">
-              <Key size={16} /> {loggingIn ? 'Gerando acesso…' : 'Conectar Google'}
+              <Key size={14} /> {loggingIn ? 'Gerando…' : 'Conectar Google'}
             </button>
           )}
-          <button onClick={handleSyncAgendaOnline} disabled={syncing || googleStatus?.running} className="btn btn-primary btn-sm">
-            <RefreshCw size={16} className={syncing || googleStatus?.running ? 'spin' : undefined} /> {syncing ? 'Sincronizando…' : 'Sincronizar agora'}
+          <button
+            onClick={handleSyncAgendaOnline}
+            disabled={syncing || googleStatus?.running}
+            className="btn btn-primary btn-sm"
+          >
+            <RefreshCw size={14} className={syncing || googleStatus?.running ? 'spin' : undefined} />
+            {syncing ? 'Sincronizando…' : 'Sincronizar'}
           </button>
-          <button onClick={() => setActiveTab('operations')} className={`btn btn-sm ${activeTab === 'operations' ? 'btn-primary' : 'btn-soft'}`}>
-            <PackageCheck size={16} /> Administrar reservas
+          <button
+            onClick={() => setActiveTab('operations')}
+            className={`btn btn-sm ${activeTab === 'operations' ? 'btn-primary' : 'btn-soft'}`}
+          >
+            <PackageCheck size={14} /> Reservas
           </button>
         </div>
       </div>
