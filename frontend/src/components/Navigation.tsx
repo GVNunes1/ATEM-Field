@@ -1,11 +1,9 @@
 import React from 'react';
 import {
-  Calendar,
+  Box,
   ClipboardList,
   Home,
-  Layers,
   PackageCheck,
-  Search,
   Users
 } from 'lucide-react';
 import './Navigation.css';
@@ -16,13 +14,11 @@ interface NavigationProps {
 }
 
 const navItems = [
-  { id: 'dashboard', label: 'Início', icon: Home },
-  { id: 'inventory', label: 'Diagnóstico', icon: Search },
-  { id: 'appointments', label: 'Agenda', icon: Calendar },
-  { id: 'checklist', label: 'Conhecimento', icon: Layers },
-  { id: 'history', label: 'Histórico', icon: ClipboardList },
-  { id: 'technicians', label: 'Usuários', icon: Users },
-  { id: 'operations', label: 'Reservas', icon: PackageCheck }
+  { id: 'dashboard', label: 'Dashboard', icon: Home },
+  { id: 'operations', label: 'Reservas', icon: PackageCheck },
+  { id: 'inventory', label: 'Padrões', icon: Box },
+  { id: 'technicians', label: 'Técnicos', icon: Users },
+  { id: 'history', label: 'Histórico', icon: ClipboardList }
 ];
 
 export const Navigation: React.FC<NavigationProps> = ({ activeTab, setActiveTab }) => {
