@@ -504,11 +504,11 @@ export const TabletKioskView: React.FC<TabletKioskViewProps> = ({
   // TELA 2: PAINEL PESSOAL DO TÉCNICO SELECIONADO
   // =========================================================================
   return (
-    <div className="tablet-kiosk-root active-tech-mode">
+    <div className="tablet-kiosk-root">
       {/* Top Tech Header */}
-      <header className="tablet-tech-topbar">
-        <div className="tablet-tech-profile">
-          <div className="tablet-tech-avatar">
+      <header className="tablet-user-header">
+        <div className="tablet-user-profile">
+          <div className="tablet-user-avatar">
             <span>{selectedTech.name.slice(0, 2).toUpperCase()}</span>
           </div>
           <div>
@@ -517,10 +517,18 @@ export const TabletKioskView: React.FC<TabletKioskViewProps> = ({
           </div>
         </div>
 
-        <div className="tablet-topbar-actions">
-          <div className="tablet-clock-mini">
-            <span>{formattedTime}</span>
-          </div>
+        <div className="tablet-header-actions">
+          <button
+            type="button"
+            onClick={() => {
+              void Promise.all([loadReservations(), onRefresh()]);
+              setFeedbackNotice('Dados atualizados!');
+            }}
+            className="tablet-btn-refresh"
+            title="Atualizar"
+          >
+            <RefreshCw size={20} />
+          </button>
           <button
             type="button"
             onClick={() => {
@@ -528,7 +536,7 @@ export const TabletKioskView: React.FC<TabletKioskViewProps> = ({
               setFeedbackNotice('');
               setFeedbackError('');
             }}
-            className="tablet-logout-btn"
+            className="tablet-btn-logout"
           >
             <LogOut size={18} /> Sair / Trocar Técnico
           </button>
@@ -537,27 +545,28 @@ export const TabletKioskView: React.FC<TabletKioskViewProps> = ({
 
       {/* Notice & Error Feedback */}
       {feedbackNotice && (
-        <div className="tablet-alert success">
+        <div className="tablet-toast tablet-toast-success">
           <span>{feedbackNotice}</span>
           <button type="button" onClick={() => setFeedbackNotice('')}><X size={18} /></button>
         </div>
       )}
       {feedbackError && (
-        <div className="tablet-alert error">
+        <div className="tablet-toast tablet-toast-error">
           <span>{feedbackError}</span>
           <button type="button" onClick={() => setFeedbackError('')}><X size={18} /></button>
         </div>
       )}
 
       {/* Navigation Tabs */}
-      <div className="tablet-tab-bar">
+      <div className="tablet-nav-tabs">
         <button
           type="button"
           className={`tablet-tab-btn ${activeTab === 'agenda' ? 'active' : ''}`}
           onClick={() => setActiveTab('agenda')}
         >
           <CalendarDays size={20} />
-          <span>1. Minha Agenda ({techAppointments.length})</span>
+          <span>1. Minha Agenda</span>
+          <span className="tablet-counter-pill">{techAppointments.length}</span>
         </button>
 
         <button
@@ -566,7 +575,8 @@ export const TabletKioskView: React.FC<TabletKioskViewProps> = ({
           onClick={() => setActiveTab('checkout')}
         >
           <Truck size={20} />
-          <span>2. Retirar Padrões / Saída ({techReadyForCheckout.length})</span>
+          <span>2. Retirar Padrões / Saída</span>
+          <span className={`tablet-counter-pill ${techReadyForCheckout.length ? 'warning' : ''}`}>{techReadyForCheckout.length}</span>
         </button>
 
         <button
@@ -575,65 +585,65 @@ export const TabletKioskView: React.FC<TabletKioskViewProps> = ({
           onClick={() => setActiveTab('checkin')}
         >
           <PackageCheck size={20} />
-          <span>3. Devolver ao Setor ({techInUse.length})</span>
+          <span>3. Devolver ao Setor</span>
+          <span className="tablet-counter-pill">{techInUse.length}</span>
         </button>
       </div>
 
       {/* Tab Content */}
-      <main className="tablet-panel-content">
+      <main className="tablet-content-area">
         {/* ABA 1: AGENDA DE VISITAS */}
         {activeTab === 'agenda' && (
-          <div className="tablet-agenda-view">
+          <div>
             <div className="tablet-section-intro">
               <h3>Meus Atendimentos Agendados</h3>
               <p>Confira seus agendamentos e toque em <strong>"Reservar Padrões"</strong> para vincular analisadores de teste para a visita.</p>
             </div>
 
-            <div className="tablet-appointments-list">
+            <div className="tablet-card-list">
               {techAppointments.map(appt => {
                 const apptReservations = reservations.filter(r => Number(r.appointment_id) === Number(appt.id));
                 const hasReservations = apptReservations.length > 0;
 
                 return (
-                  <div key={appt.id} className="tablet-appt-card">
-                    <div className="tablet-appt-time">
+                  <div key={appt.id} className="tablet-appointment-card">
+                    <div className="tablet-appt-time-col">
+                      <Clock size={20} />
                       <strong>{appt.appointment_time || 'Dia'}</strong>
                       <span>{String(appt.appointment_date || '').slice(8, 10)}/{String(appt.appointment_date || '').slice(5, 7)}</span>
                     </div>
 
                     <div className="tablet-appt-details">
-                      <h4>{appt.client_name || appt.title || 'Atendimento em Campo'}</h4>
-                      <p>
-                        <MapPin size={15} /> {appt.location || appt.sector || 'Localização não especificada'}
+                      <h3>{appt.client_name || appt.title || 'Atendimento em Campo'}</h3>
+                      <p className="tablet-appt-location">
+                        <MapPin size={16} /> {appt.location || appt.sector || 'Localização não especificada'}
                       </p>
 
                       {hasReservations && (
-                        <div className="tablet-appt-patterns-pill">
-                          <PackageCheck size={14} />
+                        <div className="tablet-status-pill success">
+                          <PackageCheck size={15} />
                           <span>{apptReservations.length} padrão(ões) vinculado(s): {apptReservations.map(r => r.asset_tag).join(', ')}</span>
                         </div>
                       )}
                     </div>
 
-                    <div className="tablet-appt-actions">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setReserveModalAppt(appt);
-                          setModalSelectedAnalyzerIds(apptReservations.map(r => r.analyzer_id));
-                        }}
-                        className="tablet-btn-reserve"
-                      >
-                        <Plus size={18} />
-                        <span>{hasReservations ? 'Alterar / Adicionar Padrões' : 'Reservar Padrões'}</span>
-                      </button>
-                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setReserveModalAppt(appt);
+                        setModalSelectedAnalyzerIds(apptReservations.map(r => r.analyzer_id));
+                      }}
+                      className="tablet-btn-action primary"
+                    >
+                      <Plus size={18} />
+                      <span>{hasReservations ? 'Alterar Padrões' : 'Reservar Padrões'}</span>
+                    </button>
                   </div>
                 );
               })}
 
               {!techAppointments.length && (
-                <div className="tablet-empty-panel">
+                <div className="tablet-empty-box">
                   <CalendarDays size={48} />
                   <h3>Nenhum atendimento agendado</h3>
                   <p>Você não possui visitas agendadas para os próximos dias.</p>
@@ -645,29 +655,32 @@ export const TabletKioskView: React.FC<TabletKioskViewProps> = ({
 
         {/* ABA 2: RETIRADAS DE PADRÕES (CHECKOUT) */}
         {activeTab === 'checkout' && (
-          <div className="tablet-checkout-view">
+          <div>
             <div className="tablet-section-intro">
               <h3>Padrões Reservados para Saída</h3>
               <p>Ao retirar a mala/analisador do almoxarifado, toque em <strong>"Registrar Saída"</strong> para atualizar o status para <strong>Em Uso</strong>.</p>
             </div>
 
-            <div className="tablet-cards-grid">
+            <div className="tablet-card-list">
               {techReadyForCheckout.map(res => (
-                <div key={res.id} className="tablet-action-card checkout">
-                  <div className="tablet-action-header">
-                    <span className="tablet-asset-tag">{res.asset_tag}</span>
-                    <span className="tablet-status-pill reserved">Pronto para Saída</span>
+                <div key={res.id} className="tablet-action-card">
+                  <div className="tablet-action-icon checkout">
+                    <Truck size={28} />
                   </div>
 
-                  <h4>{res.analyzer_name}</h4>
-                  <p>Tipo: <strong>{res.analyzer_type || 'Analisador de Campo'}</strong></p>
-                  <p>Atendimento: <strong>{res.client_name || 'Agendamento Técnico'}</strong></p>
+                  <div className="tablet-action-info">
+                    <span className="tablet-tag-pill">{res.asset_tag}</span>
+                    <strong>{res.analyzer_name}</strong>
+                    <p className="tablet-action-sub">
+                      Tipo: <strong>{res.analyzer_type || 'Analisador'}</strong> · Atendimento: <strong>{res.client_name || 'Agendamento Técnico'}</strong>
+                    </p>
+                  </div>
 
                   <button
                     type="button"
                     disabled={actionLoading === res.id}
                     onClick={() => handleCheckout(res.id)}
-                    className="tablet-btn-action checkout"
+                    className="tablet-btn-action checkout-btn"
                   >
                     <Truck size={20} />
                     <span>{actionLoading === res.id ? 'Registrando...' : 'Registrar Saída (Check-out)'}</span>
@@ -676,7 +689,7 @@ export const TabletKioskView: React.FC<TabletKioskViewProps> = ({
               ))}
 
               {!techReadyForCheckout.length && (
-                <div className="tablet-empty-panel">
+                <div className="tablet-empty-box">
                   <CheckCircle2 size={48} />
                   <h3>Nenhum padrão aguardando saída</h3>
                   <p>Você não possui reservas pendentes de retirada no momento.</p>
@@ -688,29 +701,32 @@ export const TabletKioskView: React.FC<TabletKioskViewProps> = ({
 
         {/* ABA 3: DEVOLUÇÃO DE PADRÕES (CHECKIN) */}
         {activeTab === 'checkin' && (
-          <div className="tablet-checkin-view">
+          <div>
             <div className="tablet-section-intro">
               <h3>Padrões Atualmente em sua Posse</h3>
               <p>Ao devolver o padrão ao setor, toque em <strong>"Devolver ao Setor"</strong> para liberar o patrimônio para a equipe.</p>
             </div>
 
-            <div className="tablet-cards-grid">
+            <div className="tablet-card-list">
               {techInUse.map(res => (
-                <div key={res.id} className="tablet-action-card checkin">
-                  <div className="tablet-action-header">
-                    <span className="tablet-asset-tag">{res.asset_tag}</span>
-                    <span className="tablet-status-pill inuse">Em Campo / Com Você</span>
+                <div key={res.id} className="tablet-action-card">
+                  <div className="tablet-action-icon checkin">
+                    <PackageCheck size={28} />
                   </div>
 
-                  <h4>{res.analyzer_name}</h4>
-                  <p>Tipo: <strong>{res.analyzer_type || 'Analisador de Campo'}</strong></p>
-                  <p>Atendimento: <strong>{res.client_name || 'Agendamento Técnico'}</strong></p>
+                  <div className="tablet-action-info">
+                    <span className="tablet-tag-pill warning">{res.asset_tag}</span>
+                    <strong>{res.analyzer_name}</strong>
+                    <p className="tablet-action-sub">
+                      Status: <strong>Em Campo / Em Uso</strong> · Atendimento: <strong>{res.client_name || 'Agendamento'}</strong>
+                    </p>
+                  </div>
 
                   <button
                     type="button"
                     disabled={actionLoading === res.id}
                     onClick={() => handleCheckin(res.id)}
-                    className="tablet-btn-action checkin"
+                    className="tablet-btn-action checkin-btn"
                   >
                     <CheckCircle2 size={20} />
                     <span>{actionLoading === res.id ? 'Liberando...' : 'Devolver ao Setor (Check-in)'}</span>
@@ -719,7 +735,7 @@ export const TabletKioskView: React.FC<TabletKioskViewProps> = ({
               ))}
 
               {!techInUse.length && (
-                <div className="tablet-empty-panel">
+                <div className="tablet-empty-box">
                   <PackageCheck size={48} />
                   <h3>Nenhum padrão em campo com você</h3>
                   <p>Todos os seus analisadores foram devolvidos ao setor.</p>
@@ -733,7 +749,7 @@ export const TabletKioskView: React.FC<TabletKioskViewProps> = ({
       {/* MODAL DE RESERVA TÁTIL DE PADRÕES */}
       {reserveModalAppt && (
         <div className="tablet-modal-overlay">
-          <div className="tablet-modal-container">
+          <div className="tablet-modal-box">
             <div className="tablet-modal-header">
               <div>
                 <h3>Reservar Padrões para Atendimento</h3>
@@ -742,7 +758,7 @@ export const TabletKioskView: React.FC<TabletKioskViewProps> = ({
               <button
                 type="button"
                 onClick={() => setReserveModalAppt(null)}
-                className="tablet-modal-close-btn"
+                className="tablet-modal-close"
               >
                 <X size={24} />
               </button>
@@ -758,14 +774,13 @@ export const TabletKioskView: React.FC<TabletKioskViewProps> = ({
               />
             </div>
 
-            <div className="tablet-modal-analyzer-list">
+            <div className="tablet-modal-grid">
               {filteredModalAnalyzers.map(analyzer => {
                 const isSelected = modalSelectedAnalyzerIds.includes(Number(analyzer.id));
 
                 return (
-                  <button
+                  <div
                     key={analyzer.id}
-                    type="button"
                     onClick={() => {
                       setModalSelectedAnalyzerIds(prev =>
                         isSelected
@@ -773,46 +788,38 @@ export const TabletKioskView: React.FC<TabletKioskViewProps> = ({
                           : [...prev, Number(analyzer.id)]
                       );
                     }}
-                    className={`tablet-modal-item ${isSelected ? 'selected' : ''}`}
+                    className={`tablet-analyzer-select-card ${isSelected ? 'selected' : ''}`}
                   >
-                    <div className="tablet-modal-item-info">
-                      <span className="tablet-asset-tag">{analyzer.asset_tag}</span>
-                      <strong>{analyzer.name}</strong>
-                      <span>{analyzer.type} · {analyzer.brand_model || 'Padrão Oficial'}</span>
-                    </div>
-                    <div className={`tablet-checkbox ${isSelected ? 'checked' : ''}`}>
-                      {isSelected && <CheckCircle2 size={20} />}
-                    </div>
-                  </button>
+                    <span className="tablet-analyzer-tag">{analyzer.asset_tag}</span>
+                    <strong>{analyzer.name}</strong>
+                    <span>{analyzer.type} · {analyzer.brand_model || 'Padrão Oficial'}</span>
+                  </div>
                 );
               })}
 
               {!filteredModalAnalyzers.length && (
-                <div className="tablet-empty-results">
+                <div style={{ gridColumn: '1 / -1', textAlign: 'center', padding: '30px', color: '#64748b' }}>
                   Nenhum padrão disponível encontrado para a busca.
                 </div>
               )}
             </div>
 
             <div className="tablet-modal-footer">
-              <span>{modalSelectedAnalyzerIds.length} padrão(ões) selecionado(s)</span>
-              <div className="tablet-modal-footer-btns">
-                <button
-                  type="button"
-                  onClick={() => setReserveModalAppt(null)}
-                  className="tablet-btn-cancel"
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="button"
-                  disabled={isSubmittingReservation || !modalSelectedAnalyzerIds.length}
-                  onClick={handleSubmitReserveModal}
-                  className="tablet-btn-confirm"
-                >
-                  {isSubmittingReservation ? 'Confirmando...' : 'Confirmar Reservas'}
-                </button>
-              </div>
+              <button
+                type="button"
+                onClick={() => setReserveModalAppt(null)}
+                className="tablet-btn-secondary"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                disabled={isSubmittingReservation || !modalSelectedAnalyzerIds.length}
+                onClick={handleSubmitReserveModal}
+                className="tablet-btn-primary"
+              >
+                {isSubmittingReservation ? 'Confirmando...' : `Confirmar ${modalSelectedAnalyzerIds.length} Padrão(ões)`}
+              </button>
             </div>
           </div>
         </div>
