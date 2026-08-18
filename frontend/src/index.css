@@ -477,6 +477,8 @@ html, body {
   width: 44px;
   height: 44px;
   min-width: 44px;
+  max-width: 44px;
+  max-height: 44px;
   border-radius: 12px;
   background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
   color: #1d4ed8;
@@ -487,6 +489,17 @@ html, body {
   justify-content: center;
   border: 1.5px solid #bfdbfe;
   flex-shrink: 0;
+  overflow: hidden;
+  position: relative;
+}
+.technician-avatar img {
+  width: 100%;
+  height: 100%;
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: cover;
+  border-radius: 11px;
+  display: block;
 }
 .technician-identity {
   flex: 1;
@@ -704,7 +717,8 @@ html, body {
 
 .merge-form { display: flex; flex-direction: column; gap: 18px; }
 .merge-source-card { display: flex; align-items: center; gap: 11px; padding: 12px; border: 1px solid #f1d5a5; border-radius: 12px; background: #fffbeb; }
-.technician-avatar--small { width: 42px; height: 42px; flex: 0 0 auto; border-radius: 11px; }
+.technician-avatar--small { width: 42px; height: 42px; min-width: 42px; max-width: 42px; max-height: 42px; flex: 0 0 auto; border-radius: 11px; overflow: hidden; position: relative; }
+.technician-avatar--small img { width: 100%; height: 100%; object-fit: cover; border-radius: 10px; display: block; }
 .merge-source-card > div:last-child { display: flex; min-width: 0; flex-direction: column; }
 .merge-source-card > div > span { color: #8a6116; font-size: 0.66rem; font-weight: 650; text-transform: uppercase; letter-spacing: 0.045em; }
 .merge-source-card strong { margin-top: 1px; font-size: 0.86rem; }

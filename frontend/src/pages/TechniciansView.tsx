@@ -496,7 +496,7 @@ export function TechniciansView({ technicians, onRefresh }: TechniciansViewProps
                 {/* TOP: Avatar, Nome, Cargo, Status, Menu */}
                 <div className="technician-card__top">
                   <div className="technician-avatar">
-                    {tech.avatar_url ? (
+                    {tech.avatar_url && !tech.avatar_url.includes('unsplash.com') ? (
                       <img src={tech.avatar_url} alt={tech.name} />
                     ) : (
                       <span>{initials(tech.name)}</span>
