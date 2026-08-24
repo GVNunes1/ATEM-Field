@@ -216,6 +216,29 @@
   color: #94a3b8;
 }
 
+.login-card-footer nav {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 8px;
+}
+
+.login-card-footer a {
+  min-height: 36px;
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 8px;
+  border-radius: 7px;
+  color: #64748b;
+  text-decoration: none;
+  font-weight: 600;
+  transition: color 160ms ease, background 160ms ease;
+}
+
+.login-card-footer a:hover { color: #1d4ed8; background: #eff6ff; }
+.login-card-footer a:focus-visible { outline: 3px solid rgba(37, 99, 235, 0.2); outline-offset: 2px; }
+
 @media (max-width: 480px) {
   .login-page-root {
     padding: 16px 12px;

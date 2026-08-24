@@ -9,6 +9,7 @@ import { OperationsAdminView } from './pages/OperationsAdminView';
 import { ReservationHistoryView } from './pages/ReservationHistoryView';
 import { TabletKioskView } from './pages/TabletKioskView';
 import { LoginView } from './pages/LoginView';
+import { PublicInfoView, PublicPage } from './pages/PublicInfoView';
 import { AuthUser } from './types/auth';
 import { safeFetchJson } from './lib/api';
 
@@ -32,7 +33,16 @@ function getInitialTab(): string {
   return 'dashboard';
 }
 
+function getPublicPage(): PublicPage | null {
+  const path = window.location.pathname.toLowerCase().replace(/^\/+|\/+$/g, '');
+  if (path === 'sobre' || path === 'about') return 'about';
+  if (path === 'privacidade' || path === 'privacy') return 'privacy';
+  if (path === 'termos' || path === 'terms') return 'terms';
+  return null;
+}
+
 export function App() {
+  const publicPage = getPublicPage();
   const [currentUser, setCurrentUser] = useState<AuthUser | null>(() => {
     try {
       const saved = localStorage.getItem('atem.auth.user');
@@ -155,17 +165,26 @@ export function App() {
   }, []);
 
   useEffect(() => {
+    if (publicPage) {
+      setLoading(false);
+      return;
+    }
     void fetchAllData();
-  }, [fetchAllData]);
+  }, [fetchAllData, publicPage]);
 
   useEffect(() => {
+    if (publicPage) return;
     const interval = setInterval(() => {
       if (document.visibilityState === 'visible') {
         void refreshLiveInventory();
       }
     }, 15000);
     return () => clearInterval(interval);
-  }, [refreshLiveInventory]);
+  }, [publicPage, refreshLiveInventory]);
+
+  if (publicPage) {
+    return <PublicInfoView page={publicPage} />;
+  }
 
   // Se estiver no Modo Totem / Tablet de Setor (Full Screen Kiosk)
   if (activeTab === 'totem') {

@@ -9,7 +9,7 @@ from google.auth.exceptions import RefreshError
 from google.oauth2.credentials import Credentials
 
 
-SCOPES = ["https://www.googleapis.com/auth/calendar"]
+SCOPES = ["https://www.googleapis.com/auth/calendar.readonly"]
 SERVICE_DIR = Path(__file__).resolve().parent
 BACKEND_DIR = SERVICE_DIR.parent.parent
 DATA_DIR = BACKEND_DIR / "data"

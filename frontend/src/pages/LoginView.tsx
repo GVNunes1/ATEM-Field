@@ -224,6 +224,11 @@ export const LoginView: React.FC<LoginViewProps> = ({ technicians, onLoginSucces
         {/* Footer info */}
         <div className="login-card-footer">
           <span>ATEM Hospitalar · Assistência Técnica © 2026</span>
+          <nav aria-label="Informações institucionais">
+            <a href="/sobre">Sobre</a>
+            <a href="/privacidade">Privacidade</a>
+            <a href="/termos">Termos</a>
+          </nav>
         </div>
       </div>
     </div>
