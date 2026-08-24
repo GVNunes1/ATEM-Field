@@ -1,9 +1,20 @@
+const NORTHFLANK_API_URL = 'https://p01--atem-field--2v2xm9t22wfk.code.run';
+const LEGACY_RENDER_API_URL = 'https://atem-field-backend.onrender.com';
+
+function normalizeBaseUrl(url: string): string {
+  return url.trim().replace(/\/$/, '');
+}
+
 export function getApiBaseUrl(): string {
-  const envUrl = import.meta.env.VITE_API_URL?.trim();
-  if (envUrl) {
-    return envUrl.replace(/\/$/, '');
+  const envUrl = normalizeBaseUrl(import.meta.env.VITE_API_URL || '');
+
+  // Builds antigos da Vercel ainda podem carregar a URL do Render suspenso.
+  // Redirecione-os para o backend ativo sem prejudicar o proxy do Vite local.
+  if (envUrl && envUrl !== LEGACY_RENDER_API_URL) {
+    return envUrl;
   }
-  return '';
+
+  return import.meta.env.DEV ? '' : NORTHFLANK_API_URL;
 }
 
 export function apiUrl(endpoint: string): string {
@@ -22,7 +33,7 @@ export async function safeFetchJson(url: string, options?: RequestInit): Promise
 
   if (!contentType.includes('application/json') && text.trimStart().startsWith('<')) {
     throw new Error(
-      'O Backend ainda está inicializando no Render ou a URL da API precisa ser configurada. Aguarde alguns segundos e clique em Tentar Novamente.'
+      'A URL da API está incorreta ou o backend está indisponível. Aguarde alguns segundos e clique em Tentar novamente.'
     );
   }
 
