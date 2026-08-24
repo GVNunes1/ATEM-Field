@@ -48,6 +48,13 @@ Não use variáveis de build para esses valores e não envie arquivos `.env` ou 
 
 `GOOGLE_CALENDAR_TOKEN_JSON` deve conter um token que já tenha `refresh_token`. O OAuth local não deve ser iniciado dentro do contêiner. Se o Google revogar o acesso, autorize novamente em uma máquina local e substitua o segredo no Northflank.
 
+Antes da autorização definitiva, abra **Google Cloud Console → Google Auth Platform → Audience** e confirme uma destas opções:
+
+- aplicativo interno da organização; ou
+- aplicativo externo com status **In production**.
+
+Aplicativos externos em modo **Testing** recebem refresh tokens que expiram em 7 dias para o escopo do Google Calendar. Depois de ajustar o status, execute `renovar-google-agenda.bat`, copie o valor gerado em `google-calendar-token-northflank.txt` para o segredo `GOOGLE_CALENDAR_TOKEN_JSON` e reinicie o serviço.
+
 Para manter o Render apenas como contingência, configure nele:
 
 ```env

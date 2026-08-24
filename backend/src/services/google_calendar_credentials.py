@@ -5,6 +5,7 @@ import shutil
 from pathlib import Path
 
 from google.auth.transport.requests import Request
+from google.auth.exceptions import RefreshError
 from google.oauth2.credentials import Credentials
 
 
@@ -14,6 +15,10 @@ BACKEND_DIR = SERVICE_DIR.parent.parent
 DATA_DIR = BACKEND_DIR / "data"
 DEFAULT_TOKEN_PATH = DATA_DIR / "google-calendar-token.json"
 DEFAULT_CREDENTIALS_PATH = DATA_DIR / "google-calendar-credentials.json"
+
+
+class CalendarAuthenticationRequired(RuntimeError):
+    """Raised when Google requires a new interactive authorization."""
 
 
 def _legacy_directories():
@@ -38,12 +43,14 @@ def _configured_path(environment_key, default_path):
 
 
 def token_path():
+    configured_path = _configured_path("GOOGLE_CALENDAR_TOKEN_PATH", DEFAULT_TOKEN_PATH)
     raw_env_token = os.environ.get("GOOGLE_CALENDAR_TOKEN_JSON", "").strip()
-    if raw_env_token:
-        DATA_DIR.mkdir(parents=True, exist_ok=True)
-        if not DEFAULT_TOKEN_PATH.exists() or DEFAULT_TOKEN_PATH.read_text(encoding="utf-8").strip() != raw_env_token:
-            DEFAULT_TOKEN_PATH.write_text(raw_env_token, encoding="utf-8")
-    return _configured_path("GOOGLE_CALENDAR_TOKEN_PATH", DEFAULT_TOKEN_PATH)
+    # A variável é a semente do contêiner. Depois do primeiro carregamento, o
+    # arquivo local passa a conter o access token renovado pela biblioteca.
+    # Não o sobrescreva com a cópia antiga da variável a cada subprocesso.
+    if raw_env_token and not configured_path.exists():
+        _atomic_write(configured_path, raw_env_token)
+    return configured_path
 
 
 def credentials_path():
@@ -119,8 +126,17 @@ def load_credentials(refresh=True):
         credentials = _migrate_legacy_pickle()
 
     if credentials and refresh and credentials.expired and credentials.refresh_token:
-        credentials.refresh(Request())
-        save_credentials(credentials)
+        try:
+            credentials.refresh(Request())
+            save_credentials(credentials)
+        except RefreshError as error:
+            message = str(error)
+            if "invalid_grant" in message.lower():
+                raise CalendarAuthenticationRequired(
+                    "O refresh token do Google expirou ou foi revogado. "
+                    "Autorize novamente uma vez e confirme que o aplicativo OAuth está em produção."
+                ) from error
+            raise
 
     return credentials
 

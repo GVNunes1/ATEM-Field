@@ -23,3 +23,8 @@ windows-watchdog/state/
 
 # Google Calendar OAuth and incremental sync runtime
 backend/data/google-calendar-*.json
+
+# Local export used to configure Northflank (contains production secrets)
+northflank-secrets.txt
+northflank-api-token.txt
+google-calendar-token-northflank.txt

@@ -439,6 +439,12 @@ export async function getGoogleCalendarSyncStatus() {
 }
 
 export function startGoogleCalendarAuthorization(): Promise<{ auth_url: string }> {
+  if (process.env.NODE_ENV === 'production') {
+    return Promise.reject(new Error(
+      'A credencial Google atual é do tipo Desktop e precisa ser renovada no computador do administrador. ' +
+      'Execute renovar-google-agenda.bat e atualize GOOGLE_CALENDAR_TOKEN_JSON na Northflank.'
+    ));
+  }
   if (oauthProcess) return Promise.reject(new Error('Já existe uma autorização Google em andamento.'));
   return new Promise((resolve, reject) => {
     const python = process.env.PYTHON_EXECUTABLE?.trim() || 'python';

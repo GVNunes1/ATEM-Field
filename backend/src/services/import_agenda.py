@@ -7,6 +7,7 @@ from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 
 from google_calendar_credentials import (
+    CalendarAuthenticationRequired,
     DATA_DIR,
     auth_status,
     load_credentials,
@@ -198,5 +199,7 @@ if __name__ == "__main__":
         main()
     except SystemExit:
         raise
+    except CalendarAuthenticationRequired as error:
+        emit({"success": False, "auth_required": True, "error": str(error)}, 2)
     except Exception as error:
         emit({"success": False, "auth_required": False, "error": str(error)}, 1)
