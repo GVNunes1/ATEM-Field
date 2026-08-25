@@ -15,7 +15,6 @@ const execFileAsync = promisify(execFile);
 
 const osSupabaseUrl = process.env.OS_SUPABASE_URL || 'https://oiaykixldlfhlfzsuhfv.supabase.co';
 const osSupabaseKey = process.env.OS_SUPABASE_ANON_KEY || 'sb_publishable_QN_vMYvBLHfmso9xanU4gg_K_SLcFxm';
-const osBackendUrl = (process.env.OS_BACKEND_URL || 'https://telegram-form-bot-3ajw.onrender.com').replace(/\/$/, '');
 const serviceOrderPdfDirectory = path.resolve(process.cwd(), 'data', 'service-orders');
 
 const osSupabase = createClient(osSupabaseUrl, osSupabaseKey, {
@@ -39,6 +38,16 @@ type ServiceOrderRecord = {
   pdf_url?: string | null;
   created_at?: string | null;
   updated_at?: string | null;
+};
+
+type DriveFileResult = {
+  success: boolean;
+  found?: boolean;
+  file_id?: string;
+  filename?: string;
+  web_view_url?: string;
+  download_url?: string;
+  error?: string;
 };
 
 function normalizedName(value: unknown): string {
@@ -66,10 +75,7 @@ function orderError(res: Response, error: unknown, fallback: string): void {
 
 function normalizeDownloadUrl(value: unknown): string | undefined {
   if (typeof value !== 'string' || !value.trim()) return undefined;
-  const clean = value.trim();
-  if (/^https?:\/\//i.test(clean)) return clean;
-  if (clean.startsWith('/api/service-orders/')) return clean;
-  return `${osBackendUrl}${clean.startsWith('/') ? clean : `/${clean}`}`;
+  return value.trim();
 }
 
 function safeFileSegment(value: unknown): string {
@@ -81,11 +87,33 @@ function safeFileSegment(value: unknown): string {
     .slice(0, 100) || 'OS';
 }
 
+function legacyFilenameSegment(value: unknown): string {
+  return String(value || '')
+    .replace(/[\\/*?:"<>|]/g, '-')
+    .trim()
+    .slice(0, 100) || 'AUTO';
+}
+
 function timestampForFilename(): string {
   const now = new Date();
   const date = [now.getFullYear(), String(now.getMonth() + 1).padStart(2, '0'), String(now.getDate()).padStart(2, '0')].join('');
   const time = [String(now.getHours()).padStart(2, '0'), String(now.getMinutes()).padStart(2, '0'), String(now.getSeconds()).padStart(2, '0')].join('');
   return `${date}_${time}`;
+}
+
+function originalOrderReference(formData: Record<string, any>): string {
+  const serial = legacyFilenameSegment(String(formData.Serie || '').trim().toUpperCase());
+  const serviceDate = String(formData.Data || '').replace(/\D/g, '');
+  if (serial && serial !== 'AUTO' && serviceDate) return `${serial}_${serviceDate}`;
+  return legacyFilenameSegment(formData.Atendimento || formData.Serie || Date.now());
+}
+
+function driveFileId(value: unknown): string | undefined {
+  const url = String(value || '');
+  const pathMatch = url.match(/drive\.google\.com\/file\/d\/([^/?#]+)/i);
+  if (pathMatch?.[1]) return pathMatch[1];
+  const queryMatch = url.match(/[?&]id=([^&#]+)/i);
+  return queryMatch?.[1] ? decodeURIComponent(queryMatch[1]) : undefined;
 }
 
 function localPdfPath(filename: string): string {
@@ -105,25 +133,69 @@ function pythonInvocation(): { command: string; prefixArgs: string[] } {
     : { command: 'python3', prefixArgs: [] };
 }
 
+function parseScriptResult(stdout: string): any {
+  const lines = stdout.trim().split(/\r?\n/).filter(Boolean);
+  return lines.length ? JSON.parse(lines[lines.length - 1]) : null;
+}
+
+async function runPythonService(scriptName: string, args: string[], timeout = 90_000): Promise<any> {
+  const python = pythonInvocation();
+  const scriptPath = path.resolve(process.cwd(), 'src', 'services', scriptName);
+  try {
+    const { stdout } = await execFileAsync(
+      python.command,
+      [...python.prefixArgs, scriptPath, ...args],
+      { timeout, maxBuffer: 1024 * 1024 }
+    );
+    const result = parseScriptResult(stdout);
+    if (!result?.success) throw new Error(result?.error || `${scriptName} não concluiu a operação.`);
+    return result;
+  } catch (error: any) {
+    const result = error?.stdout ? parseScriptResult(String(error.stdout)) : null;
+    throw new Error(result?.error || error?.message || `Falha ao executar ${scriptName}.`);
+  }
+}
+
+async function driveCommand(args: string[]): Promise<DriveFileResult> {
+  return runPythonService('service_order_drive.py', args, 120_000) as Promise<DriveFileResult>;
+}
+
+async function findOriginalDriveFile(order: ServiceOrderRecord): Promise<DriveFileResult | null> {
+  const currentUrl = String(order.pdf_url || '');
+  const currentFileId = driveFileId(currentUrl);
+  if (currentFileId && /^https?:\/\//i.test(currentUrl)) {
+    return {
+      success: true,
+      found: true,
+      file_id: currentFileId,
+      filename: order.pdf_filename || undefined,
+      web_view_url: currentUrl
+    };
+  }
+  if (!order.pdf_filename) return null;
+
+  const result = await driveCommand(['find', order.pdf_filename, String(order.status === 'signed')]);
+  if (!result.found || !result.web_view_url) return null;
+
+  if (result.web_view_url !== order.pdf_url) {
+    const { error } = await osSupabase
+      .from('service_orders')
+      .update({ pdf_url: result.web_view_url })
+      .eq('id', order.id);
+    if (error) console.warn('[service-orders] Não foi possível atualizar a URL histórica do Drive:', error);
+  }
+  return result;
+}
+
 async function generateLocalPdf(orderId: string, filename: string, formData: Record<string, any>): Promise<string> {
   await mkdir(serviceOrderPdfDirectory, { recursive: true });
   const inputPath = path.join(serviceOrderPdfDirectory, `${safeFileSegment(orderId)}.json`);
   const outputPath = localPdfPath(filename);
-  const scriptPath = path.resolve(process.cwd(), 'src', 'services', 'service_order_pdf.py');
-  const python = pythonInvocation();
 
   await writeFile(inputPath, JSON.stringify(formData), 'utf8');
   try {
-    const { stdout } = await execFileAsync(
-      python.command,
-      [...python.prefixArgs, scriptPath, inputPath, outputPath],
-      { timeout: 90_000, maxBuffer: 1024 * 1024 }
-    );
-    const lines = stdout.trim().split(/\r?\n/).filter(Boolean);
-    const result = lines.length ? JSON.parse(lines[lines.length - 1]) : null;
-    if (!result?.success || !existsSync(outputPath)) {
-      throw new Error(result?.error || 'O gerador local não produziu o arquivo PDF.');
-    }
+    await runPythonService('service_order_pdf.py', [inputPath, outputPath]);
+    if (!existsSync(outputPath)) throw new Error('O gerador PAT01-F2 não produziu o arquivo PDF.');
     return outputPath;
   } finally {
     await unlink(inputPath).catch(() => undefined);
@@ -147,7 +219,9 @@ router.get('/', async (req: AuthenticatedRequest, res: Response) => {
       : orders.filter(order => canManageOrder(req, order)))
       .map(order => ({
         ...order,
-        pdf_url: normalizeDownloadUrl(order.pdf_url || (order.pdf_filename ? `/download/${order.pdf_filename}` : undefined))
+        pdf_url: normalizeDownloadUrl(
+          order.pdf_url || (order.pdf_filename ? `/api/service-orders/${encodeURIComponent(order.id)}/pdf` : undefined)
+        )
       }));
 
     res.set('Cache-Control', 'no-store');
@@ -217,62 +291,89 @@ router.post('/generate', async (req: AuthenticatedRequest, res: Response) => {
 
   try {
     const originalId = String(formData._original_id || '').trim();
+    let originalOrder: ServiceOrderRecord | null = null;
     if (originalId) {
-      const { data: originalOrder, error: originalError } = await osSupabase
+      const { data, error: originalError } = await osSupabase
         .from('service_orders')
         .select('*')
         .eq('id', originalId)
         .maybeSingle();
 
       if (originalError) throw originalError;
-      if (originalOrder && !canManageOrder(req, originalOrder as ServiceOrderRecord)) {
+      originalOrder = data as ServiceOrderRecord | null;
+      if (originalOrder && !canManageOrder(req, originalOrder)) {
         res.status(403).json({ success: false, error: 'Você não possui permissão para editar esta ordem de serviço.' });
         return;
       }
     }
 
     const signed = Boolean(formData.Assinatura_Tecnico || formData.Assinatura_Cliente);
-    const orderReference = safeFileSegment(formData.Atendimento || formData.Serie || Date.now());
+    const orderReference = originalOrderReference(formData);
+    formData.Atendimento = orderReference;
     const generatedFilename = `${signed ? 'SIGNED_OS' : 'OS'}_${orderReference}_${timestampForFilename()}.pdf`;
     const orderId = generatedFilename.replace(/\.pdf$/i, '');
-    const downloadUrl = `/api/service-orders/${encodeURIComponent(orderId)}/pdf`;
+    const pdfPath = await generateLocalPdf(orderId, generatedFilename, formData);
+    let uploadedFile: DriveFileResult | null = null;
+    let orderSaved = false;
 
-    await generateLocalPdf(orderId, generatedFilename, formData);
+    try {
+      uploadedFile = await driveCommand(['upload', pdfPath, generatedFilename, String(signed)]);
+      if (!uploadedFile.found || !uploadedFile.web_view_url) {
+        throw new Error('O Google Drive não confirmou o armazenamento do PDF.');
+      }
 
-    const order: ServiceOrderRecord = {
-      id: orderId,
-      os_number: String(formData.Atendimento || orderId),
-      status: signed ? 'signed' : 'unsigned',
-      client_name: clientName,
-      serial_number: String(formData.Serie || ''),
-      equipment_name: String(formData.Equipamento || ''),
-      technician_name: technicianName,
-      service_date: String(formData.Data || ''),
-      form_data: formData,
-      pdf_filename: generatedFilename || null,
-      pdf_url: downloadUrl || null,
-      updated_at: new Date().toISOString()
-    };
+      const order: ServiceOrderRecord = {
+        id: orderId,
+        os_number: orderReference,
+        status: signed ? 'signed' : 'unsigned',
+        client_name: clientName,
+        serial_number: String(formData.Serie || ''),
+        equipment_name: String(formData.Equipamento || ''),
+        technician_name: technicianName,
+        service_date: String(formData.Data || ''),
+        form_data: formData,
+        pdf_filename: generatedFilename,
+        pdf_url: uploadedFile.web_view_url,
+        updated_at: new Date().toISOString()
+      };
 
-    const { error: upsertError } = await osSupabase
-      .from('service_orders')
-      .upsert(order);
-    if (upsertError) throw upsertError;
-
-    if (originalId && originalId !== orderId) {
-      const { error: deleteOriginalError } = await osSupabase
+      const { error: upsertError } = await osSupabase
         .from('service_orders')
-        .delete()
-        .eq('id', originalId);
-      if (deleteOriginalError) throw deleteOriginalError;
-    }
+        .upsert(order);
+      if (upsertError) throw upsertError;
+      orderSaved = true;
 
-    res.json({
-      success: true,
-      order,
-      filename: generatedFilename,
-      download_url: downloadUrl
-    });
+      if (originalId && originalId !== orderId) {
+        const { error: deleteOriginalError } = await osSupabase
+          .from('service_orders')
+          .delete()
+          .eq('id', originalId);
+        if (deleteOriginalError) throw deleteOriginalError;
+
+        if (originalOrder) {
+          try {
+            const oldDriveFile = await findOriginalDriveFile(originalOrder);
+            if (oldDriveFile?.file_id) await driveCommand(['delete', oldDriveFile.file_id]);
+          } catch (cleanupError) {
+            console.warn('[service-orders] A OS foi atualizada, mas o PDF anterior não pôde ser removido do Drive:', cleanupError);
+          }
+        }
+      }
+
+      res.json({
+        success: true,
+        order,
+        filename: generatedFilename,
+        download_url: uploadedFile.web_view_url
+      });
+    } catch (generationError) {
+      if (!orderSaved && uploadedFile?.file_id) {
+        await driveCommand(['delete', uploadedFile.file_id]).catch(() => undefined);
+      }
+      throw generationError;
+    } finally {
+      await unlink(pdfPath).catch(() => undefined);
+    }
   } catch (error) {
     orderError(res, error, 'Não foi possível gerar a ordem de serviço.');
   }
@@ -296,16 +397,19 @@ router.get('/:id/pdf', async (req: AuthenticatedRequest, res: Response) => {
       return;
     }
 
-    const filename = safeFileSegment(order.pdf_filename || `${id}.pdf`).replace(/\.pdf$/i, '') + '.pdf';
-    let filePath = localPdfPath(filename);
-    if (!existsSync(filePath)) {
-      filePath = await generateLocalPdf(id, filename, order.form_data || {});
+    const driveFile = await findOriginalDriveFile(order as ServiceOrderRecord);
+    if (!driveFile?.web_view_url) {
+      res.status(410).json({
+        success: false,
+        error: 'O arquivo original desta OS não foi encontrado no Google Drive. Nenhum PDF foi recriado.'
+      });
+      return;
     }
 
     res.set('Cache-Control', 'private, no-store');
-    res.download(filePath, filename);
+    res.redirect(302, driveFile.web_view_url);
   } catch (error) {
-    orderError(res, error, 'Não foi possível preparar o PDF da ordem de serviço.');
+    orderError(res, error, 'Não foi possível localizar o PDF original da ordem de serviço no Google Drive.');
   }
 });
 
@@ -333,6 +437,11 @@ router.delete('/:id', async (req: AuthenticatedRequest, res: Response) => {
       return;
     }
 
+    const driveFile = await findOriginalDriveFile(order as ServiceOrderRecord).catch(error => {
+      console.warn('[service-orders] PDF do Drive não localizado antes da exclusão:', error);
+      return null;
+    });
+
     const { error: deleteError } = await osSupabase
       .from('service_orders')
       .delete()
@@ -343,9 +452,9 @@ router.delete('/:id', async (req: AuthenticatedRequest, res: Response) => {
       await unlink(localPdfPath(order.pdf_filename)).catch(() => undefined);
     }
 
-    if (order.pdf_filename && !String(order.pdf_url || '').startsWith('/api/service-orders/')) {
-      void fetch(`${osBackendUrl}/delete_file/${encodeURIComponent(order.pdf_filename)}`).catch(error => {
-        console.warn('[service-orders] PDF legado não removido:', error);
+    if (driveFile?.file_id) {
+      await driveCommand(['delete', driveFile.file_id]).catch(error => {
+        console.warn('[service-orders] Registro excluído, mas o PDF não pôde ser removido do Drive:', error);
       });
     }
 

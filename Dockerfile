@@ -22,10 +22,11 @@ FROM node:22-bookworm-slim AS runtime
 ENV NODE_ENV=production \
     PORT=8080 \
     PYTHONUNBUFFERED=1 \
-    PYTHON_EXECUTABLE=/opt/atem-python/bin/python
+    PYTHON_EXECUTABLE=/opt/atem-python/bin/python \
+    CHROMIUM_EXECUTABLE=/usr/bin/chromium
 
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends ca-certificates python3 python3-venv \
+    && apt-get install -y --no-install-recommends ca-certificates python3 python3-venv chromium fonts-liberation \
     && python3 -m venv /opt/atem-python \
     && rm -rf /var/lib/apt/lists/*
 
@@ -41,6 +42,7 @@ RUN npm ci --omit=dev --ignore-scripts \
 
 COPY --from=backend-build --chown=node:node /workspace/backend/dist ./dist
 COPY --chown=node:node backend/src/services/*.py ./src/services/
+COPY --chown=node:node backend/src/services/service_order_template.html ./src/services/service_order_template.html
 COPY --from=frontend-build --chown=node:node /workspace/frontend/dist /workspace/frontend/dist
 
 RUN mkdir -p /workspace/backend/data \

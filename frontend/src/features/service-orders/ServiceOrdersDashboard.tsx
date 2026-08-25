@@ -181,7 +181,7 @@ export function ServiceOrdersDashboard({
   const handleDownload = async (order: ServiceOrder) => {
     setDownloadingId(order.id);
     try {
-      await downloadServiceOrderPdf(order.id, order.pdf_filename);
+      await downloadServiceOrderPdf(order.id, order.pdf_filename, order.pdf_url);
     } catch (downloadError) {
       notify(downloadError instanceof Error ? downloadError.message : 'Não foi possível baixar o PDF.', 'error');
     } finally {
@@ -327,9 +327,15 @@ export function ServiceOrdersDashboard({
                               </div>
                             </div>
                             <div className="os-order-actions">
-                              <button type="button" className="os-button os-button--quiet" onClick={() => void handleDownload(order)} disabled={downloadingId === order.id}>
-                                {downloadingId === order.id ? <LoaderCircle className="spin" size={16} /> : <Download size={16} />} Baixar
-                              </button>
+                              {order.pdf_url?.startsWith('http') ? (
+                                <a className="os-button os-button--quiet" href={order.pdf_url} target="_blank" rel="noopener noreferrer">
+                                  <Download size={16} /> Baixar original
+                                </a>
+                              ) : (
+                                <button type="button" className="os-button os-button--quiet" onClick={() => void handleDownload(order)} disabled={downloadingId === order.id}>
+                                  {downloadingId === order.id ? <LoaderCircle className="spin" size={16} /> : <Download size={16} />} Baixar original
+                                </button>
+                              )}
                               {!signed && (
                                 <button type="button" className="os-button os-button--secondary" onClick={() => onOpenOrder(order)}>
                                   <Edit3 size={16} /> Editar / assinar

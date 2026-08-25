@@ -35,7 +35,23 @@ export async function deleteServiceOrder(id: string): Promise<void> {
   if (!data.success) throw new Error(data.error || 'Não foi possível excluir a ordem de serviço.');
 }
 
-export async function downloadServiceOrderPdf(id: string, suggestedFilename?: string): Promise<void> {
+function openExternalPdf(url: string): void {
+  const anchor = document.createElement('a');
+  anchor.href = url;
+  anchor.target = '_blank';
+  anchor.rel = 'noopener noreferrer';
+  anchor.style.display = 'none';
+  document.body.appendChild(anchor);
+  anchor.click();
+  anchor.remove();
+}
+
+export async function downloadServiceOrderPdf(id: string, suggestedFilename?: string, sourceUrl?: string): Promise<void> {
+  if (sourceUrl && /^https?:\/\//i.test(sourceUrl)) {
+    openExternalPdf(sourceUrl);
+    return;
+  }
+
   const headers = new Headers();
   try {
     const token = localStorage.getItem('atem.auth.token');

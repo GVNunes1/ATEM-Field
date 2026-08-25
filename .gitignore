@@ -2,6 +2,10 @@
 .env
 .env.*
 !.env.example
+**/token.json
+**/client_secret*.json
+**/*service-account*.json
+**/*service_account*.json
 
 # Generated dependencies and build output
 node_modules/

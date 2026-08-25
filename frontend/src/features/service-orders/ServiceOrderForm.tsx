@@ -293,7 +293,7 @@ export function ServiceOrderForm({ currentUser, initialOrder, onBack, notify }: 
       try { localStorage.removeItem(draftKey); } catch { /* Ignore storage errors. */ }
       notify('Ordem de serviço gerada e salva com sucesso.', 'success');
       try {
-        await downloadServiceOrderPdf(result.order.id, result.order.pdf_filename);
+        await downloadServiceOrderPdf(result.order.id, result.order.pdf_filename, result.order.pdf_url);
       } catch (downloadError) {
         notify(downloadError instanceof Error ? downloadError.message : 'A OS foi salva, mas o download não iniciou.', 'error');
       }
@@ -307,7 +307,7 @@ export function ServiceOrderForm({ currentUser, initialOrder, onBack, notify }: 
   const downloadGeneratedOrder = async () => {
     if (!generatedOrder) return;
     try {
-      await downloadServiceOrderPdf(generatedOrder.id, generatedOrder.pdf_filename);
+      await downloadServiceOrderPdf(generatedOrder.id, generatedOrder.pdf_filename, generatedOrder.pdf_url);
     } catch (error) {
       notify(error instanceof Error ? error.message : 'Não foi possível baixar o PDF.', 'error');
     }

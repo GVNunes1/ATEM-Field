@@ -35,7 +35,11 @@ services:
         sync: false
       - key: OS_SUPABASE_ANON_KEY
         sync: false
-      - key: OS_BACKEND_URL
+      - key: GOOGLE_DRIVE_OAUTH_TOKEN_JSON_BASE64
         sync: false
+      - key: GOOGLE_DRIVE_OS_UNSIGNED_FOLDER_ID
+        value: 1IWdsd9B2ZGRotVdzt6OVzu6NjM7SnRdS
+      - key: GOOGLE_DRIVE_OS_SIGNED_FOLDER_ID
+        value: 13OOs4zsvGJh9RGKJ1sK_hMugTmL-kmKi
       - key: GOOGLE_CALENDAR_SYNC_ENABLED
         value: false
