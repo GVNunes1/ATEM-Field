@@ -139,7 +139,7 @@ CREATE TABLE IF NOT EXISTS public.appointment_equipments (
     model TEXT,
     serial_number TEXT,
     tag TEXT,
-    sector TEXT DEFAULT 'Engenharia Clínica',
+    sector TEXT DEFAULT 'Assistência Técnica',
     created_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now())
 );
 
@@ -294,7 +294,7 @@ export const supabaseAdmin = createClient<Database>(
           "model": "Confratenização universal",
           "serial_number": "S/N-REG-20250101",
           "tag": "PAT-HOSP-1",
-          "sector": "Engenharia Clínica"
+          "sector": "Assistência Técnica"
         }
       ],
       "reservations": []

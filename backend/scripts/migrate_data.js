@@ -124,7 +124,7 @@ async function migrate() {
     model: item.model || null,
     serial_number: item.serial_number || null,
     tag: item.tag || null,
-    sector: item.sector || 'Engenharia Clínica'
+    sector: item.sector || 'Assistência Técnica'
   })), 'id');
 
   const appointmentTechnicians = [];

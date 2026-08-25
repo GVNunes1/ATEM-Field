@@ -3,6 +3,10 @@ param(
 )
 
 $ErrorActionPreference = 'Stop'
+$utf8 = New-Object System.Text.UTF8Encoding($false)
+[Console]::InputEncoding = $utf8
+[Console]::OutputEncoding = $utf8
+$OutputEncoding = $utf8
 $secretsFile = Join-Path $ProjectRoot 'northflank-secrets.txt'
 $backendEnv = Join-Path $ProjectRoot 'backend\.env'
 $sourceFile = if (Test-Path -LiteralPath $secretsFile) { $secretsFile } else { $backendEnv }

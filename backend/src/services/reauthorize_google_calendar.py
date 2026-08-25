@@ -30,7 +30,6 @@ def main():
         open_browser=True,
         access_type="offline",
         prompt="consent",
-        include_granted_scopes="true",
         authorization_prompt_message="Abrindo a autorização do Google no navegador...",
         success_message="Google Agenda autorizado. Você pode fechar esta aba e voltar ao instalador.",
     )

@@ -8,7 +8,7 @@ interface PublicInfoViewProps {
   page: PublicPage;
 }
 
-const updatedAt = '24 de agosto de 2026';
+const updatedAt = '25 de agosto de 2026';
 
 function PublicHeader() {
   return (
@@ -17,7 +17,7 @@ function PublicHeader() {
         <img src="/logomarca_azul_clinico_sem_fundo.png" alt="ATEM" width="132" height="52" />
         <span>
           <strong>ATEM Field</strong>
-          <small>Gestão de campo e engenharia clínica</small>
+          <small>Gestão de campo e assistência técnica</small>
         </span>
       </a>
       <nav className="public-nav" aria-label="Navegação institucional">
@@ -33,7 +33,7 @@ function PublicHeader() {
 function PublicFooter() {
   return (
     <footer className="public-footer">
-      <span>ATEM Hospitalar · Assistência Técnica © 2026</span>
+      <span>Mult Med Equipamentos Hospitalares · Uso interno © 2026</span>
       <nav aria-label="Links legais">
         <a href="/sobre">Sobre</a>
         <a href="/privacidade">Política de Privacidade</a>
@@ -50,8 +50,9 @@ function AboutContent() {
         <div className="public-eyebrow"><ShieldCheck size={17} /> Plataforma operacional interna</div>
         <h1 id="public-title">Assistência técnica organizada, do atendimento à reserva de padrões.</h1>
         <p>
-          O ATEM Field apoia a operação de engenharia clínica da ATEM Hospitalar, reunindo agenda de campo,
-          técnicos, analisadores, reservas e checklists em um ambiente controlado.
+          O ATEM Field é um projeto de uso exclusivamente interno da Mult Med Equipamentos Hospitalares.
+          Apoia a operação de assistência técnica reunindo agenda de campo, técnicos, analisadores, reservas
+          e checklists em um ambiente controlado. O software não é comercializado, licenciado ou vendido a terceiros.
         </p>
         <a href="/" className="public-primary-action">Acessar o ATEM Field</a>
       </section>
@@ -89,11 +90,11 @@ function PrivacyContent() {
   return (
     <article className="public-document" aria-labelledby="privacy-title">
       <header><span>Documento público</span><h1 id="privacy-title">Política de Privacidade</h1><p>Última atualização: {updatedAt}</p></header>
-      <section><h2>1. Finalidade</h2><p>Esta política explica como o ATEM Field acessa e utiliza dados necessários à gestão interna de atendimentos técnicos, reservas de padrões e atividades de engenharia clínica da ATEM Hospitalar.</p></section>
+      <section><h2>1. Finalidade</h2><p>Esta política explica como o ATEM Field acessa e utiliza dados necessários à gestão interna de atendimentos, reservas de padrões e atividades de assistência técnica da Mult Med Equipamentos Hospitalares. O sistema é um projeto interno, sem finalidade comercial, e não é oferecido ou vendido a terceiros.</p></section>
       <section><h2>2. Dados do Google acessados</h2><p>Após autorização, a integração pode acessar a lista de calendários e informações dos eventos, incluindo identificador, título, data, horário, local, descrição e situação do evento. O acesso é utilizado exclusivamente para importar e manter atualizada a agenda operacional no ATEM Field.</p></section>
       <section><h2>3. Uso e compartilhamento</h2><p>Os dados importados são exibidos somente a usuários autorizados e usados para organizar atendimentos, equipes e recursos. Não vendemos dados do Google, não os utilizamos para publicidade e não os compartilhamos com terceiros para finalidades independentes.</p></section>
-      <section><h2>4. Armazenamento e segurança</h2><p>Os dados operacionais são armazenados na infraestrutura contratada pela ATEM Hospitalar, incluindo banco de dados Supabase e serviços de hospedagem necessários ao funcionamento do sistema. Credenciais de integração são mantidas como segredos de servidor e não são enviadas ao navegador.</p></section>
-      <section><h2>5. Retenção e exclusão</h2><p>As informações são mantidas pelo período necessário à operação e aos registros internos aplicáveis. Solicitações de correção ou exclusão devem ser encaminhadas ao canal corporativo de suporte informado aos colaboradores da ATEM Hospitalar.</p></section>
+      <section><h2>4. Armazenamento e segurança</h2><p>Os dados operacionais são armazenados na infraestrutura utilizada pela Mult Med Equipamentos Hospitalares, incluindo banco de dados Supabase e serviços de hospedagem necessários ao funcionamento do sistema. Credenciais de integração são mantidas como segredos de servidor e não são enviadas ao navegador.</p></section>
+      <section><h2>5. Retenção e exclusão</h2><p>As informações são mantidas pelo período necessário à operação e aos registros internos aplicáveis. Solicitações de correção ou exclusão devem ser encaminhadas ao canal corporativo de suporte informado aos colaboradores da Mult Med Equipamentos Hospitalares.</p></section>
       <section><h2>6. Controle do usuário</h2><p>O responsável pela conta Google pode revogar o acesso do ATEM Field a qualquer momento nas configurações de segurança da Conta Google. A revogação interrompe novas importações, sem alterar registros operacionais já incorporados quando houver obrigação legítima de conservação.</p></section>
       <section><h2>7. Uso limitado</h2><p>O uso das informações recebidas das APIs do Google segue a Política de Dados do Usuário dos Serviços de API do Google, incluindo os requisitos de Uso Limitado.</p></section>
       <section><h2>8. Atualizações</h2><p>Esta política poderá ser atualizada para refletir mudanças no sistema, na infraestrutura ou em requisitos legais. A versão vigente permanecerá publicada nesta página.</p></section>
@@ -105,7 +106,7 @@ function TermsContent() {
   return (
     <article className="public-document" aria-labelledby="terms-title">
       <header><span>Documento público</span><h1 id="terms-title">Termos de Uso</h1><p>Última atualização: {updatedAt}</p></header>
-      <section><h2>1. Escopo do serviço</h2><p>O ATEM Field é uma plataforma de uso operacional da ATEM Hospitalar destinada à gestão de atendimentos técnicos, profissionais, reservas de padrões, analisadores e checklists.</p></section>
+      <section><h2>1. Escopo do sistema</h2><p>O ATEM Field é um projeto de uso exclusivamente interno da Mult Med Equipamentos Hospitalares, destinado à gestão de atendimentos de assistência técnica, profissionais, reservas de padrões, analisadores e checklists. Não se trata de produto comercial e o software não é oferecido, licenciado, alugado ou vendido a terceiros.</p></section>
       <section><h2>2. Usuários autorizados</h2><p>O acesso é restrito a administradores, técnicos e demais profissionais expressamente autorizados. Cada usuário deve proteger suas credenciais e utilizar o sistema somente para atividades relacionadas às suas atribuições.</p></section>
       <section><h2>3. Responsabilidade pelas informações</h2><p>Usuários devem conferir dados de agenda, reservas e disponibilidade antes de executar atividades de campo. O sistema auxilia a operação, mas não substitui procedimentos técnicos, normas de segurança ou validações profissionais aplicáveis.</p></section>
       <section><h2>4. Integração com o Google</h2><p>A leitura do Google Agenda depende de autorização válida da conta responsável. O usuário pode revogar esse acesso no Google. Interrupções ou limites do serviço do Google podem afetar temporariamente a atualização da agenda.</p></section>
@@ -119,7 +120,7 @@ function TermsContent() {
 export function PublicInfoView({ page }: PublicInfoViewProps) {
   useEffect(() => {
     const metadata = {
-      about: ['ATEM Field | Gestão de campo e engenharia clínica', 'Conheça o ATEM Field e como a plataforma organiza agenda, técnicos, padrões e reservas.'],
+      about: ['ATEM Field | Gestão de campo e assistência técnica', 'Conheça o projeto interno ATEM Field, da Mult Med Equipamentos Hospitalares, e como ele organiza agenda, técnicos, padrões e reservas.'],
       privacy: ['Política de Privacidade | ATEM Field', 'Saiba como o ATEM Field acessa, utiliza e protege dados operacionais e do Google Agenda.'],
       terms: ['Termos de Uso | ATEM Field', 'Consulte as condições de uso da plataforma operacional ATEM Field.'],
     }[page];

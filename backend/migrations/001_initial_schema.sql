@@ -119,7 +119,7 @@ CREATE TABLE IF NOT EXISTS public.appointment_equipments (
     model TEXT,
     serial_number TEXT,
     tag TEXT,
-    sector TEXT DEFAULT 'Engenharia Clínica',
+    sector TEXT DEFAULT 'Assistência Técnica',
     created_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now())
 );
 

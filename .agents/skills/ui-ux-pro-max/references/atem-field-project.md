@@ -4,7 +4,7 @@ Load this file only when the workspace is the ATEM Field project. Confirm it by 
 
 ## Product and users
 
-- Product: internal clinical-engineering field operations platform.
+- Product: internal technical-assistance field operations platform for Mult Med Equipamentos Hospitalares, with no commercial offering or software sales.
 - Primary users: supervisors, warehouse/asset staff, and field technicians.
 - Core jobs: review schedules, assign technicians, reserve analyzers by asset tag, manage checklists, and monitor Telegram/Google Calendar routines.
 - Usage: desktop-first operational work with responsive access in the field; dense information must stay scannable and safe under time pressure.
@@ -47,7 +47,7 @@ If a generated design-system result conflicts with these established project cho
 Use a multidimensional query such as:
 
 ```text
-internal healthcare clinical engineering field operations asset inventory scheduling professional light responsive data-dense
+internal healthcare technical assistance field operations asset inventory scheduling professional light responsive data-dense
 ```
 
 Use `--stack react`. For the base design-system query use variance `4`, motion `3`, and density `8`. Supplement with explicit `ux`, `icons`, `color`, or `chart` domain searches only as the task requires.

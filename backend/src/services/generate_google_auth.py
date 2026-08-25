@@ -25,8 +25,7 @@ try:
 
     auth_url, _ = flow.authorization_url(
         access_type='offline',
-        prompt='consent',
-        include_granted_scopes='true'
+        prompt='consent'
     )
 
     print(json.dumps({

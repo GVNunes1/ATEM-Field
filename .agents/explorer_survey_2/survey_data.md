@@ -118,7 +118,7 @@ An exhaustive, field-by-field examination of `backend/data/db.json` was conducte
   - `model` (`string`): Equipment model description.
   - `serial_number` (`string`): Serial tag (e.g., `S/N-REG-20250101`).
   - `tag` (`string`): Hospital asset tag (e.g., `PAT-HOSP-1`).
-  - `sector` (`string`): Hospital sector (`"Engenharia Clínica"` for all records).
+  - `sector` (`string`): Technical-assistance sector (`"Assistência Técnica"` for all records).
 
 ### 1.7 `reservations` (0 Records in JSON)
 - **Primary Key**: `id` (`INTEGER`)
@@ -182,4 +182,3 @@ In `db.json`, technician assignments are embedded directly inside `appointments`
 | `appointment_technicians` | `appointments.technician_ids` | 2,437 | `id SERIAL` | `appointment_id -> appointments(id)`, `technician_id -> technicians(id)` |
 | `reservations` | `reservations` | 0 | `id SERIAL` | `appointment_id -> appointments(id)`, `analyzer_id -> analyzers(id)`, `technician_id -> technicians(id)` |
 | `notification_logs` | `notification_logs` | 0 | `id SERIAL` | `technician_id -> technicians(id)`, `appointment_id -> appointments(id)` |
-

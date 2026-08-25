@@ -8,7 +8,7 @@
 
 **Project:** ATEM Field
 **Generated:** 2026-08-12; adapted to the existing product and brand
-**Category:** Internal clinical-engineering operations platform
+**Category:** Internal technical-assistance operations platform
 **Design Dials:** Variance 4/10 (Balanced / Modern) | Motion 3/10 (Subtle) | Density 8/10 (Dense / Dashboard)
 
 This file is the project source of truth. Database search output is advisory; preserve these decisions unless the user explicitly approves a redesign.
@@ -180,7 +180,7 @@ This file is the project source of truth. Database search output is advisory; pr
 
 **Keywords:** professional, operational, data-dense, scannable, light, responsive, accessible, subtle depth
 
-**Best For:** Clinical-engineering schedules, field teams, equipment inventory, checklists, and operational status
+**Best For:** Technical-assistance schedules, field teams, equipment inventory, checklists, and operational status
 
 **Key Effects:** Quiet shadows, consistent borders/radii, 150-240ms state feedback, visible focus, and WCAG AA contrast
 

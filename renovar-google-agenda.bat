@@ -1,4 +1,5 @@
 @echo off
+chcp 65001 >nul
 setlocal EnableExtensions
 pushd "%~dp0" >nul || exit /b 1
 set "PROJECT_ROOT=%CD%"
