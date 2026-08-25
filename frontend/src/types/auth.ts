@@ -6,3 +6,5 @@ export interface AuthUser {
   email?: string;
   avatar_url?: string;
 }
+
+export type LoginSuccessHandler = (user: AuthUser, token: string) => void;

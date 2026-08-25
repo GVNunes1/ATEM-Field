@@ -1,12 +1,13 @@
 services:
   - type: web
     name: atem-field-backend
-    env: node
+    runtime: docker
     plan: free
     region: oregon
-    rootDir: backend
-    buildCommand: npm install --include=dev && (python3 -m pip install -r requirements-google-calendar.txt || pip install -r requirements-google-calendar.txt || true) && npm run build
-    startCommand: npm start
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    healthCheckPath: /health
+    maxShutdownDelaySeconds: 120
     envVars:
       - key: PORT
         value: 10000
@@ -16,9 +17,25 @@ services:
         sync: false
       - key: SUPABASE_URL
         sync: false
+      - key: SUPABASE_ANON_KEY
+        sync: false
       - key: SUPABASE_SERVICE_ROLE_KEY
         sync: false
+      - key: JWT_SECRET
+        sync: false
+      - key: ENCRYPTION_MASTER_KEY
+        sync: false
+      - key: BCRYPT_SALT_ROUNDS
+        value: 12
       - key: TECHNICIAN_PORTAL_SECRET
         sync: false
       - key: TECHNICIAN_PORTAL_LINK_TTL_HOURS
         value: 72
+      - key: OS_SUPABASE_URL
+        sync: false
+      - key: OS_SUPABASE_ANON_KEY
+        sync: false
+      - key: OS_BACKEND_URL
+        sync: false
+      - key: GOOGLE_CALENDAR_SYNC_ENABLED
+        value: false

@@ -13,7 +13,7 @@ Crie um **Combined Service** a partir do repositório GitHub `GVNunes1/ATEM-Fiel
 - Health check: `GET /health` na porta `8080`
 - Instâncias: `1`
 
-O contêiner compila o frontend React, o backend Node/Express e instala o conector Python do Google Agenda.
+O contêiner compila o frontend React, o backend Node/Express e instala o runtime Python com Google Agenda e ReportLab. O mesmo serviço entrega a SPA e a API; não é necessário publicar um frontend separado.
 
 ## Variáveis públicas de runtime
 
@@ -40,9 +40,21 @@ ENCRYPTION_MASTER_KEY
 TECHNICIAN_PORTAL_SECRET
 GOOGLE_CALENDAR_CREDENTIALS_JSON
 GOOGLE_CALENDAR_TOKEN_JSON
+OS_SUPABASE_URL
+OS_SUPABASE_ANON_KEY
 ```
 
 Não use variáveis de build para esses valores e não envie arquivos `.env` ou `backend/data` ao GitHub.
+
+`OS_BACKEND_URL` é opcional e serve somente para registros históricos cujo PDF ainda dependa de uma URL relativa do gerador anterior. As novas ordens são geradas localmente pelo contêiner.
+
+## PDFs das ordens de serviço
+
+Os PDFs gerados ficam em `/workspace/backend/data/service-orders`. Esse diretório funciona como cache: os dados oficiais permanecem na tabela `service_orders` e um PDF ausente é reconstruído sob demanda pelo ReportLab.
+
+- Com uma instância, o disco efêmero padrão é suficiente e evita manter estado local obrigatório.
+- Reinícios e novos deploys podem apagar o cache sem perda das ordens.
+- Se quiser evitar regenerações, monte um volume persistente exatamente em `/workspace/backend/data/service-orders`; não monte sobre `/workspace/backend/data`, pois esse diretório também pode ser usado por outros serviços.
 
 ## Google Agenda
 
@@ -63,6 +75,8 @@ GOOGLE_CALENDAR_SYNC_ENABLED=false
 
 Isso impede que dois servidores executem a mesma sincronização automática.
 
+O Blueprint oficial é o arquivo `render.yaml` na raiz e usa o mesmo Dockerfile da Northflank. A cópia antiga em `backend/render.yaml` foi removida para impedir que um deploy parcial publique somente a API, sem frontend ou ReportLab.
+
 ## Verificação
 
 Após o deploy, abra:
@@ -72,3 +86,5 @@ https://URL-GERADA/health
 ```
 
 A resposta esperada inclui `"status":"ok"` e `"apiVersion":4`.
+
+Confirme também que a raiz pública retorna a interface do ATEM Field e que o contêiner está marcado como saudável. O Dockerfile possui um `HEALTHCHECK` próprio em `/health`, além da verificação configurada na plataforma.

@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { AuthUser } from '../types/auth';
+import { LoginSuccessHandler } from '../types/auth';
 import { safeFetchJson } from '../lib/api';
 import {
   CheckCircle2,
@@ -19,7 +19,7 @@ import './LoginView.css';
 
 interface LoginViewProps {
   technicians: any[];
-  onLoginSuccess: (user: AuthUser) => void;
+  onLoginSuccess: LoginSuccessHandler;
 }
 
 export const LoginView: React.FC<LoginViewProps> = ({ technicians, onLoginSuccess }) => {
@@ -59,8 +59,8 @@ export const LoginView: React.FC<LoginViewProps> = ({ technicians, onLoginSucces
         body: JSON.stringify({ type: 'admin', pin: adminPin.trim() })
       });
 
-      if (data.success && data.user) {
-        onLoginSuccess(data.user);
+      if (data.success && data.user && data.token) {
+        onLoginSuccess(data.user, data.token);
       } else {
         setError(data.error || 'PIN ou Senha de administrador incorreta.');
       }
@@ -92,8 +92,8 @@ export const LoginView: React.FC<LoginViewProps> = ({ technicians, onLoginSucces
         })
       });
 
-      if (data.success && data.user) {
-        onLoginSuccess(data.user);
+      if (data.success && data.user && data.token) {
+        onLoginSuccess(data.user, data.token);
       } else {
         setError(data.error || 'PIN incorreto. Tente 1234.');
       }

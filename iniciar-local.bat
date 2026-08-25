@@ -31,6 +31,16 @@ if not exist "%FRONTEND_DIR%\node_modules" (
   call npm.cmd --prefix "%FRONTEND_DIR%" ci || goto :failed
 )
 
+set "BACKEND_PYTHON=%BACKEND_DIR%\.venv\Scripts\python.exe"
+if not exist "%BACKEND_PYTHON%" (
+  echo Preparando Python para Agenda e geracao de PDFs...
+  where py >nul 2>&1 || goto :python_missing
+  py -3 -m venv "%BACKEND_DIR%\.venv" || goto :failed
+)
+
+echo Instalando dependencias Python do backend...
+"%BACKEND_PYTHON%" -m pip install --disable-pip-version-check -r "%BACKEND_DIR%\requirements-google-calendar.txt" || goto :failed
+
 echo.
 echo Compilando backend...
 call npm.cmd --prefix "%BACKEND_DIR%" run build || goto :failed
@@ -46,7 +56,7 @@ node "%BACKEND_DIR%\scripts\verify_schema.js" || goto :supabase_failed
 echo.
 echo Reiniciando o backend para carregar a compilacao e as configuracoes atuais...
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File "%BACKEND_DIR%\scripts\stop-stale-local-backend.ps1" -Port 3001 || goto :backend_failed
-start "Quick Turing Backend" /D "%BACKEND_DIR%" cmd.exe /k "set PORT=3001&& npm.cmd start"
+start "Quick Turing Backend" /D "%BACKEND_DIR%" cmd.exe /k "set PORT=3001&& set PYTHON_EXECUTABLE=%BACKEND_PYTHON%&& npm.cmd start"
 call :wait_for_backend || goto :backend_failed
 
 echo.
@@ -79,6 +89,10 @@ goto :error_exit
 
 :npm_missing
 echo [ERRO] npm.cmd nao foi encontrado no PATH. Reinstale o Node.js e tente novamente.
+goto :error_exit
+
+:python_missing
+echo [ERRO] Python 3 nao foi encontrado. Instale o Python com o launcher 'py' e tente novamente.
 goto :error_exit
 
 :env_missing

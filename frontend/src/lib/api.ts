@@ -25,7 +25,17 @@ export function apiUrl(endpoint: string): string {
 
 export async function safeFetchJson(url: string, options?: RequestInit): Promise<any> {
   const targetUrl = apiUrl(url);
-  const response = await fetch(targetUrl, options);
+  const headers = new Headers(options?.headers || {});
+  try {
+    const token = localStorage.getItem('atem.auth.token');
+    if (token && !headers.has('Authorization')) {
+      headers.set('Authorization', `Bearer ${token}`);
+    }
+  } catch {
+    // Storage can be unavailable in restricted browser contexts.
+  }
+
+  const response = await fetch(targetUrl, { ...options, headers });
   const contentType = response.headers.get('content-type') || '';
   
   const text = await response.text();

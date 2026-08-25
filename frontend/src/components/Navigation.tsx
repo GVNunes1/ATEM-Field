@@ -94,19 +94,28 @@ export const Navigation: React.FC<NavigationProps> = ({
         </button>
 
         <div className="sidebar-user">
-          <div className="sidebar-avatar" aria-hidden="true">
-            <span>{userInitials || 'AP'}</span>
-          </div>
-          <div className="sidebar-user-info">
-            <strong>{currentUser?.name || 'Administrador'}</strong>
-            <span>{isAdmin ? 'Admin Master' : 'Técnico de Campo'}</span>
-          </div>
+          <button
+            type="button"
+            onClick={() => setActiveTab('profile')}
+            className={`sidebar-profile-btn ${activeTab === 'profile' ? 'sidebar-profile-btn--active' : ''}`}
+            aria-current={activeTab === 'profile' ? 'page' : undefined}
+            title="Abrir perfil e Ordens de Serviço"
+          >
+            <span className="sidebar-avatar" aria-hidden="true">
+              <span>{userInitials || 'AP'}</span>
+            </span>
+            <span className="sidebar-user-info">
+              <strong>{currentUser?.name || 'Administrador'}</strong>
+              <span>{isAdmin ? 'Admin Master' : 'Técnico de Campo'}</span>
+            </span>
+          </button>
           {onLogout && (
             <button
               type="button"
               onClick={onLogout}
               className="sidebar-logout-btn"
               title="Encerrar sessão"
+              aria-label="Encerrar sessão"
             >
               <LogOut size={16} />
             </button>

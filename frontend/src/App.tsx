@@ -10,6 +10,7 @@ import { ReservationHistoryView } from './pages/ReservationHistoryView';
 import { TabletKioskView } from './pages/TabletKioskView';
 import { LoginView } from './pages/LoginView';
 import { PublicInfoView, PublicPage } from './pages/PublicInfoView';
+import { ProfileView } from './pages/ProfileView';
 import { AuthUser } from './types/auth';
 import { safeFetchJson } from './lib/api';
 
@@ -20,6 +21,7 @@ const noCacheFetchOptions: RequestInit = {
 
 function getInitialTab(): string {
   const path = window.location.pathname.toLowerCase().replace(/^\/+/, '');
+  if (path === 'perfil' || path === 'profile' || path.startsWith('perfil/') || path.startsWith('profile/')) return 'profile';
   if (path === 'totem' || path === 'tablet' || path === 'kiosk') return 'totem';
   if (path === 'templates' || path === 'checklist') return 'templates';
   if (path === 'reservas' || path === 'operacoes' || path === 'operations') return 'operations';
@@ -46,7 +48,8 @@ export function App() {
   const [currentUser, setCurrentUser] = useState<AuthUser | null>(() => {
     try {
       const saved = localStorage.getItem('atem.auth.user');
-      return saved ? JSON.parse(saved) : null;
+      const token = localStorage.getItem('atem.auth.token');
+      return saved && token ? JSON.parse(saved) : null;
     } catch {
       return null;
     }
@@ -63,10 +66,11 @@ export function App() {
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState('');
 
-  const handleLoginSuccess = (user: AuthUser) => {
+  const handleLoginSuccess = (user: AuthUser, token: string) => {
     setCurrentUser(user);
     try {
       localStorage.setItem('atem.auth.user', JSON.stringify(user));
+      localStorage.setItem('atem.auth.token', token);
     } catch {
       // Ignore
     }
@@ -76,6 +80,7 @@ export function App() {
     setCurrentUser(null);
     try {
       localStorage.removeItem('atem.auth.user');
+      localStorage.removeItem('atem.auth.token');
     } catch {
       // Ignore
     }
@@ -100,6 +105,9 @@ export function App() {
         window.history.pushState({}, '', '/tecnicos');
       } else if (tab === 'history') {
         window.history.pushState({}, '', '/historico');
+      } else if (tab === 'profile') {
+        window.history.pushState({}, '', '/perfil');
+        window.dispatchEvent(new PopStateEvent('popstate'));
       }
     } catch {
       // Ignore in iframe / restricted environments
@@ -226,7 +234,7 @@ export function App() {
             </div>
           )}
 
-          {loading ? (
+          {loading && activeTab !== 'profile' ? (
             <div className="loading-state" aria-live="polite">
               <span className="loading-spinner" />
               <div>
@@ -267,6 +275,9 @@ export function App() {
                   technicians={technicians}
                   onRefresh={fetchAllData}
                 />
+              )}
+              {activeTab === 'profile' && (
+                <ProfileView currentUser={currentUser} />
               )}
             </>
           )}

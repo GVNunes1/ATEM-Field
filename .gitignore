@@ -5,6 +5,7 @@
 
 # Generated dependencies and build output
 node_modules/
+.venv/
 dist/
 .npm-cache-local/
 *.log
@@ -23,6 +24,9 @@ windows-watchdog/state/
 
 # Google Calendar OAuth and incremental sync runtime
 backend/data/google-calendar-*.json
+
+# PDFs generated on demand by the integrated service-order module
+backend/data/service-orders/
 
 # Local export used to configure Northflank (contains production secrets)
 northflank-secrets.txt
