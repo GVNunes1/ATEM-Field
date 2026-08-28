@@ -14,6 +14,7 @@ import json
 import os
 import re
 import shutil
+import signal
 import subprocess
 import sys
 import tempfile
@@ -28,6 +29,8 @@ TEMPLATE_PATH = Path(__file__).with_name("service_order_template.html")
 DATA_IMAGE_PATTERN = re.compile(
     r"data:image/(?P<kind>[a-zA-Z0-9.+-]+);base64,(?P<data>[a-zA-Z0-9+/=\r\n]+)"
 )
+DEFAULT_RENDER_TIMEOUT_SECONDS = 45.0
+PDF_STABILITY_INTERVAL_SECONDS = 0.15
 
 
 def clean_parts(value: Any) -> list[dict[str, str]]:
@@ -130,6 +133,123 @@ def materialize_data_images(rendered_html: str, directory: Path) -> str:
     return DATA_IMAGE_PATTERN.sub(replace, rendered_html)
 
 
+def render_timeout_seconds() -> float:
+    raw_timeout = os.getenv("PDF_RENDER_TIMEOUT_SECONDS", str(DEFAULT_RENDER_TIMEOUT_SECONDS))
+    try:
+        timeout = float(raw_timeout)
+    except ValueError as error:
+        raise ValueError("PDF_RENDER_TIMEOUT_SECONDS deve ser um número de segundos.") from error
+    if timeout < 5 or timeout > 75:
+        raise ValueError("PDF_RENDER_TIMEOUT_SECONDS deve estar entre 5 e 75 segundos.")
+    return timeout
+
+
+def complete_pdf_size(output_path: Path) -> int | None:
+    """Return the size only after Chromium has written a complete PDF."""
+    try:
+        size = output_path.stat().st_size
+        if size < 8:
+            return None
+        with output_path.open("rb") as pdf_stream:
+            if pdf_stream.read(5) != b"%PDF-":
+                return None
+            pdf_stream.seek(max(0, size - 2048))
+            if b"%%EOF" not in pdf_stream.read():
+                return None
+        return size
+    except (FileNotFoundError, OSError):
+        return None
+
+
+def stop_process_tree(process: subprocess.Popen[Any]) -> None:
+    """Stop Chromium and every helper process spawned for this render."""
+    if process.poll() is not None:
+        return
+
+    if os.name == "nt":
+        subprocess.run(
+            ["taskkill", "/PID", str(process.pid), "/T", "/F"],
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            timeout=5,
+            check=False,
+        )
+    else:
+        try:
+            os.killpg(process.pid, signal.SIGTERM)
+        except ProcessLookupError:
+            return
+        try:
+            process.wait(timeout=3)
+        except subprocess.TimeoutExpired:
+            try:
+                os.killpg(process.pid, signal.SIGKILL)
+            except ProcessLookupError:
+                pass
+
+    try:
+        process.wait(timeout=3)
+    except subprocess.TimeoutExpired:
+        process.kill()
+        process.wait(timeout=3)
+
+
+def run_browser(command: list[str], output_path: Path, log_path: Path) -> tuple[int | None, str]:
+    """Run Chromium until the PDF is complete, even if its parent stays alive."""
+    popen_options: dict[str, Any] = {}
+    if os.name == "nt":
+        popen_options["creationflags"] = subprocess.CREATE_NEW_PROCESS_GROUP
+    else:
+        popen_options["start_new_session"] = True
+
+    deadline = time.monotonic() + render_timeout_seconds()
+    stable_size: int | None = None
+    stable_observations = 0
+    exited_at: float | None = None
+
+    with log_path.open("w+", encoding="utf-8", errors="replace") as browser_log:
+        process = subprocess.Popen(
+            command,
+            stdout=browser_log,
+            stderr=subprocess.STDOUT,
+            text=True,
+            **popen_options,
+        )
+        try:
+            while time.monotonic() < deadline:
+                current_size = complete_pdf_size(output_path)
+                if current_size is not None:
+                    if current_size == stable_size:
+                        stable_observations += 1
+                    else:
+                        stable_size = current_size
+                        stable_observations = 1
+                    if stable_observations >= 2:
+                        break
+
+                return_code = process.poll()
+                if return_code is not None:
+                    exited_at = exited_at or time.monotonic()
+                    # A few Chromium/Edge builds hand off the final flush to a
+                    # child process. Preserve a short grace period for it.
+                    if time.monotonic() - exited_at >= 3:
+                        break
+                time.sleep(PDF_STABILITY_INTERVAL_SECONDS)
+        finally:
+            stop_process_tree(process)
+
+        return_code = process.poll()
+        browser_log.flush()
+        browser_log.seek(0)
+        details = browser_log.read()[-4000:]
+
+    if complete_pdf_size(output_path) is None:
+        if time.monotonic() >= deadline:
+            details = f"tempo limite de {render_timeout_seconds():g}s excedido. {details}"
+        return return_code, details.strip()
+    return return_code, details.strip()
+
+
 def render_pdf(data: dict[str, Any], output_path: Path) -> None:
     if not TEMPLATE_PATH.is_file():
         raise FileNotFoundError(f"Template PAT01-F2 não encontrado: {TEMPLATE_PATH}")
@@ -149,37 +269,34 @@ def render_pdf(data: dict[str, Any], output_path: Path) -> None:
 
         command = [
             browser,
-            "--headless",
+            "--headless=new",
+            "--disable-background-networking",
+            "--disable-breakpad",
+            "--disable-component-update",
+            "--disable-default-apps",
+            "--disable-domain-reliability",
+            "--disable-extensions",
             "--disable-gpu",
             "--disable-dev-shm-usage",
+            "--disable-sync",
+            "--metrics-recording-only",
             "--no-sandbox",
+            "--no-default-browser-check",
+            "--no-first-run",
             "--allow-file-access-from-files",
             "--no-pdf-header-footer",
-            "--run-all-compositor-stages-before-draw",
-            "--virtual-time-budget=2000",
             f"--user-data-dir={profile_path}",
             f"--print-to-pdf={output_path.resolve()}",
             html_path.resolve().as_uri(),
         ]
-        result = subprocess.run(command, capture_output=True, text=True, timeout=90, check=False)
-
-        # Some Edge builds return control before the renderer has finished
-        # flushing the output file. Wait briefly for a complete PDF instead of
-        # treating that asynchronous hand-off as a generation failure.
-        deadline = time.monotonic() + 15
-        while time.monotonic() < deadline:
-            if output_path.is_file() and output_path.stat().st_size > 4:
-                with output_path.open("rb") as pdf_stream:
-                    if pdf_stream.read(5) == b"%PDF-":
-                        break
-            time.sleep(0.1)
+        result_code, browser_details = run_browser(command, output_path, temporary_path / "chromium.log")
 
     # Edge on Windows may exit with a non-zero status after successfully
     # writing the PDF (the original ATEM OS used the file itself as the source
     # of truth for this reason). Chromium in the container normally exits 0.
-    if not output_path.is_file() or output_path.stat().st_size == 0:
-        details = (result.stderr or result.stdout or "sem detalhes").strip()[:800]
-        raise RuntimeError(f"Falha ao imprimir o PAT01-F2 pelo navegador: {details}")
+    if complete_pdf_size(output_path) is None:
+        details = browser_details or f"Chromium encerrou com código {result_code}, sem detalhes."
+        raise RuntimeError(f"Falha ao imprimir o PAT01-F2 pelo navegador: {details[:1200]}")
 
 
 def read_payload(source: str) -> dict[str, Any]:

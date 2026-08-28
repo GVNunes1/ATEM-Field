@@ -410,6 +410,8 @@ button.os-stat-card.is-active { border-color: var(--primary); box-shadow: 0 0 0 
 .os-download-success { padding: 13px; color: #065f46; background: #ecfdf5; border: 1px solid #a7f3d0; border-radius: 10px; }
 .os-download-success > svg { flex: 0 0 auto; color: var(--accent-teal); }
 .os-download-success > span { flex: 1; font-size: 0.8rem; }
+.os-download-success--pending { color: #854d0e; background: #fffbeb; border-color: #fde68a; }
+.os-download-success--pending > svg { color: var(--status-medium); }
 
 .os-toast-stack { position: fixed; right: 22px; bottom: 22px; z-index: 1100; display: grid; gap: 8px; width: min(390px, calc(100vw - 24px)); pointer-events: none; }
 .os-toast { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 10px; min-height: 52px; padding: 11px 12px; color: var(--text-secondary); font-size: 0.79rem; font-weight: 650; background: rgba(255, 255, 255, 0.98); border: 1px solid var(--border-color); border-radius: 11px; box-shadow: 0 14px 40px rgba(15, 23, 42, 0.18); pointer-events: auto; }

@@ -8,6 +8,7 @@
     "start": "node dist/server.js",
     "dev": "ts-node-dev --respawn --transpile-only src/server.ts",
     "test:e2e": "node tests/e2e_runner.js",
+    "test:service-orders": "npm run build && node --test tests/service_orders_fallback.test.js",
     "sync:checklists": "node scripts/sync-preventive-checklists.js"
   },
   "dependencies": {

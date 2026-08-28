@@ -18,6 +18,8 @@ export async function findEquipment(serial: string): Promise<EquipmentRecord | n
 export async function generateServiceOrder(formData: ServiceOrderFormData): Promise<{
   order: ServiceOrder;
   downloadUrl?: string;
+  driveUploaded: boolean;
+  warning?: string;
 }> {
   const data = await safeFetchJson('/api/service-orders/generate', {
     method: 'POST',
@@ -25,7 +27,12 @@ export async function generateServiceOrder(formData: ServiceOrderFormData): Prom
     body: JSON.stringify({ form_data: formData })
   });
   if (!data.success) throw new Error(data.error || 'Não foi possível gerar a ordem de serviço.');
-  return { order: data.order, downloadUrl: data.download_url };
+  return {
+    order: data.order,
+    downloadUrl: data.download_url,
+    driveUploaded: data.drive_uploaded !== false,
+    warning: typeof data.warning === 'string' && data.warning.trim() ? data.warning.trim() : undefined
+  };
 }
 
 export async function deleteServiceOrder(id: string): Promise<void> {

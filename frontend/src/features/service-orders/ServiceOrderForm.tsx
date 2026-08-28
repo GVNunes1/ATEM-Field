@@ -191,6 +191,7 @@ export function ServiceOrderForm({ currentUser, initialOrder, onBack, notify }: 
   const [searchingEquipment, setSearchingEquipment] = useState(false);
   const [equipmentResult, setEquipmentResult] = useState<'found' | 'missing' | ''>('');
   const [generatedOrder, setGeneratedOrder] = useState<ServiceOrder | null>(null);
+  const [generatedDriveWarning, setGeneratedDriveWarning] = useState('');
   const [dirty, setDirty] = useState(false);
   const [validationError, setValidationError] = useState('');
 
@@ -260,6 +261,7 @@ export function ServiceOrderForm({ currentUser, initialOrder, onBack, notify }: 
     setFormData(defaultForm(currentUser));
     setEquipmentResult('');
     setGeneratedOrder(null);
+    setGeneratedDriveWarning('');
     setDirty(false);
     try { localStorage.removeItem(draftKey); } catch { /* Ignore storage errors. */ }
     notify('Formulário limpo.', 'info');
@@ -289,13 +291,23 @@ export function ServiceOrderForm({ currentUser, initialOrder, onBack, notify }: 
     try {
       const result = await generateServiceOrder(formData);
       setGeneratedOrder(result.order);
+      setGeneratedDriveWarning(result.driveUploaded ? '' : result.warning || 'O envio ao Google Drive ficou pendente.');
       setDirty(false);
       try { localStorage.removeItem(draftKey); } catch { /* Ignore storage errors. */ }
-      notify('Ordem de serviço gerada e salva com sucesso.', 'success');
       try {
-        await downloadServiceOrderPdf(result.order.id, result.order.pdf_filename, result.order.pdf_url);
+        await downloadServiceOrderPdf(
+          result.order.id,
+          result.order.pdf_filename,
+          result.downloadUrl || result.order.pdf_url
+        );
+        notify(
+          result.driveUploaded
+            ? 'Ordem de serviço gerada, salva e baixada com sucesso.'
+            : result.warning || 'PDF gerado e baixado. O envio ao Google Drive ficou pendente.',
+          result.driveUploaded ? 'success' : 'info'
+        );
       } catch (downloadError) {
-        notify(downloadError instanceof Error ? downloadError.message : 'A OS foi salva, mas o download não iniciou.', 'error');
+        notify(downloadError instanceof Error ? downloadError.message : 'A OS foi gerada, mas o download não iniciou.', 'error');
       }
     } catch (error) {
       notify(error instanceof Error ? error.message : 'Erro inesperado ao gerar a ordem de serviço.', 'error');
@@ -433,9 +445,12 @@ export function ServiceOrderForm({ currentUser, initialOrder, onBack, notify }: 
         </div>
 
         {generatedOrder && (
-          <div className="os-download-success" role="status">
-            <CheckCircle2 size={20} />
-            <span><strong>Documento pronto.</strong> A ordem foi registrada no ATEM Field.</span>
+          <div className={`os-download-success${generatedDriveWarning ? ' os-download-success--pending' : ''}`} role="status">
+            {generatedDriveWarning ? <AlertTriangle size={20} /> : <CheckCircle2 size={20} />}
+            <span>
+              <strong>{generatedDriveWarning ? 'PDF pronto; Drive pendente.' : 'Documento pronto.'}</strong>{' '}
+              {generatedDriveWarning || 'A ordem foi registrada no ATEM Field e salva no Google Drive.'}
+            </span>
             <button type="button" className="os-button os-button--success" onClick={() => void downloadGeneratedOrder()}><Download size={17} /> Baixar PDF</button>
           </div>
         )}

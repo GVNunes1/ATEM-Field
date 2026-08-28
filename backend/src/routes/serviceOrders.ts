@@ -2,7 +2,7 @@ import { createClient } from '@supabase/supabase-js';
 import { Router, Response } from 'express';
 import { execFile } from 'child_process';
 import { existsSync } from 'fs';
-import { mkdir, unlink, writeFile } from 'fs/promises';
+import { mkdir, readFile, unlink, writeFile } from 'fs/promises';
 import path from 'path';
 import { promisify } from 'util';
 import {
@@ -120,6 +120,22 @@ function localPdfPath(filename: string): string {
   return path.join(serviceOrderPdfDirectory, path.basename(filename));
 }
 
+function localPdfDownloadUrl(orderId: string): string {
+  return `/api/service-orders/${encodeURIComponent(orderId)}/pdf`;
+}
+
+async function readGeneratedLocalPdf(order: ServiceOrderRecord): Promise<Buffer | null> {
+  if (!order.pdf_filename) return null;
+
+  try {
+    const pdf = await readFile(localPdfPath(order.pdf_filename));
+    return pdf.subarray(0, 5).toString('ascii') === '%PDF-' ? pdf : null;
+  } catch (error: any) {
+    if (error?.code === 'ENOENT') return null;
+    throw error;
+  }
+}
+
 function pythonInvocation(): { command: string; prefixArgs: string[] } {
   const configured = process.env.PYTHON_EXECUTABLE?.trim();
   if (configured) return { command: configured, prefixArgs: [] };
@@ -220,7 +236,7 @@ router.get('/', async (req: AuthenticatedRequest, res: Response) => {
       .map(order => ({
         ...order,
         pdf_url: normalizeDownloadUrl(
-          order.pdf_url || (order.pdf_filename ? `/api/service-orders/${encodeURIComponent(order.id)}/pdf` : undefined)
+          order.pdf_url || (order.pdf_filename ? localPdfDownloadUrl(order.id) : undefined)
         )
       }));
 
@@ -315,11 +331,22 @@ router.post('/generate', async (req: AuthenticatedRequest, res: Response) => {
     const pdfPath = await generateLocalPdf(orderId, generatedFilename, formData);
     let uploadedFile: DriveFileResult | null = null;
     let orderSaved = false;
+    let keepLocalPdf = false;
 
     try {
-      uploadedFile = await driveCommand(['upload', pdfPath, generatedFilename, String(signed)]);
-      if (!uploadedFile.found || !uploadedFile.web_view_url) {
-        throw new Error('O Google Drive não confirmou o armazenamento do PDF.');
+      let driveWarning: string | undefined;
+      try {
+        uploadedFile = await driveCommand(['upload', pdfPath, generatedFilename, String(signed)]);
+        if (!uploadedFile.found || !uploadedFile.web_view_url) {
+          throw new Error('O Google Drive não confirmou o armazenamento do PDF.');
+        }
+      } catch (uploadError) {
+        if (uploadedFile?.file_id) {
+          await driveCommand(['delete', uploadedFile.file_id]).catch(() => undefined);
+        }
+        uploadedFile = null;
+        driveWarning = 'O PDF foi gerado e está disponível para download, mas o envio ao Google Drive ficou pendente.';
+        console.warn('[service-orders] Upload ao Google Drive falhou; mantendo o PDF local para download:', uploadError);
       }
 
       const order: ServiceOrderRecord = {
@@ -333,7 +360,7 @@ router.post('/generate', async (req: AuthenticatedRequest, res: Response) => {
         service_date: String(formData.Data || ''),
         form_data: formData,
         pdf_filename: generatedFilename,
-        pdf_url: uploadedFile.web_view_url,
+        pdf_url: uploadedFile?.web_view_url || null,
         updated_at: new Date().toISOString()
       };
 
@@ -342,15 +369,16 @@ router.post('/generate', async (req: AuthenticatedRequest, res: Response) => {
         .upsert(order);
       if (upsertError) throw upsertError;
       orderSaved = true;
+      keepLocalPdf = !uploadedFile?.web_view_url;
 
       if (originalId && originalId !== orderId) {
         const { error: deleteOriginalError } = await osSupabase
           .from('service_orders')
           .delete()
           .eq('id', originalId);
-        if (deleteOriginalError) throw deleteOriginalError;
-
-        if (originalOrder) {
+        if (deleteOriginalError) {
+          console.warn('[service-orders] A nova OS foi salva, mas o registro anterior não pôde ser removido:', deleteOriginalError);
+        } else if (originalOrder && uploadedFile?.web_view_url) {
           try {
             const oldDriveFile = await findOriginalDriveFile(originalOrder);
             if (oldDriveFile?.file_id) await driveCommand(['delete', oldDriveFile.file_id]);
@@ -360,19 +388,22 @@ router.post('/generate', async (req: AuthenticatedRequest, res: Response) => {
         }
       }
 
+      const downloadUrl = uploadedFile?.web_view_url || localPdfDownloadUrl(orderId);
       res.json({
         success: true,
-        order,
+        order: { ...order, pdf_url: downloadUrl },
         filename: generatedFilename,
-        download_url: uploadedFile.web_view_url
+        download_url: downloadUrl,
+        drive_uploaded: Boolean(uploadedFile?.web_view_url),
+        warning: driveWarning
       });
-    } catch (generationError) {
+    } catch (persistenceError) {
       if (!orderSaved && uploadedFile?.file_id) {
         await driveCommand(['delete', uploadedFile.file_id]).catch(() => undefined);
       }
-      throw generationError;
+      throw persistenceError;
     } finally {
-      await unlink(pdfPath).catch(() => undefined);
+      if (!keepLocalPdf) await unlink(pdfPath).catch(() => undefined);
     }
   } catch (error) {
     orderError(res, error, 'Não foi possível gerar a ordem de serviço.');
@@ -394,6 +425,22 @@ router.get('/:id/pdf', async (req: AuthenticatedRequest, res: Response) => {
     }
     if (!canManageOrder(req, order as ServiceOrderRecord)) {
       res.status(403).json({ success: false, error: 'Você não possui permissão para baixar esta ordem de serviço.' });
+      return;
+    }
+
+    const existingDriveUrl = String(order.pdf_url || '').trim();
+    if (/^https?:\/\//i.test(existingDriveUrl) && driveFileId(existingDriveUrl)) {
+      res.set('Cache-Control', 'private, no-store');
+      res.redirect(302, existingDriveUrl);
+      return;
+    }
+
+    const localPdf = await readGeneratedLocalPdf(order as ServiceOrderRecord);
+    if (localPdf) {
+      res.set('Cache-Control', 'private, no-store');
+      res.type('application/pdf');
+      res.attachment(path.basename(order.pdf_filename || `${id}.pdf`));
+      res.send(localPdf);
       return;
     }
 

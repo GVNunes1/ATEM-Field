@@ -64,7 +64,11 @@ O ATEM Field usa o mesmo template HTML/Jinja e o mesmo fluxo Chromium do ATEM OS
 - não assinadas: `1IWdsd9B2ZGRotVdzt6OVzu6NjM7SnRdS`;
 - assinadas: `13OOs4zsvGJh9RGKJ1sK_hMugTmL-kmKi`.
 
-O arquivo local existe somente durante a geração e é removido depois do upload. A tabela `service_orders` guarda o link definitivo do Drive. Ao baixar uma OS histórica, o sistema abre esse arquivo original; um documento ausente nunca é recriado silenciosamente.
+Quando o upload termina, o arquivo local é removido e a tabela `service_orders` guarda o link definitivo do Drive. Se o Drive estiver indisponível, a OS ainda é registrada sem uma URL remota falsa, o PDF local é preservado e o usuário recebe imediatamente um download autenticado pelo navegador, junto com o aviso de que o envio ficou pendente. Esse arquivo de contingência permanece somente na instância ativa; ele não substitui o arquivamento definitivo no Drive.
+
+Ao baixar uma OS histórica que já possui link do Drive, o sistema sempre abre esse arquivo original, mesmo que exista uma cópia local residual. Se o original não for encontrado, o sistema retorna um aviso e nunca recria silenciosamente outro PDF.
+
+O renderizador considera o documento pronto assim que encontra um PDF completo e estável, sem aguardar o Chromium encerrar sozinho. O timeout interno padrão é de 45 segundos e pode ser ajustado, quando necessário, com `PDF_RENDER_TIMEOUT_SECONDS` entre 5 e 75 segundos.
 
 ## Google Agenda
 
@@ -98,3 +102,10 @@ https://URL-GERADA/health
 A resposta esperada inclui `"status":"ok"` e `"apiVersion":4`.
 
 Confirme também que a raiz pública retorna a interface do ATEM Field e que o contêiner está marcado como saudável. O Dockerfile possui um `HEALTHCHECK` próprio em `/health`, além da verificação configurada na plataforma.
+
+Antes de publicar alterações no fluxo de OS, execute:
+
+```powershell
+cd backend
+npm run test:service-orders
+```
