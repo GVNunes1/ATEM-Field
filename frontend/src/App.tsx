@@ -13,6 +13,7 @@ import { PublicInfoView, PublicPage } from './pages/PublicInfoView';
 import { ProfileView } from './pages/ProfileView';
 import { AuthUser } from './types/auth';
 import { safeFetchJson } from './lib/api';
+import { SupportAssistant } from './features/support/SupportAssistant';
 
 const noCacheFetchOptions: RequestInit = {
   cache: 'no-store',
@@ -65,6 +66,7 @@ export function App() {
   const [selectedAppointmentForReservation, setSelectedAppointmentForReservation] = useState<number | string | null>(null);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState('');
+  const [supportOpen, setSupportOpen] = useState(false);
 
   const handleLoginSuccess = (user: AuthUser, token: string) => {
     setCurrentUser(user);
@@ -78,6 +80,7 @@ export function App() {
 
   const handleLogout = () => {
     setCurrentUser(null);
+    setSupportOpen(false);
     try {
       localStorage.removeItem('atem.auth.user');
       localStorage.removeItem('atem.auth.token');
@@ -85,6 +88,9 @@ export function App() {
       // Ignore
     }
   };
+
+  const openSupport = useCallback(() => setSupportOpen(true), []);
+  const closeSupport = useCallback(() => setSupportOpen(false), []);
 
   const handleTabChange = (tab: string) => {
     setActiveTab(tab);
@@ -224,6 +230,7 @@ export function App() {
         setActiveTab={handleTabChange}
         currentUser={currentUser}
         onLogout={handleLogout}
+        onOpenSupport={openSupport}
       />
       <div className="app-content-wrapper">
         <main className="app-main">
@@ -287,6 +294,7 @@ export function App() {
           ATEM Field © 2026 · Operações em campo e controle de patrimônio
         </footer>
       </div>
+      <SupportAssistant open={supportOpen} onClose={closeSupport} />
     </div>
   );
 }

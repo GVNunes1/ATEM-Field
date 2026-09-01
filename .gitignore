@@ -36,3 +36,5 @@ backend/data/service-orders/
 northflank-secrets.txt
 northflank-api-token.txt
 google-calendar-token-northflank.txt
+# Local API credentials (never commit)
+gemini-api-key.txt

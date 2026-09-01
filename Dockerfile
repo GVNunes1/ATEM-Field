@@ -23,10 +23,12 @@ ENV NODE_ENV=production \
     PORT=8080 \
     PYTHONUNBUFFERED=1 \
     PYTHON_EXECUTABLE=/opt/atem-python/bin/python \
-    CHROMIUM_EXECUTABLE=/usr/bin/chromium
+    CHROMIUM_EXECUTABLE=/usr/bin/chromium-headless-shell \
+    MALLOC_ARENA_MAX=2
 
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends ca-certificates python3 python3-venv chromium fonts-liberation \
+    && apt-get install -y --no-install-recommends ca-certificates python3 python3-venv chromium-headless-shell fontconfig fonts-liberation \
+    && fc-cache -f \
     && python3 -m venv /opt/atem-python \
     && rm -rf /var/lib/apt/lists/*
 
@@ -41,6 +43,7 @@ RUN npm ci --omit=dev --ignore-scripts \
     && npm cache clean --force
 
 COPY --from=backend-build --chown=node:node /workspace/backend/dist ./dist
+COPY --chown=node:node backend/data/support-faq.json ./data/support-faq.json
 COPY --chown=node:node backend/src/services/*.py ./src/services/
 COPY --chown=node:node backend/src/services/service_order_template.html ./src/services/service_order_template.html
 COPY --from=frontend-build --chown=node:node /workspace/frontend/dist /workspace/frontend/dist

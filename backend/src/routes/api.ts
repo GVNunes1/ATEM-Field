@@ -18,7 +18,7 @@ import {
   TechnicianPortalAuthError
 } from '../services/telegramDashboard';
 import { syncOfficialTechniciansDatabase } from '../scripts/syncOfficialTechnicians';
-import { AuthService, CryptoService } from '../security/authService';
+import { AuthService, CryptoService, requireAuthentication, requireRole } from '../security/authService';
 
 const router = Router();
 const technicianMergeLocks = new Set<number>();
@@ -1738,7 +1738,10 @@ router.post('/auth/admin-login', async (req: Request, res: Response) => {
       .eq('username', 'admin')
       .maybeSingle();
 
-    const validPins = [adminCred?.pin, '3247', '6233', 'atem2026', 'admin'].filter(Boolean);
+    const developmentFallbackPins = process.env.NODE_ENV === 'production'
+      ? []
+      : ['3247', '6233', 'atem2026', 'admin'];
+    const validPins = [adminCred?.pin, ...developmentFallbackPins].filter(Boolean);
     const isValid = validPins.some(p => CryptoService.timingSafeCompare(input, p!));
 
     if (isValid) {
@@ -1777,7 +1780,10 @@ router.post('/auth/login', async (req: Request, res: Response) => {
         .eq('username', 'admin')
         .maybeSingle();
 
-      const validAdminPins = [adminCred?.pin, '3247', '6233', 'atem2026', 'admin'].filter(Boolean);
+      const developmentFallbackPins = process.env.NODE_ENV === 'production'
+        ? []
+        : ['3247', '6233', 'atem2026', 'admin'];
+      const validAdminPins = [adminCred?.pin, ...developmentFallbackPins].filter(Boolean);
       const isValid = validAdminPins.some(p => CryptoService.timingSafeCompare(inputPin, p!));
 
       if (isValid) {
@@ -1819,11 +1825,17 @@ router.post('/auth/login', async (req: Request, res: Response) => {
         return res.status(401).json({ success: false, error: 'Credenciais inválidas. Verifique os dados informados.' });
       }
 
-      // Validar PIN: Aceita PIN do banco de dados, 3247, 1234, 6233 ou últimos 4 dígitos do telefone
+      // Em produção, aceite somente o PIN cadastrado ou os últimos quatro
+      // dígitos do telefone. Os atalhos abaixo existem apenas para o ambiente
+      // local legado e não devem ser usados em uma implantação pública.
       const last4Phone = technician.phone ? String(technician.phone).replace(/\D/g, '').slice(-4) : '';
-      const validTechPins = [technician.pin, '3247', '1234', '6233', '0000', 'atem', last4Phone].filter(Boolean);
+      const developmentFallbackPins = process.env.NODE_ENV === 'production'
+        ? []
+        : ['3247', '1234', '6233', '0000', 'atem'];
+      const validTechPins = [technician.pin, ...developmentFallbackPins, last4Phone].filter(Boolean);
 
-      const isValid = validTechPins.some(p => CryptoService.timingSafeCompare(inputPin, p!)) || inputPin === '3247' || inputPin === '1234' || !inputPin;
+      const isValid = validTechPins.some(p => CryptoService.timingSafeCompare(inputPin, p!))
+        || (process.env.NODE_ENV !== 'production' && !inputPin && process.env.ALLOW_EMPTY_TECH_PIN === 'true');
 
       if (isValid) {
         const user = {
@@ -1856,7 +1868,7 @@ router.post('/auth/login', async (req: Request, res: Response) => {
 // ==========================================================================
 // GERENCIADOR DE CREDENCIAIS E PINS (DATABASE CRUD)
 // ==========================================================================
-router.get('/credentials', async (req: Request, res: Response) => {
+router.get('/credentials', requireAuthentication, requireRole(['admin']), async (req: Request, res: Response) => {
   try {
     const { data, error } = await supabaseAdmin
       .from('app_credentials')
@@ -1869,7 +1881,7 @@ router.get('/credentials', async (req: Request, res: Response) => {
   }
 });
 
-router.post('/credentials', async (req: Request, res: Response) => {
+router.post('/credentials', requireAuthentication, requireRole(['admin']), async (req: Request, res: Response) => {
   try {
     const { display_name, username, pin, role, user_type } = req.body;
     if (!display_name || !pin) {
@@ -1918,7 +1930,7 @@ router.post('/credentials', async (req: Request, res: Response) => {
   }
 });
 
-router.patch('/credentials/:id', async (req: Request, res: Response) => {
+router.patch('/credentials/:id', requireAuthentication, requireRole(['admin']), async (req: Request, res: Response) => {
   try {
     const credId = Number(req.params.id);
     const { pin, display_name, role, status } = req.body;
@@ -1958,7 +1970,7 @@ router.patch('/credentials/:id', async (req: Request, res: Response) => {
   }
 });
 
-router.delete('/credentials/:id', async (req: Request, res: Response) => {
+router.delete('/credentials/:id', requireAuthentication, requireRole(['admin']), async (req: Request, res: Response) => {
   try {
     const credId = Number(req.params.id);
     const { data: cred } = await supabaseAdmin

@@ -1,0 +1,5 @@
+{
+  "dependencies": {
+    "@northflank/js-client": "^0.10.1"
+  }
+}

@@ -18,6 +18,8 @@
 **/*.log
 **/tmp
 backend/data
+!backend/data/
+!backend/data/support-faq.json
 windows-watchdog
 cloudflare-mcp-oauth
 render-mcp-oauth

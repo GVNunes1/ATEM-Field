@@ -1,0 +1,58 @@
+[
+  {
+    "id": "support-overview",
+    "question": "O que o ATEM Field faz?",
+    "answer": "O ATEM Field organiza agenda de atendimentos, equipe técnica, padrões de teste, reservas de analisadores, checklists e histórico operacional. Use a navegação lateral para abrir cada área.",
+    "spokenSummary": "O ATEM organiza agenda, equipe, padrões, reservas e checklists em um só lugar.",
+    "keywords": ["atem", "sistema", "funcionalidades", "faz", "organiza", "ajuda"],
+    "source": { "id": "atem-overview", "title": "FAQ curada do ATEM Field", "section": "Visão geral", "kind": "faq" }
+  },
+  {
+    "id": "support-reservation",
+    "question": "Como faço uma reserva de analisador?",
+    "answer": "Abra Reservas, selecione o atendimento e o analisador disponível, confira o técnico responsável e confirme. A disponibilidade deve ser conferida na tela antes de concluir; o assistente não cria reservas automaticamente.",
+    "spokenSummary": "Abra Reservas, selecione atendimento e analisador disponível e confirme os dados.",
+    "keywords": ["reserva", "reservar", "analisador", "equipamento", "disponivel", "checkout"],
+    "source": { "id": "atem-reservas", "title": "FAQ curada do ATEM Field", "section": "Reservas", "kind": "faq" }
+  },
+  {
+    "id": "support-checklist",
+    "question": "Onde encontro os checklists e padrões de teste?",
+    "answer": "Abra Padrões para consultar os analisadores e Templates para visualizar os checklists por categoria. Antes de executar um teste, confirme o modelo do equipamento e os parâmetros exigidos no template aprovado.",
+    "spokenSummary": "Use Padrões para os analisadores e Templates para os checklists aprovados.",
+    "keywords": ["checklist", "template", "padrao", "padrões", "teste", "parametros", "categoria"],
+    "source": { "id": "atem-checklists", "title": "FAQ curada do ATEM Field", "section": "Checklists", "kind": "faq" }
+  },
+  {
+    "id": "support-calendar",
+    "question": "Como vejo a agenda e os atendimentos?",
+    "answer": "Abra Agenda para visualizar os atendimentos sincronizados, filtrar por período e consultar o técnico associado. Se o atendimento estiver desatualizado, use a ação de atualização disponível na tela e confirme o indicador de sincronização.",
+    "spokenSummary": "Abra Agenda para consultar atendimentos, períodos e técnicos associados.",
+    "keywords": ["agenda", "atendimento", "calendario", "calendário", "sincronizacao", "sincronização", "tecnico"],
+    "source": { "id": "atem-agenda", "title": "FAQ curada do ATEM Field", "section": "Agenda", "kind": "faq" }
+  },
+  {
+    "id": "support-history",
+    "question": "Onde consulto o histórico de reservas?",
+    "answer": "Abra Histórico para consultar reservas anteriores e os respectivos analisadores e técnicos. Use os filtros da tela para reduzir a lista antes de abrir um registro.",
+    "spokenSummary": "Abra Histórico para consultar reservas anteriores e seus responsáveis.",
+    "keywords": ["historico", "histórico", "reserva", "reservas", "registro", "anteriores"],
+    "source": { "id": "atem-historico", "title": "FAQ curada do ATEM Field", "section": "Histórico", "kind": "faq" }
+  },
+  {
+    "id": "support-login",
+    "question": "Não consigo entrar no sistema. O que faço?",
+    "answer": "Confira se o perfil correto está selecionado e se o PIN foi digitado sem espaços. Se o problema persistir, solicite a revisão do cadastro ao administrador; não compartilhe seu PIN no chat.",
+    "spokenSummary": "Confira o perfil e o PIN. Se persistir, procure o administrador sem compartilhar o PIN.",
+    "keywords": ["login", "entrar", "acesso", "senha", "pin", "credenciais", "administrador"],
+    "source": { "id": "atem-login", "title": "FAQ curada do ATEM Field", "section": "Acesso", "kind": "faq" }
+  },
+  {
+    "id": "support-not-found",
+    "question": "Como pedir ajuda técnica sobre um equipamento?",
+    "answer": "Informe o tipo do equipamento, fabricante, modelo e o procedimento ou código de erro. A consulta técnica deve usar somente manual, checklist ou procedimento aprovado; quando a fonte não estiver disponível, encaminhe o caso ao responsável técnico.",
+    "spokenSummary": "Informe tipo, fabricante, modelo e código de erro; dúvidas sem fonte aprovada devem ser encaminhadas ao responsável técnico.",
+    "keywords": ["equipamento", "fabricante", "modelo", "erro", "manual", "procedimento", "tecnica", "técnica"],
+    "source": { "id": "atem-tecnico", "title": "FAQ curada do ATEM Field", "section": "Consulta técnica", "kind": "faq" }
+  }
+]

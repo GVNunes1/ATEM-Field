@@ -3,6 +3,7 @@ import {
   Box,
   Calendar,
   ClipboardList,
+  CircleHelp,
   Home,
   LogOut,
   PackageCheck,
@@ -17,13 +18,15 @@ interface NavigationProps {
   setActiveTab: (tab: string) => void;
   currentUser?: AuthUser | null;
   onLogout?: () => void;
+  onOpenSupport?: () => void;
 }
 
 export const Navigation: React.FC<NavigationProps> = ({
   activeTab,
   setActiveTab,
   currentUser,
-  onLogout
+  onLogout,
+  onOpenSupport
 }) => {
   const isAdmin = currentUser?.role === 'admin';
 
@@ -83,6 +86,19 @@ export const Navigation: React.FC<NavigationProps> = ({
 
       {/* Bottom Profile and Totem Shortcut */}
       <div className="sidebar-footer">
+        {onOpenSupport && (
+          <button
+            id="support-open-button"
+            type="button"
+            onClick={onOpenSupport}
+            className="sidebar-support-shortcut"
+            title="Abrir Ajuda ATEM"
+            aria-label="Abrir Ajuda ATEM"
+          >
+            <CircleHelp size={18} aria-hidden="true" />
+            <span>Ajuda ATEM</span>
+          </button>
+        )}
         <button
           type="button"
           onClick={() => setActiveTab('totem')}

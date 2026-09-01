@@ -23,6 +23,7 @@ PORT=8080
 GOOGLE_CALENDAR_SYNC_ENABLED=true
 GOOGLE_CALENDAR_SYNC_CRON=*/10 * * * *
 TECHNICIAN_PORTAL_LINK_TTL_HOURS=72
+CORS_ALLOWED_ORIGINS=https://URL-GERADA
 ```
 
 Depois do primeiro deploy, defina `PUBLIC_APP_URL` com a URL pública gerada pelo Northflank.
@@ -43,9 +44,17 @@ GOOGLE_CALENDAR_TOKEN_JSON
 OS_SUPABASE_URL
 OS_SUPABASE_ANON_KEY
 GOOGLE_DRIVE_OAUTH_TOKEN_JSON_BASE64
+SUPPORT_LLM_API_URL (opcional)
+SUPPORT_LLM_API_KEY (opcional)
+SUPPORT_LLM_MODEL (opcional)
+SUPPORT_LLM_REASONING_EFFORT (opcional; use `minimal` para Gemma 4)
+SUPPORT_TTS_MODEL (opcional; padrão `gemini-3.1-flash-tts-preview`)
+SUPPORT_TTS_VOICE (opcional; padrão `Kore`)
+AZURE_SPEECH_REGION (opcional; necessário para a voz Azure)
+AZURE_SPEECH_KEY (opcional; necessário para a voz Azure)
 ```
 
-Não use variáveis de build para esses valores e não envie arquivos `.env` ou `backend/data` ao GitHub.
+Não use variáveis de build para esses valores e não envie arquivos `.env` ou dados operacionais sensíveis ao GitHub. A FAQ curada do suporte é um artefato público do build; manuais e documentos internos devem permanecer no Storage privado.
 
 `GOOGLE_DRIVE_OAUTH_TOKEN_JSON_BASE64` deve conter o `token.json` OAuth do ATEM OS codificado integralmente em Base64. Esse token precisa ter `refresh_token` e acesso `drive.file` às pastas originais. Não use a conta de serviço antiga para novos uploads em um Drive pessoal, pois contas de serviço não possuem cota própria nesse cenário.
 

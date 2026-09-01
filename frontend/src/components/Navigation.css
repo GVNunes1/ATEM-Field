@@ -127,6 +127,35 @@
   width: 100%;
 }
 
+.sidebar-support-shortcut {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 44px;
+  padding: 10px 14px;
+  color: var(--primary);
+  font-size: 0.84rem;
+  font-weight: 700;
+  text-align: left;
+  cursor: pointer;
+  border: 1px solid #bed3f5;
+  border-radius: 12px;
+  background: var(--primary-soft);
+  transition: color 160ms ease, background 160ms ease, border-color 160ms ease;
+}
+
+.sidebar-support-shortcut:hover {
+  color: var(--primary-hover);
+  border-color: #9fbdf0;
+  background: #dfeaff;
+}
+
+.sidebar-support-shortcut:focus-visible {
+  outline: 3px solid rgba(23, 92, 211, 0.22);
+  outline-offset: 2px;
+}
+
 .sidebar-totem-shortcut:hover {
   background: #dcfce7;
   border-color: #86efac;
@@ -316,6 +345,17 @@
   }
 
   .sidebar-totem-shortcut {
+    display: none;
+  }
+
+  .sidebar-support-shortcut {
+    width: 44px;
+    min-height: 44px;
+    justify-content: center;
+    padding: 0;
+  }
+
+  .sidebar-support-shortcut span {
     display: none;
   }
 

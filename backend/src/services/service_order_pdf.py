@@ -85,6 +85,7 @@ def browser_executable() -> str:
     configured = os.getenv("CHROMIUM_EXECUTABLE") or os.getenv("BROWSER_EXECUTABLE")
     candidates = [
         configured,
+        shutil.which("chromium-headless-shell"),
         shutil.which("chromium"),
         shutil.which("chromium-browser"),
         shutil.which("google-chrome"),
@@ -267,9 +268,25 @@ def render_pdf(data: dict[str, Any], output_path: Path) -> None:
         profile_path = temporary_path / "browser-profile"
         html_path.write_text(materialize_data_images(rendered_html, temporary_path), encoding="utf-8")
 
+        # Northflank's smallest runtime has 256 MB shared by Node and the PDF
+        # renderer. Debian's dedicated headless shell plus an in-process
+        # renderer avoids the zygote/renderer trees that otherwise exhaust the
+        # cgroup before Chromium reaches print-to-pdf.
+        is_headless_shell = "headless-shell" in Path(browser).name.lower()
+        linux_low_memory_flags = (
+            [
+                "--no-zygote",
+                "--single-process",
+                "--num-raster-threads=1",
+                "--disable-crash-reporter",
+            ]
+            if sys.platform.startswith("linux")
+            else []
+        )
         command = [
             browser,
-            "--headless=new",
+            *([] if is_headless_shell else ["--headless"]),
+            *linux_low_memory_flags,
             "--disable-background-networking",
             "--disable-breakpad",
             "--disable-component-update",
@@ -285,6 +302,7 @@ def render_pdf(data: dict[str, Any], output_path: Path) -> None:
             "--no-first-run",
             "--allow-file-access-from-files",
             "--no-pdf-header-footer",
+            "--timeout=15000",
             f"--user-data-dir={profile_path}",
             f"--print-to-pdf={output_path.resolve()}",
             html_path.resolve().as_uri(),

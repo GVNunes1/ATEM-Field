@@ -1,5 +1,6 @@
 import jwt from 'jsonwebtoken';
 import { Request, Response, NextFunction } from 'express';
+import { randomBytes } from 'crypto';
 import { CryptoService } from './cryptoService';
 
 /**
@@ -28,13 +29,20 @@ export interface AuthenticatedUserPayload {
 
 // Hash Bcrypt fictício pré-computado para simular custo computacional constante (evita User Enumeration por Timing)
 const DUMMY_BCRYPT_HASH = '$2a$12$7eqJtq98hPqEX7fNZaFWoOhuU2W87F2KzWn2U6g1hH6X6c6T1Pj7i';
+const DEVELOPMENT_JWT_SECRET = randomBytes(48).toString('hex');
 
 function getJwtSecret(): string {
-  const secret =
-    process.env.JWT_SECRET ||
-    process.env.SUPABASE_SERVICE_ROLE_KEY ||
-    'atem-field-clinical-sec-jwt-token-2026-master-key-3247-enterprise-auth';
-  return secret;
+  const secret = process.env.JWT_SECRET?.trim();
+  if (secret) return secret;
+
+  if (process.env.NODE_ENV === 'production') {
+    throw new Error('JWT_SECRET é obrigatório em produção. Configure um segredo independente no Secret Group.');
+  }
+
+  // Desenvolvimento local: a chave é efêmera e nunca reutiliza a service role.
+  // Reiniciar o backend invalida as sessões locais, o que é preferível a um
+  // segredo fixo compartilhado no código-fonte.
+  return DEVELOPMENT_JWT_SECRET;
 }
 
 export class AuthService {
