@@ -180,15 +180,14 @@ export const ReservationHistoryView: React.FC<ReservationHistoryViewProps> = ({
   }, [mode, selectedTechnicianId, technicians]);
 
   return (
-    <div className="history-view animate-fade-in">
+    <div className="history-view field-dashboard">
       {/* Header Bar */}
-      <div className="glass-panel history-header">
-        <div className="history-header__info">
-          <h2>
-            <History size={24} color="var(--primary)" /> Histórico de Reservas e Posse
-          </h2>
+      <header className="field-page-heading">
+        <div>
+          <span className="field-overline">Rastreabilidade & Auditoria</span>
+          <h1>Histórico de reservas.</h1>
           <p>
-            Rastreamento completo de retiradas, devoluções e reagendamentos de simuladores na operação.
+            Registro cronológico completo de saídas, devoluções e posse dos analisadores em campo.
           </p>
         </div>
 
@@ -204,7 +203,7 @@ export const ReservationHistoryView: React.FC<ReservationHistoryViewProps> = ({
               setSelectedTechnicianId('all');
             }}
           >
-            <Cpu size={18} /> Por Equipamento
+            <Cpu size={16} /> Por Equipamento
           </button>
 
           <button
@@ -217,19 +216,74 @@ export const ReservationHistoryView: React.FC<ReservationHistoryViewProps> = ({
               setSelectedEquipmentId('all');
             }}
           >
-            <Users size={18} /> Por Técnico
+            <Users size={16} /> Por Técnico
           </button>
         </div>
-      </div>
+      </header>
+
+      {/* Metrics Summary Strip */}
+      <section className="field-metrics" aria-label="Métricas do histórico">
+        <button
+          type="button"
+          className="field-metric available"
+          onClick={() => setStatusFilter('all')}
+        >
+          <span className="field-metric-label">
+            Total registrado
+            <History size={17} aria-hidden="true" />
+          </span>
+          <strong>{metrics.total}</strong>
+          <span className="field-metric-detail">Movimentações no sistema</span>
+        </button>
+
+        <button
+          type="button"
+          className="field-metric"
+          onClick={() => setStatusFilter('Em Uso')}
+        >
+          <span className="field-metric-label">
+            Em campo / Reservados
+            <PackageCheck size={17} aria-hidden="true" />
+          </span>
+          <strong>{metrics.active}</strong>
+          <span className="field-metric-detail">Operações ativas</span>
+        </button>
+
+        <button
+          type="button"
+          className="field-metric"
+          onClick={() => setStatusFilter('Devolvido')}
+        >
+          <span className="field-metric-label">
+            Devolvidos
+            <CheckCircle2 size={17} aria-hidden="true" />
+          </span>
+          <strong>{metrics.completed}</strong>
+          <span className="field-metric-detail">Concluídas com sucesso</span>
+        </button>
+
+        <button
+          type="button"
+          className="field-metric"
+          onClick={() => {}}
+        >
+          <span className="field-metric-label">
+            {mode === 'equipment' ? 'Técnicos distintos' : 'Padrões distintos'}
+            {mode === 'equipment' ? <Users size={17} aria-hidden="true" /> : <Cpu size={17} aria-hidden="true" />}
+          </span>
+          <strong>{mode === 'equipment' ? metrics.uniqueTechnicians : metrics.uniqueEquipments}</strong>
+          <span className="field-metric-detail">{mode === 'equipment' ? 'Profissionais envolvidos' : 'Equipamentos movimentados'}</span>
+        </button>
+      </section>
 
       {/* Filter Controls Panel */}
-      <div className="glass-panel history-filters">
+      <div className="field-surface history-filters" style={{ padding: '20px 24px' }}>
         {mode === 'equipment' ? (
           <div className="history-filters__group">
             <label htmlFor="select-equipment">Selecionar Equipamento (Patrimônio)</label>
             <select
               id="select-equipment"
-              className="history-select"
+              className="select-field history-select"
               value={selectedEquipmentId}
               onChange={e => setSelectedEquipmentId(e.target.value)}
             >
@@ -246,7 +300,7 @@ export const ReservationHistoryView: React.FC<ReservationHistoryViewProps> = ({
             <label htmlFor="select-technician">Selecionar Técnico Responsável</label>
             <select
               id="select-technician"
-              className="history-select"
+              className="select-field history-select"
               value={selectedTechnicianId}
               onChange={e => setSelectedTechnicianId(e.target.value)}
             >
@@ -267,7 +321,7 @@ export const ReservationHistoryView: React.FC<ReservationHistoryViewProps> = ({
             <input
               id="history-search"
               type="text"
-              className="history-search-input"
+              className="input-field history-search-input"
               placeholder="Buscar por patrimônio, técnico, cliente ou notas..."
               value={searchTerm}
               onChange={e => setSearchTerm(e.target.value)}
@@ -310,29 +364,37 @@ export const ReservationHistoryView: React.FC<ReservationHistoryViewProps> = ({
 
       {/* Selected Entity Banner Highlight (If specific analyzer or technician is selected) */}
       {selectedEquipment && (
-        <div className="history-entity-banner">
+        <div className="field-surface history-entity-banner" style={{ padding: '18px 24px', background: '#f8fafc' }}>
           <div className="history-entity-banner__left">
-            <span className="history-entity-banner__badge">{selectedEquipment.asset_tag}</span>
+            <span className="field-asset-icon" style={{ width: '40px', height: '40px', background: '#fff' }}>
+              <Cpu size={20} color="var(--primary)" />
+            </span>
             <div className="history-entity-banner__copy">
-              <h3>{selectedEquipment.name}</h3>
-              <p>Tipo: {selectedEquipment.type} {selectedEquipment.brand_model ? `· ${selectedEquipment.brand_model}` : ''}</p>
+              <h3 style={{ fontSize: '0.95rem', fontWeight: 650, color: 'var(--text-main)' }}>{selectedEquipment.name}</h3>
+              <p style={{ fontSize: '0.76rem', color: 'var(--text-muted)' }}>
+                Patrimônio: <code>{selectedEquipment.asset_tag}</code> · Tipo: {selectedEquipment.type} {selectedEquipment.brand_model ? `· ${selectedEquipment.brand_model}` : ''}
+              </p>
             </div>
           </div>
           <div className="history-entity-banner__right">
-            <span className={`badge ${selectedEquipment.status === 'Disponível' ? 'badge-green' : selectedEquipment.status === 'Em Uso' ? 'badge-blue' : 'badge-amber'}`}>
-              Status no Inventário: {selectedEquipment.status}
+            <span className={`badge ${selectedEquipment.status === 'Disponível' ? 'badge-success' : selectedEquipment.status === 'Em Uso' ? 'badge-warning' : 'badge-purple'}`}>
+              Status: {selectedEquipment.status}
             </span>
           </div>
         </div>
       )}
 
       {selectedTechnician && (
-        <div className="history-entity-banner">
+        <div className="field-surface history-entity-banner" style={{ padding: '18px 24px', background: '#f8fafc' }}>
           <div className="history-entity-banner__left">
-            <span className="history-entity-banner__badge"><User size={20} /></span>
+            <span className="field-asset-icon" style={{ width: '40px', height: '40px', background: '#fff' }}>
+              <User size={20} color="var(--primary)" />
+            </span>
             <div className="history-entity-banner__copy">
-              <h3>{selectedTechnician.name}</h3>
-              <p>{selectedTechnician.role || 'Técnico de Campo'} {selectedTechnician.phone ? `· Tel: ${selectedTechnician.phone}` : ''}</p>
+              <h3 style={{ fontSize: '0.95rem', fontWeight: 650, color: 'var(--text-main)' }}>{selectedTechnician.name}</h3>
+              <p style={{ fontSize: '0.76rem', color: 'var(--text-muted)' }}>
+                {selectedTechnician.role || 'Técnico de Campo'} {selectedTechnician.phone ? `· Tel: ${selectedTechnician.phone}` : ''}
+              </p>
             </div>
           </div>
           <div className="history-entity-banner__right">
@@ -343,142 +405,119 @@ export const ReservationHistoryView: React.FC<ReservationHistoryViewProps> = ({
         </div>
       )}
 
-      {/* Metrics Summary Grid */}
-      <div className="history-metrics">
-        <div className="glass-panel history-metric-card">
-          <div className="history-metric-card__icon"><History size={24} /></div>
-          <div className="history-metric-card__data">
-            <strong>{metrics.total}</strong>
-            <span>Total de Registros</span>
+      {/* History Records Table / Surface */}
+      <section className="field-surface" aria-labelledby="history-records-title">
+        <header className="field-section-heading">
+          <div>
+            <h2 id="history-records-title">
+              Registros de movimentação
+              <span className="field-count">{filteredReservations.length}</span>
+            </h2>
+            <p>Histórico detalhado com horários de saída, devolução e responsabilidade técnica.</p>
           </div>
-        </div>
+        </header>
 
-        <div className="glass-panel history-metric-card">
-          <div className="history-metric-card__icon" style={{ color: '#0284c7', background: 'rgba(2, 132, 199, 0.1)' }}><PackageCheck size={24} /></div>
-          <div className="history-metric-card__data">
-            <strong>{metrics.active}</strong>
-            <span>Em Campo / Reservados</span>
+        {loading ? (
+          <div className="field-empty" style={{ minHeight: '200px' }} aria-live="polite">
+            <span className="loading-spinner" />
+            <p>Carregando histórico de reservas…</p>
           </div>
-        </div>
-
-        <div className="glass-panel history-metric-card">
-          <div className="history-metric-card__icon" style={{ color: '#16a34a', background: 'rgba(22, 163, 74, 0.1)' }}><CheckCircle2 size={24} /></div>
-          <div className="history-metric-card__data">
-            <strong>{metrics.completed}</strong>
-            <span>Devolvidos</span>
+        ) : error ? (
+          <div className="field-empty" style={{ minHeight: '200px', color: '#ef4444' }}>
+            <Info size={30} />
+            <p>{error}</p>
           </div>
-        </div>
-
-        <div className="glass-panel history-metric-card">
-          <div className="history-metric-card__icon" style={{ color: '#9333ea', background: 'rgba(147, 51, 234, 0.1)' }}>
-            {mode === 'equipment' ? <Users size={24} /> : <Cpu size={24} />}
+        ) : !filteredReservations.length ? (
+          <div className="field-empty" style={{ minHeight: '200px' }}>
+            <History size={30} />
+            <h3>Nenhum registro encontrado</h3>
+            <p>Não há histórico de reservas para a seleção e filtros informados.</p>
           </div>
-          <div className="history-metric-card__data">
-            <strong>{mode === 'equipment' ? metrics.uniqueTechnicians : metrics.uniqueEquipments}</strong>
-            <span>{mode === 'equipment' ? 'Técnicos Distintos' : 'Equipamentos Distintos'}</span>
+        ) : (
+          <div className="field-table-scroll">
+            <table className="field-table">
+              <thead>
+                <tr>
+                  <th scope="col">Padrão / Patrimônio</th>
+                  <th scope="col">Responsável</th>
+                  <th scope="col">Atendimento / Cliente</th>
+                  <th scope="col">Data</th>
+                  <th scope="col">Retirada (Checkout)</th>
+                  <th scope="col">Devolução (Checkin)</th>
+                  <th scope="col">Situação</th>
+                  <th scope="col" style={{ width: '50px' }}>Ações</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredReservations.map(res => {
+                  const isDevolvido = res.status === 'Devolvido';
+                  const isEmUso = res.status === 'Em Uso';
+
+                  return (
+                    <tr key={res.id}>
+                      <td>
+                        <div className="field-asset">
+                          <span className="field-asset-icon"><PackageCheck size={16} /></span>
+                          <div>
+                            <strong>{res.analyzer_name || 'Simulador'}</strong>
+                            <code>{res.asset_tag || 'Sem patrimônio'}</code>
+                          </div>
+                        </div>
+                      </td>
+                      <td>
+                        <strong style={{ color: 'var(--text-main)', fontSize: '0.78rem' }}>{res.technician_name || 'Não informado'}</strong>
+                      </td>
+                      <td>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                          <span style={{ fontWeight: 550, color: 'var(--text-main)' }}>{res.client_name || `Atendimento #${res.appointment_id}`}</span>
+                          {res.notes && <small style={{ color: 'var(--text-muted)', fontSize: '0.68rem' }}>{res.notes}</small>}
+                        </div>
+                      </td>
+                      <td>
+                        <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.74rem' }}>{formatDate(res.appointment_date || res.reserved_date)}</span>
+                      </td>
+                      <td>
+                        <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.72rem', color: res.checkout_at ? 'var(--text-main)' : 'var(--text-muted)' }}>
+                          {formatDateTime(res.checkout_at)}
+                        </span>
+                      </td>
+                      <td>
+                        <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.72rem', color: res.checkin_at ? 'var(--text-main)' : 'var(--text-muted)' }}>
+                          {formatDateTime(res.checkin_at)}
+                        </span>
+                      </td>
+                      <td>
+                        <span className={`badge ${isDevolvido ? 'badge-success' : isEmUso ? 'badge-warning' : 'badge-purple'}`}>
+                          {res.status}
+                        </span>
+                      </td>
+                      <td>
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteHistoryItem(res.id)}
+                          title="Apagar Registro do Histórico (Admin)"
+                          style={{
+                            background: '#fef2f2',
+                            border: '1px solid #fecaca',
+                            borderRadius: '6px',
+                            color: '#dc2626',
+                            padding: '5px 7px',
+                            cursor: 'pointer',
+                            display: 'inline-flex',
+                            alignItems: 'center'
+                          }}
+                        >
+                          <Trash2 size={13} />
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
           </div>
-        </div>
-      </div>
-
-      {/* Timeline List of Reservations */}
-      {loading ? (
-        <div className="glass-panel history-empty" aria-live="polite">
-          <span className="loading-spinner" />
-          <p>Carregando histórico de reservas...</p>
-        </div>
-      ) : error ? (
-        <div className="glass-panel history-empty" style={{ color: '#ef4444' }}>
-          <Info size={32} />
-          <p>{error}</p>
-        </div>
-      ) : filteredReservations.length === 0 ? (
-        <div className="glass-panel history-empty">
-          <History size={36} color="var(--text-muted)" />
-          <strong>Nenhum registro encontrado</strong>
-          <p>Não há histórico de reservas para a seleção e filtros informados.</p>
-        </div>
-      ) : (
-        <div className="history-timeline">
-          {filteredReservations.map(res => {
-            const isDevolvido = res.status === 'Devolvido';
-            const isEmUso = res.status === 'Em Uso';
-            const isReservado = res.status === 'Reservado';
-
-            return (
-              <div key={res.id} className="glass-panel history-card animate-fade-in">
-                <div className="history-card__header">
-                  <div className="history-card__tags">
-                    <span className="asset-tag-pill">{res.asset_tag || 'PAT-N/A'}</span>
-                    <span className="analyzer-title">{res.analyzer_name || 'Simulador'}</span>
-                    <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>({res.analyzer_type || 'Geral'})</span>
-                  </div>
-
-                  <div className="history-card__tags">
-                    <span className={`status-badge ${isDevolvido ? 'status-badge--devolvido' : isEmUso ? 'status-badge--emuso' : 'status-badge--reservado'}`}>
-                      {isDevolvido && <CheckCircle2 size={13} />}
-                      {isEmUso && <Clock size={13} />}
-                      {isReservado && <Calendar size={13} />}
-                      {res.status}
-                    </span>
-
-                    <button
-                      type="button"
-                      onClick={() => handleDeleteHistoryItem(res.id)}
-                      title="Apagar Registro do Banco (Admin)"
-                      style={{
-                        background: '#fef2f2',
-                        border: '1px solid #fecaca',
-                        borderRadius: '6px',
-                        color: '#dc2626',
-                        padding: '4px 6px',
-                        cursor: 'pointer',
-                        display: 'inline-flex',
-                        alignItems: 'center'
-                      }}
-                    >
-                      <Trash2 size={13} />
-                    </button>
-                  </div>
-                </div>
-
-                <div className="history-card__body">
-                  <div className="history-detail-item">
-                    <small><User size={12} /> Técnico Responsável</small>
-                    <strong>{res.technician_name || 'Não informado'}</strong>
-                  </div>
-
-                  <div className="history-detail-item">
-                    <small><Calendar size={12} /> Atendimento / Cliente</small>
-                    <strong>{res.client_name || `Atendimento #${res.appointment_id}`}</strong>
-                  </div>
-
-                  <div className="history-detail-item">
-                    <small><Clock size={12} /> Data do Atendimento</small>
-                    <strong>{formatDate(res.appointment_date || res.reserved_date)}</strong>
-                  </div>
-
-                  <div className="history-detail-item">
-                    <small><Clock size={12} /> Retirada / Checkout</small>
-                    <strong>{formatDateTime(res.checkout_at)}</strong>
-                  </div>
-
-                  <div className="history-detail-item">
-                    <small><CheckCircle2 size={12} /> Devolução / Checkin</small>
-                    <strong>{formatDateTime(res.checkin_at)}</strong>
-                  </div>
-                </div>
-
-                {res.notes && (
-                  <div className="history-card__notes">
-                    <FileText size={13} style={{ display: 'inline', marginRight: '6px' }} />
-                    {res.notes}
-                  </div>
-                )}
-              </div>
-            );
-          })}
-        </div>
-      )}
+        )}
+      </section>
     </div>
   );
 };

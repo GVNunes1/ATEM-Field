@@ -213,9 +213,30 @@
   .login-submit-btn:active:not(:disabled) { transform: translateY(1px); }
   .login-card-footer { color: var(--text-muted); font-size: .67rem; margin-top: 30px; line-height: 1.7; }
 
-  /* Shared mobile surfaces keep large hit areas, without altering kiosk logic. */
+  /* Tablet Kiosk / Totem Refinements (Taste Design System) */
   .tablet-kiosk-root { font-family: var(--font-body); background: var(--bg-primary); min-height: 100dvh; }
-  .tablet-kiosk-header { background: #164ba0; box-shadow: none; }
+  .tablet-kiosk-header { background: #164ba0; box-shadow: none; border-bottom: 1px solid rgba(255, 255, 255, 0.12); padding: 18px 28px; }
+  .tablet-brand-text h1 { font-family: var(--font-heading); font-weight: 600; letter-spacing: -.035em; }
+  .tablet-clock-card { background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.18); border-radius: 10px; }
+  .tablet-live-time { font-family: var(--font-mono); font-weight: 600; letter-spacing: -.02em; }
+  .tablet-welcome-hero h2 { font-family: var(--font-heading); font-weight: 580; letter-spacing: -.045em; color: var(--text-main); }
+  .tablet-tech-card { border-radius: 14px; background: #ffffff; border: 1px solid var(--border-color); box-shadow: none; transition: border-color var(--motion-fast), transform var(--motion-fast); }
+  .tablet-tech-card:hover, .tablet-tech-card:active { border-color: var(--primary); box-shadow: var(--shadow-sm); transform: translateY(-2px); background: #ffffff; }
+  .tablet-tech-avatar { border-radius: 14px; background: #edf2f9; color: #36557f; font-weight: 650; box-shadow: none; }
+  .tablet-tech-avatar.large { border-radius: 18px; }
+  .tablet-user-header { background: #ffffff; border-bottom: 1px solid var(--border-color); box-shadow: none; padding: 16px 28px; }
+  .tablet-user-avatar { border-radius: 12px; background: #edf2f9; color: #36557f; font-weight: 650; box-shadow: none; }
+  .tablet-nav-tabs { background: #ffffff; border-bottom: 1px solid var(--border-color); padding: 6px 28px; gap: 8px; }
+  .tablet-tab-btn { border-radius: 8px; font-weight: 550; font-size: .88rem; padding: 10px 16px; color: var(--text-muted); }
+  .tablet-tab-btn.active { background: var(--primary-soft); color: var(--primary); font-weight: 650; }
+  .tablet-appointment-card, .tablet-action-card { border-radius: 14px; border: 1px solid var(--border-color); background: #ffffff; box-shadow: none; }
+  .tablet-appointment-card:hover, .tablet-action-card:hover { border-color: #cbd5e1; box-shadow: none; }
+  .tablet-btn-action { border-radius: 8px; font-weight: 550; box-shadow: none; }
+  .tablet-pin-modal, .tablet-modal-box { border-radius: 16px; border: 1px solid var(--border-color); box-shadow: 0 24px 70px rgb(20 40 70 / 18%); }
+  .tablet-numpad-btn { border-radius: 12px; border: 1px solid var(--border-color); background: #ffffff; box-shadow: var(--shadow-xs); font-family: var(--font-mono); font-weight: 600; font-size: 1.35rem; }
+  .tablet-numpad-btn:active { background: var(--primary-soft); border-color: var(--primary); }
+  .tablet-search-bar { border-radius: 10px; border: 1px solid var(--border-color); background: #ffffff; box-shadow: var(--shadow-xs); }
+  .tablet-search-bar:focus-within { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(23, 92, 211, 0.1); }
   .tg-dashboard { background: var(--bg-primary); min-height: 100dvh; }
   .tg-dashboard-hero { background: #164ba0; box-shadow: none; }
   .tg-dashboard-hero__brand > span { background: rgb(255 255 255 / 12%); }

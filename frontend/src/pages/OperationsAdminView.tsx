@@ -455,15 +455,15 @@ export function OperationsAdminView({
   };
 
   return (
-    <div className="operations-admin-view animate-fade-in">
-      <header className="page-hero">
-        <div className="page-hero__copy">
-          <span className="eyebrow"><ShieldCheck size={16} /> {isTechnician ? `Painel de Reservas do Técnico: ${currentUser?.name}` : 'Painel de Reservas & Operações'}</span>
-          <h2>{isTechnician ? 'Minhas Reservas & Saída de Padrões' : 'Controle Operacional de Padrões e Saídas'}</h2>
+    <div className="operations-admin-view field-dashboard">
+      <header className="field-page-heading">
+        <div>
+          <span className="field-overline">Operações & Padrões</span>
+          <h1>{isTechnician ? 'Minhas reservas em campo.' : 'Gestão de reservas.'}</h1>
           <p>
             {isTechnician
-              ? 'Selecione seus atendimentos da agenda, reserve os padrões necessários em seu nome e registre as retiradas e devoluções.'
-              : 'Faça reservas administrativas, registre retiradas e devoluções e envie acessos individuais para os técnicos.'}
+              ? 'Separe os analisadores para seus atendimentos e controle saídas e devoluções.'
+              : 'Controle operacional de saídas, empréstimos, calibrações e disponibilidade dos analisadores.'}
           </p>
         </div>
       </header>
@@ -471,24 +471,70 @@ export function OperationsAdminView({
       {notice && <div className="operations-notice is-success" role="status"><p>{notice}</p><button type="button" onClick={() => setNotice('')} aria-label="Fechar aviso"><X size={15} /></button></div>}
       {error && <div className="operations-notice is-error" role="alert"><p>{error}</p><button type="button" onClick={() => setError('')} aria-label="Fechar erro"><X size={15} /></button></div>}
 
-      <section className="operations-metrics" aria-label="Métricas da operação">
-        <article><span><PackageCheck size={20} /></span><div><strong>{metrics.active}</strong><small>{isTechnician ? 'minhas reservas ativas' : 'reservas ativas'}</small></div></article>
-        <article><span><Activity size={20} /></span><div><strong>{metrics.inUse}</strong><small>{isTechnician ? 'comigo em campo' : 'em campo'}</small></div></article>
-        <article><span><Wrench size={20} /></span><div><strong>{metrics.available}</strong><small>padrões disponíveis</small></div></article>
-        <article><span><CalendarDays size={20} /></span><div><strong>{metrics.weekAppointments}</strong><small>atendimentos em 7 dias</small></div></article>
+      <section className="field-metrics" aria-label="Indicadores da operação">
+        <button
+          type="button"
+          className="field-metric available"
+          onClick={() => setStatusFilter('ACTIVE')}
+        >
+          <span className="field-metric-label">
+            {isTechnician ? 'Minhas reservas' : 'Reservas ativas'}
+            <PackageCheck size={17} aria-hidden="true" />
+          </span>
+          <strong>{metrics.active}</strong>
+          <span className="field-metric-detail">Separadas para atendimento</span>
+        </button>
+
+        <button
+          type="button"
+          className="field-metric"
+          onClick={() => setStatusFilter('Em Uso')}
+        >
+          <span className="field-metric-label">
+            Em campo
+            <Activity size={17} aria-hidden="true" />
+          </span>
+          <strong>{metrics.inUse}</strong>
+          <span className="field-metric-detail">{isTechnician ? 'Comigo em campo' : 'Em uso pelos técnicos'}</span>
+        </button>
+
+        <button
+          type="button"
+          className="field-metric"
+          onClick={() => setStatusFilter('ALL')}
+        >
+          <span className="field-metric-label">
+            Padrões livres
+            <Wrench size={17} aria-hidden="true" />
+          </span>
+          <strong>{metrics.available}</strong>
+          <span className="field-metric-detail">Disponíveis no setor</span>
+        </button>
+
+        <button
+          type="button"
+          className="field-metric"
+          onClick={() => {}}
+        >
+          <span className="field-metric-label">
+            Próximos 7 dias
+            <CalendarDays size={17} aria-hidden="true" />
+          </span>
+          <strong>{metrics.weekAppointments}</strong>
+          <span className="field-metric-detail">Atendimentos agendados</span>
+        </button>
       </section>
 
       <section className="operations-primary-grid">
-        <form className="glass-panel reservation-form" onSubmit={createReservation}>
-          <div className="operations-section-heading">
-            <span><PackageCheck size={19} /></span>
+        <form className="field-surface reservation-form" onSubmit={createReservation}>
+          <div className="field-section-heading">
             <div>
-              <h3>
+              <h2>
                 {operationType === 'Chamado' ? '🚨 Saída para Chamado Espontâneo' :
                  operationType === 'Calibração' ? '🔬 Saída para Calibração de Padrão' :
                  operationType === 'Empréstimo' ? '🤝 Empréstimo de Equipamento' :
                  (isTechnician ? '📋 Reservar Padrão para Atendimento' : 'Nova reserva administrativa')}
-              </h3>
+              </h2>
               <p>
                 {operationType === 'Chamado' ? 'Atendimento espontâneo de emergência / sem agendamento prévio na agenda.' :
                  operationType !== 'Atendimento' ? (isEqat && !isAdmin ? 'Solicitação da EQAT sujeita à aprovação do Administrador Geral.' : 'Registro direto de saída/reserva sem agendamento.') :
@@ -715,17 +761,17 @@ export function OperationsAdminView({
 
         {/* Portal Access Link Box (Admin only) or Technician Info Card */}
         {isAdmin ? (
-          <div className="glass-panel portal-access-card">
-            <div className="operations-section-heading">
-              <span><UserRound size={19} /></span>
+          <div className="field-surface portal-access-card">
+            <div className="field-section-heading">
               <div>
-                <h3>Acesso do técnico</h3>
+                <h2>Acesso do técnico</h2>
                 <p>Gere e copie o link individual de acesso ao portal do técnico.</p>
               </div>
             </div>
             <label>
               <span>Técnico</span>
               <select
+                className="select-field"
                 value={portalTechnicianId}
                 onChange={event => { setPortalTechnicianId(event.target.value); setPortalLink(''); }}
               >
@@ -777,38 +823,49 @@ export function OperationsAdminView({
             </div>
           </div>
         ) : (
-          <div className="glass-panel portal-access-card" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-            <div className="operations-section-heading">
-              <span><ShieldCheck size={19} /></span>
+          <div className="field-surface portal-access-card" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+            <div className="field-section-heading">
               <div>
-                <h3>Perfil de Técnico Conectado</h3>
+                <h2>Perfil conectado</h2>
                 <p>Você está autenticado como <strong>{currentUser?.name}</strong>.</p>
               </div>
             </div>
-            <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '12px', padding: '16px', fontSize: '0.88rem', color: '#475569', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            <div style={{ background: 'var(--bg-primary)', border: '1px solid var(--border-color)', borderRadius: '10px', padding: '16px', fontSize: '0.84rem', color: 'var(--text-secondary)', display: 'flex', flexDirection: 'column', gap: '8px' }}>
               <div>📱 <strong>Telefone:</strong> {currentUser?.phone || 'Não cadastrado'}</div>
               <div>📧 <strong>E-mail:</strong> {currentUser?.email || 'Não cadastrado'}</div>
-              <div>🔒 <strong>Permissões:</strong> Reserva restrita em nome próprio, registro de retiradas (Check-out) e devoluções (Check-in).</div>
+              <div>🔒 <strong>Permissões:</strong> Reserva restrita em nome próprio, retiradas e devoluções.</div>
             </div>
           </div>
         )}
       </section>
 
-      <section className="glass-panel reservations-overview">
-        <div className="reservations-overview__head">
-          <div className="operations-section-heading">
-            <span><Clock3 size={19} /></span>
-            <div>
-              <h3>{isTechnician ? 'Minhas Reservas Ativas e em Campo' : 'Overview das reservas'}</h3>
-              <p>{filteredReservations.length} registro(s) exibido(s).</p>
-            </div>
+      <section className="field-surface reservations-overview">
+        <div className="field-section-heading" style={{ flexWrap: 'wrap', gap: '16px' }}>
+          <div>
+            <h2>
+              {isTechnician ? 'Minhas reservas em campo' : 'Lista de reservas'}
+              <span className="field-count">{filteredReservations.length}</span>
+            </h2>
+            <p>Controle de retiradas, status e devoluções</p>
           </div>
-          <div className="reservations-filters">
-            <label>
-              <Search size={16} />
-              <input type="search" placeholder="Patrimônio, técnico ou cliente" value={searchTerm} onChange={event => setSearchTerm(event.target.value)} />
+          <div className="reservations-filters" style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
+            <label style={{ display: 'flex', alignItems: 'center', gap: '8px', background: '#fff', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '0 10px', minHeight: '40px' }}>
+              <Search size={15} color="var(--text-muted)" />
+              <input
+                type="search"
+                style={{ border: 'none', outline: 'none', background: 'transparent', fontSize: '0.82rem', color: 'var(--text-main)' }}
+                placeholder="Buscar patrimônio, técnico ou cliente..."
+                value={searchTerm}
+                onChange={event => setSearchTerm(event.target.value)}
+              />
             </label>
-            <select aria-label="Filtrar status" value={statusFilter} onChange={event => setStatusFilter(event.target.value)}>
+            <select
+              aria-label="Filtrar status"
+              className="select-field"
+              style={{ minHeight: '40px', padding: '6px 12px', fontSize: '0.8rem', width: 'auto' }}
+              value={statusFilter}
+              onChange={event => setStatusFilter(event.target.value)}
+            >
               <option value="ACTIVE">Reservas ativas</option>
               <option value="ALL">Todos os status</option>
               <option value="Reservado">Reservado</option>
@@ -819,30 +876,43 @@ export function OperationsAdminView({
         </div>
 
         {loadingReservations ? (
-          <div className="operations-loading"><LoaderCircle className="spin" size={24} /> Carregando reservas…</div>
+          <div className="operations-loading" style={{ padding: '36px', textAlign: 'center', color: 'var(--text-muted)' }}>
+            <LoaderCircle className="spin" size={24} /> Carregando reservas…
+          </div>
+        ) : !filteredReservations.length ? (
+          <div className="field-empty" style={{ minHeight: '220px' }}>
+            <PackageCheck size={28} />
+            <h3>Nenhuma reserva encontrada</h3>
+            <p>Não há reservas cadastradas para o filtro selecionado.</p>
+          </div>
         ) : (
-          <div className="reservations-table-wrap">
-            <table>
+          <div className="field-table-scroll">
+            <table className="field-table">
               <thead>
                 <tr>
-                  <th>Patrimônio</th>
-                  <th>Atendimento</th>
-                  <th>Técnico</th>
-                  <th>Data</th>
-                  <th>Status</th>
-                  <th>Ações de Campo</th>
-                  {isAdmin && <th>Gerenciamento (Admin)</th>}
+                  <th scope="col">Patrimônio / Padrão</th>
+                  <th scope="col">Atendimento / Cliente</th>
+                  <th scope="col">Responsável</th>
+                  <th scope="col">Data</th>
+                  <th scope="col">Status</th>
+                  <th scope="col">Ações de Campo</th>
+                  {isAdmin && <th scope="col">Gerenciamento</th>}
                 </tr>
               </thead>
               <tbody>
                 {filteredReservations.map(reservation => (
                   <tr key={reservation.id}>
-                    <td data-label="Patrimônio">
-                      <strong className="asset-tag">{reservation.asset_tag}</strong>
-                      <small>{reservation.analyzer_name}</small>
+                    <td>
+                      <div className="field-asset">
+                        <span className="field-asset-icon"><PackageCheck size={16} /></span>
+                        <div>
+                          <strong>{reservation.analyzer_name}</strong>
+                          <code>{reservation.asset_tag}</code>
+                        </div>
+                      </div>
                     </td>
-                    <td data-label="Atendimento">
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '2px' }}>
+                    <td>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '3px' }}>
                         {reservation.operation_type === 'Chamado' ? (
                           <span style={{ background: '#ffedd5', color: '#c2410c', border: '1px solid #fed7aa', fontSize: '0.65rem', fontWeight: 800, padding: '1px 5px', borderRadius: '4px' }}>🚨 CHAMADO</span>
                         ) : reservation.operation_type === 'Calibração' ? (
@@ -853,22 +923,22 @@ export function OperationsAdminView({
                           <span style={{ background: '#f1f5f9', color: '#475467', fontSize: '0.65rem', fontWeight: 700, padding: '1px 5px', borderRadius: '4px' }}>📋 ATENDIMENTO</span>
                         )}
                       </div>
-                      <strong>{reservation.client_name}</strong>
-                      <small>{reservation.analyzer_type}</small>
+                      <strong style={{ color: 'var(--text-main)', fontSize: '0.8rem' }}>{reservation.client_name}</strong>
+                      <div style={{ color: 'var(--text-muted)', fontSize: '0.72rem' }}>{reservation.analyzer_type}</div>
                     </td>
-                    <td data-label="Técnico">{reservation.technician_name}</td>
-                    <td data-label="Data">{formatDate(reservation.appointment_date || reservation.reserved_date)}</td>
-                    <td data-label="Status">
-                      <span className={`reservation-status reservation-status--${String(reservation.status).toLowerCase().replace(/\s/g, '-')}`}>
+                    <td>{reservation.technician_name}</td>
+                    <td><span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.75rem' }}>{formatDate(reservation.appointment_date || reservation.reserved_date)}</span></td>
+                    <td>
+                      <span className={`badge ${reservation.status === 'Em Uso' ? 'badge-warning' : reservation.status === 'Reservado' ? 'badge-purple' : reservation.status === 'Devolvido' ? 'badge-success' : 'badge-amber'}`}>
                         {reservation.status === 'Aguardando Aprovação' ? '⏳ Aguardando Aprovação' : reservation.status}
                       </span>
                     </td>
-                    <td data-label="Ações de Campo">
+                    <td>
                       {reservation.status === 'Aguardando Aprovação' ? (
                         isAdmin ? (
                           <button
                             className="btn btn-primary btn-sm"
-                            style={{ background: '#16a34a', borderColor: '#16a34a', gap: '4px', fontSize: '0.75rem', padding: '4px 8px' }}
+                            style={{ background: '#16a34a', borderColor: '#16a34a', gap: '4px', fontSize: '0.75rem', padding: '4px 10px' }}
                             disabled={actionId === reservation.id}
                             onClick={() => handleApproveReservation(reservation.id)}
                           >
@@ -886,7 +956,7 @@ export function OperationsAdminView({
                           {actionId === reservation.id ? <LoaderCircle className="spin" size={15} /> : reservation.status === 'Reservado' ? 'Saída' : 'Devolver'}
                         </button>
                       ) : (
-                        <span className="reservation-closed">Concluída</span>
+                        <span style={{ color: 'var(--text-muted)', fontSize: '0.72rem' }}>Concluída</span>
                       )}
                     </td>
                     {isAdmin && (

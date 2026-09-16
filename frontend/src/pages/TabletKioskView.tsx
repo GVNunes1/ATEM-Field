@@ -486,6 +486,7 @@ export const TabletKioskView: React.FC<TabletKioskViewProps> = ({
 
         <main className="tablet-standby-main">
           <div className="tablet-welcome-hero">
+            <span className="field-overline" style={{ display: 'block', textAlign: 'center', marginBottom: '8px' }}>Autoatendimento em campo</span>
             <h2>Toque no seu nome para acessar</h2>
             <p>Selecione seu perfil e digite seu PIN de 4 dígitos para gerenciar sua agenda, reservar padrões ou registrar saídas e devoluções.</p>
 
@@ -741,40 +742,36 @@ export const TabletKioskView: React.FC<TabletKioskViewProps> = ({
 
       {/* BANNER DE OPERAÇÕES ESPECIAIS EQAT */}
       {selectedTech?.name?.trim().toUpperCase() === 'EQAT' && (
-        <div style={{
-          background: 'linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%)',
-          border: '1.5px solid #93c5fd',
-          borderRadius: '16px',
-          padding: '14px 20px',
-          margin: '0 24px 16px 24px',
+        <div className="field-surface" style={{
+          padding: '16px 22px',
+          margin: '0 28px 16px 28px',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
           flexWrap: 'wrap',
-          gap: '12px',
-          boxShadow: '0 4px 12px rgba(2, 132, 199, 0.08)'
+          gap: '12px'
         }}>
           <div>
-            <strong style={{ color: '#1e40af', fontSize: '1rem', display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <strong style={{ color: 'var(--primary)', fontSize: '0.94rem', display: 'flex', alignItems: 'center', gap: '6px' }}>
               🔧 Operações Autônomas EQAT (Sem Agendamento)
             </strong>
-            <p style={{ margin: '3px 0 0 0', color: '#2563eb', fontSize: '0.84rem' }}>
+            <p style={{ margin: '3px 0 0 0', color: 'var(--text-muted)', fontSize: '0.8rem' }}>
               Solicite a retirada de padrões para calibração ou empréstimo. A saída física será liberada após aprovação do Administrador.
             </p>
           </div>
           <div style={{ display: 'flex', gap: '10px' }}>
             <button
               type="button"
-              className="btn btn-primary"
-              style={{ background: '#d97706', borderColor: '#b45309', gap: '6px', fontSize: '0.88rem', padding: '8px 14px', borderRadius: '10px' }}
+              className="btn btn-secondary btn-sm"
+              style={{ gap: '6px', fontSize: '0.82rem' }}
               onClick={() => { setSpecialOpType('Calibração'); setSpecialOpSelectedIds([]); setSpecialOpNotes(''); setSpecialOpSearch(''); }}
             >
               🔬 Solicitar Calibração
             </button>
             <button
               type="button"
-              className="btn btn-primary"
-              style={{ background: '#4338ca', borderColor: '#3730a3', gap: '6px', fontSize: '0.88rem', padding: '8px 14px', borderRadius: '10px' }}
+              className="btn btn-primary btn-sm"
+              style={{ gap: '6px', fontSize: '0.82rem' }}
               onClick={() => { setSpecialOpType('Empréstimo'); setSpecialOpSelectedIds([]); setSpecialOpNotes(''); setSpecialOpSearch(''); }}
             >
               🤝 Solicitar Empréstimo
