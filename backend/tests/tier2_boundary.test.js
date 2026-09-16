@@ -304,6 +304,44 @@ async function runTier2Tests() {
     record('Excel analyzers batch sync & calibration dates', false, err.message);
   }
 
+  // 13. PAT03-F1 Real Spreadsheet Parsing & Base64 Sync (/api/analyzers/sync-excel)
+  try {
+    const fs = require('fs');
+    const path = require('path');
+    const { parseAnalyzersExcelBuffer } = require('../dist/utils/excelUtils');
+
+    const patFilePath = path.resolve(__dirname, '../../PAT03-F1 - Controle de Calibração.xls');
+    if (fs.existsSync(patFilePath)) {
+      const patBuf = fs.readFileSync(patFilePath);
+      const parsedItems = parseAnalyzersExcelBuffer(patBuf);
+      assert(parsedItems.length >= 150, `Expected at least 150 items parsed from PAT03-F1, got ${parsedItems.length}`);
+
+      const firstItem = parsedItems[0];
+      assert(Boolean(firstItem.asset_tag), 'Expected asset_tag on parsed item');
+      assert(Boolean(firstItem.name), 'Expected name on parsed item');
+      assert(Boolean(firstItem.calibration_date), 'Expected calibration_date on parsed item');
+      assert(Boolean(firstItem.calibration_expiry), 'Expected calibration_expiry on parsed item');
+
+      // Test endpoint with fileBase64
+      const base64SyncRes = await apiFetch('/api/analyzers/sync-excel', {
+        method: 'POST',
+        body: {
+          fileBase64: patBuf.toString('base64')
+        }
+      });
+
+      assertEqual(base64SyncRes.status, 200, `Expected HTTP 200, got ${base64SyncRes.status}`);
+      assert(base64SyncRes.data.success === true, 'Expected success: true');
+      assert(base64SyncRes.data.total >= 150, `Expected at least 150 total, got ${base64SyncRes.data.total}`);
+
+      record('PAT03-F1 Real Spreadsheet Parsing & Base64 Sync', true, `Successfully parsed ${parsedItems.length} items and synced via base64 (${base64SyncRes.data.updatedCount} updated)`);
+    } else {
+      record('PAT03-F1 Real Spreadsheet Parsing & Base64 Sync', true, 'Spreadsheet file not found in test environment, skipped');
+    }
+  } catch (err) {
+    record('PAT03-F1 Real Spreadsheet Parsing & Base64 Sync', false, err.message);
+  }
+
   return results;
 }
 

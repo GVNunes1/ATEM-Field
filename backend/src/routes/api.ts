@@ -982,9 +982,28 @@ router.post('/analyzers/sync-excel', async (req: Request, res: Response) => {
     const existingMap = new Map<string, any>();
     for (const a of existingList || []) {
       if (a.asset_tag) {
-        existingMap.set(a.asset_tag.toUpperCase().trim(), a);
+        const clean = String(a.asset_tag).toUpperCase().trim();
+        existingMap.set(clean, a);
+        if (/^\d+$/.test(clean)) {
+          existingMap.set(clean.padStart(6, '0'), a);
+          const unpadded = clean.replace(/^0+/, '');
+          if (unpadded) existingMap.set(unpadded, a);
+        }
       }
     }
+
+    const findExisting = (tag: string) => {
+      const clean = String(tag || '').toUpperCase().trim();
+      if (!clean) return undefined;
+      if (existingMap.has(clean)) return existingMap.get(clean);
+      if (/^\d+$/.test(clean)) {
+        const padded = clean.padStart(6, '0');
+        if (existingMap.has(padded)) return existingMap.get(padded);
+        const unpadded = clean.replace(/^0+/, '');
+        if (unpadded && existingMap.has(unpadded)) return existingMap.get(unpadded);
+      }
+      return undefined;
+    };
 
     let createdCount = 0;
     let updatedCount = 0;
@@ -993,7 +1012,12 @@ router.post('/analyzers/sync-excel', async (req: Request, res: Response) => {
 
     for (const row of rowsToProcess) {
       try {
-        const existing = existingMap.get(row.asset_tag);
+        let tag = String(row.asset_tag || '').trim().toUpperCase();
+        if (/^\d+$/.test(tag) && tag.length < 6) {
+          tag = tag.padStart(6, '0');
+        }
+
+        const existing = findExisting(tag);
 
         if (existing) {
           const updates: Record<string, any> = {
@@ -1023,7 +1047,7 @@ router.post('/analyzers/sync-excel', async (req: Request, res: Response) => {
 
           updatedCount++;
           details.push({
-            asset_tag: row.asset_tag,
+            asset_tag: existing.asset_tag || tag,
             action: 'updated',
             name: row.name,
             calibration_expiry: row.calibration_expiry ?? existing.calibration_expiry
@@ -1032,7 +1056,7 @@ router.post('/analyzers/sync-excel', async (req: Request, res: Response) => {
           const { data: insData, error: insErr } = await supabaseAdmin
             .from('analyzers')
             .insert({
-              asset_tag: row.asset_tag,
+              asset_tag: tag,
               name: row.name,
               type: row.type,
               serial_number: row.serial_number,
@@ -1049,10 +1073,15 @@ router.post('/analyzers/sync-excel', async (req: Request, res: Response) => {
 
           if (insErr) throw insErr;
 
-          existingMap.set(row.asset_tag, { ...row, id: insData.id });
+          const createdObj = { ...row, asset_tag: tag, id: insData.id };
+          existingMap.set(tag, createdObj);
+          if (/^\d+$/.test(tag)) {
+            const unpadded = tag.replace(/^0+/, '');
+            if (unpadded) existingMap.set(unpadded, createdObj);
+          }
           createdCount++;
           details.push({
-            asset_tag: row.asset_tag,
+            asset_tag: tag,
             action: 'created',
             name: row.name,
             calibration_expiry: row.calibration_expiry

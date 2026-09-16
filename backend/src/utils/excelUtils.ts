@@ -86,6 +86,56 @@ export function parseExcelDate(value: any): string | null {
 }
 
 /**
+ * Scores a candidate header row based on presence of key standard columns.
+ */
+export function scoreHeaderRow(row: any[]): number {
+  if (!Array.isArray(row)) return 0;
+  let score = 0;
+  const keywords = [
+    /patrimonio|pat\b|asset_tag|tag\b|c[oó]digo/i,
+    /modelo|marca/i,
+    /s[eé]rie|serial/i,
+    /calibra[cç][aã]o|verifica[cç][aã]o/i,
+    /validade|vencimento|pr[oó]xima/i,
+    /descri[cç][aã]o|equipamento|analisador|nome/i,
+    /executor|certificado|localiza[cç][aã]o/i
+  ];
+  for (const cell of row) {
+    const text = String(cell || '').trim();
+    if (!text) continue;
+    for (const kw of keywords) {
+      if (kw.test(text)) {
+        score++;
+        break;
+      }
+    }
+  }
+  return score;
+}
+
+/**
+ * Finds the most likely header row index and normalized keys in a 2D sheet grid.
+ */
+export function findBestHeaderRow(grid: any[][]): { headerIdx: number; headerKeys: string[]; score: number } {
+  let bestIdx = 0;
+  let bestScore = 0;
+  const searchDepth = Math.min(15, grid.length);
+
+  for (let i = 0; i < searchDepth; i++) {
+    const s = scoreHeaderRow(grid[i]);
+    if (s > bestScore) {
+      bestScore = s;
+      bestIdx = i;
+    }
+  }
+
+  const headerRow = grid[bestIdx] || [];
+  const headerKeys = headerRow.map((cell: any) => normalizeHeader(cell));
+
+  return { headerIdx: bestIdx, headerKeys, score: bestScore };
+}
+
+/**
  * Maps arbitrary row object from Excel to standard AnalyzerExcelRow.
  */
 export function mapRowToAnalyzer(rowObj: Record<string, any>, rowIndex: number): AnalyzerExcelRow | null {
@@ -112,24 +162,50 @@ export function mapRowToAnalyzer(rowObj: Record<string, any>, rowIndex: number):
     return undefined;
   };
 
-  const rawAssetTag = findValue('patrimonio', 'asset_tag', 'tag', 'codigo', 'cod_patrimonio', 'num_patrimonio', 'id_patrimonio');
-  if (!rawAssetTag) return null;
+  const rawAssetTag = findValue('pat', 'patrimonio', 'asset_tag', 'tag', 'novo_pat', 'codigo', 'cod_patrimonio', 'num_patrimonio', 'id_patrimonio');
+  if (!rawAssetTag || String(rawAssetTag).trim() === '-' || String(rawAssetTag).trim() === '') return null;
 
-  const assetTag = String(rawAssetTag).trim().toUpperCase();
+  let assetTag = String(rawAssetTag).trim().toUpperCase();
+  // Standardize purely numeric asset tags (e.g. 378 -> 000378)
+  if (/^\d+$/.test(assetTag) && assetTag.length < 6) {
+    assetTag = assetTag.padStart(6, '0');
+  }
 
-  const rawName = findValue('nome', 'analisador', 'nome_analisador', 'descricao', 'equipamento', 'padrao', 'instrumento') || `Analisador ${assetTag}`;
-  const rawType = findValue('tipo', 'tipo_de_padrao', 'tipo_analisador', 'categoria', 'tipo_equipamento') || 'Padrão Geral';
-  const rawSerial = findValue('numero_de_serie', 'n_de_serie', 'serie', 'serial', 'serial_number', 'n_serie', 'sn') || assetTag;
-  const rawModel = findValue('marca_modelo', 'modelo_marca', 'modelo', 'marca', 'brand_model', 'fabricante') || String(rawName);
+  const rawName = findValue('descricao_marca', 'descricao', 'nome', 'analisador', 'nome_analisador', 'equipamento', 'padrao', 'instrumento') || `Analisador ${assetTag}`;
+  const nameStr = String(rawName).trim();
+
+  // In PAT03, "Descrição / Marca" can be split to infer type if type column isn't present
+  let inferredType = 'Padrão Geral';
+  if (nameStr.includes('/')) {
+    const prefix = nameStr.split('/')[0].trim();
+    if (prefix) inferredType = prefix;
+  }
+
+  const rawType = findValue('tipo', 'tipo_de_padrao', 'tipo_analisador', 'categoria', 'tipo_equipamento') || inferredType;
+  const rawSerial = findValue('no_serie', 'numero_de_serie', 'n_de_serie', 'serie', 'serial', 'serial_number', 'n_serie', 'sn') || assetTag;
+  const rawModel = findValue('modelo', 'marca_modelo', 'modelo_marca', 'marca', 'brand_model', 'fabricante') || nameStr;
   const rawStatus = findValue('status', 'situacao', 'estado');
-  const rawLocation = findValue('localizacao', 'local', 'almoxarifado', 'current_location') || 'Almoxarifado Central';
-  const rawNotes = findValue('observacoes', 'observacao', 'notas', 'notes', 'comentarios');
+  const rawLocation = findValue('localizacao', 'local', 'almoxarifado', 'current_location') || 'Matriz';
 
-  const rawCalibDate = findValue('data_de_calibracao', 'data_calibracao', 'calibracao', 'calibrado_em', 'calibration_date', 'dt_calibracao', 'ultima_calibracao');
-  const rawExpiryDate = findValue('validade_da_calibracao', 'validade_calibracao', 'validade', 'vencimento', 'proxima_calibracao', 'calibration_expiry', 'calibration_due', 'dt_validade', 'vencimento_calibracao');
+  const rawCalibDate = findValue('data_calibracao', 'data_verificacao', 'data_de_calibracao', 'calibracao', 'calibrado_em', 'calibration_date', 'dt_calibracao', 'ultima_calibracao');
+  const rawExpiryDate = findValue('proxima_calibracao', 'proxima_verificacao', 'validade_da_calibracao', 'validade_calibracao', 'validade', 'vencimento', 'calibration_expiry', 'calibration_due', 'dt_validade', 'vencimento_calibracao');
 
   const calibDate = parseExcelDate(rawCalibDate);
   const expiryDate = parseExcelDate(rawExpiryDate);
+
+  const cert = findValue('no_certificado', 'certificado', 'cert');
+  const executor = findValue('executor', 'responsavel');
+  const approver = findValue('aprovado_por', 'aprovador');
+  const periodicity = findValue('periodicidade', 'periodo');
+  const existingNotes = findValue('observacoes', 'observacao', 'notas', 'notes', 'comentarios');
+
+  // Compose clean, descriptive metadata notes
+  const noteParts: string[] = [];
+  if (existingNotes) noteParts.push(String(existingNotes).trim());
+  if (cert) noteParts.push(`Certificado: ${cert}`);
+  if (executor) noteParts.push(`Executor: ${executor}`);
+  if (approver) noteParts.push(`Aprovado por: ${approver}`);
+  if (periodicity) noteParts.push(`Periodicidade: ${periodicity} ano(s)`);
 
   let status = 'Disponível';
   if (rawStatus) {
@@ -142,35 +218,71 @@ export function mapRowToAnalyzer(rowObj: Record<string, any>, rowIndex: number):
 
   return {
     asset_tag: assetTag,
-    name: String(rawName).trim(),
+    name: nameStr,
     type: String(rawType).trim(),
     serial_number: String(rawSerial).trim(),
     brand_model: String(rawModel).trim(),
     status,
     calibration_date: calibDate,
     calibration_expiry: expiryDate,
-    current_location: String(rawLocation).trim(),
-    notes: rawNotes ? String(rawNotes).trim() : '',
+    current_location: String(rawLocation).trim() || 'Matriz',
+    notes: noteParts.join(' | '),
     rawRowIndex: rowIndex
   };
 }
 
 /**
  * Parses an Excel or CSV buffer into an array of AnalyzerExcelRow items.
+ * Intelligently scores sheets and header rows so files with top title rows
+ * (like PAT03-F1 - Controle de Calibração.xls) parse accurately.
  */
-export function parseAnalyzersExcelBuffer(buffer: Buffer): AnalyzerExcelRow[] {
+export function parseAnalyzersExcelBuffer(buffer: Buffer, preferredSheetName?: string): AnalyzerExcelRow[] {
   const workbook = XLSX.read(buffer, { type: 'buffer', cellDates: true });
-  const firstSheetName = workbook.SheetNames[0];
-  if (!firstSheetName) return [];
+  if (!workbook.SheetNames || workbook.SheetNames.length === 0) return [];
 
-  const worksheet = workbook.Sheets[firstSheetName];
-  const rawRows = XLSX.utils.sheet_to_json<Record<string, any>>(worksheet, { defval: '' });
+  // Determine target sheet: use preferredSheetName if valid, or pick sheet with highest header score
+  let targetSheetName = preferredSheetName && workbook.Sheets[preferredSheetName] ? preferredSheetName : '';
 
+  if (!targetSheetName) {
+    let highestScore = -1;
+    for (const sName of workbook.SheetNames) {
+      const ws = workbook.Sheets[sName];
+      const grid = XLSX.utils.sheet_to_json<any[]>(ws, { header: 1, defval: '' });
+      const { score } = findBestHeaderRow(grid);
+      if (score > highestScore) {
+        highestScore = score;
+        targetSheetName = sName;
+      }
+    }
+  }
+
+  if (!targetSheetName) targetSheetName = workbook.SheetNames[0];
+
+  const worksheet = workbook.Sheets[targetSheetName];
+  if (!worksheet) return [];
+
+  const grid = XLSX.utils.sheet_to_json<any[]>(worksheet, { header: 1, defval: '' });
+  if (!grid || grid.length === 0) return [];
+
+  const { headerIdx, headerKeys } = findBestHeaderRow(grid);
   const result: AnalyzerExcelRow[] = [];
-  rawRows.forEach((row, index) => {
-    const mapped = mapRowToAnalyzer(row, index + 2); // 1-based index including header
+
+  for (let r = headerIdx + 1; r < grid.length; r++) {
+    const row = grid[r];
+    if (!Array.isArray(row) || row.every(c => c === '' || c === null || c === undefined)) continue;
+
+    const rowObj: Record<string, any> = {};
+    headerKeys.forEach((key, colIdx) => {
+      if (key) {
+        rowObj[key] = row[colIdx];
+      } else {
+        rowObj[`__col_${colIdx}`] = row[colIdx];
+      }
+    });
+
+    const mapped = mapRowToAnalyzer(rowObj, r + 1);
     if (mapped) result.push(mapped);
-  });
+  }
 
   return result;
 }
