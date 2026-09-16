@@ -222,7 +222,7 @@ async function runTier3Tests() {
     });
     assertEqual(duplicateReservation.status, 400, `Expected HTTP 400 for duplicate active reservation, got ${duplicateReservation.status}`);
     assert(duplicateReservation.data.success === false, 'Expected success: false');
-    assert(duplicateReservation.data.error.includes('já está reservado/em uso'), 'Expected conflict error message');
+    assert(duplicateReservation.data.error.includes('já possui reserva') || duplicateReservation.data.error.includes('já está reservado') || duplicateReservation.data.error.includes('reserva/solicitação'), `Expected conflict error message, got "${duplicateReservation.data.error}"`);
     record('Reservation conflict prevention (double booking)', true, `Correctly blocked conflict reservation with HTTP 400: "${duplicateReservation.data.error}"`);
   } catch (error) {
     record('Reservation conflict prevention (double booking)', false, error.message);

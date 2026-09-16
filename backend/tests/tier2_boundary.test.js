@@ -1,4 +1,4 @@
-const { apiFetch, assert, assertEqual, assertNotNull, trackTechnician } = require('./helpers');
+const { apiFetch, assert, assertEqual, assertNotNull, trackTechnician, trackAnalyzer } = require('./helpers');
 
 async function runTier2Tests() {
   const results = [];
@@ -243,6 +243,65 @@ async function runTier2Tests() {
     record('Non-technical appointment checklist flag', true, `Returned isTechnicalService: false and empty requirements for "${nonTechAppt.title}"`);
   } catch (err) {
     record('Non-technical appointment checklist flag', false, err.message);
+  }
+
+  // 11. Excel template generation endpoint (/api/analyzers/template-excel)
+  try {
+    const templateRes = await apiFetch('/api/analyzers/template-excel');
+    assertEqual(templateRes.status, 200, `Expected HTTP 200, got ${templateRes.status}`);
+    record('Excel template generation endpoint', true, 'Successfully generated and served .xlsx template');
+  } catch (err) {
+    record('Excel template generation endpoint', false, err.message);
+  }
+
+  // 12. Excel analyzers batch sync & calibration dates (/api/analyzers/sync-excel)
+  try {
+    const timestamp = Date.now();
+    const newTag = `PAT-WF-EXCEL-${timestamp.toString().slice(-5)}`;
+
+    const analyzersRes = await apiFetch('/api/analyzers');
+    assert(analyzersRes.data.analyzers.length > 0, 'Expected at least one analyzer');
+    const existingAnalyzer = analyzersRes.data.analyzers[0];
+
+    const syncPayload = {
+      rows: [
+        {
+          asset_tag: newTag,
+          name: `E2E Excel Sync New ${timestamp}`,
+          type: 'Analisador de Desfibrilador',
+          serial_number: `SN-EXCEL-${timestamp}`,
+          brand_model: 'Fluke Impulse Pro',
+          calibration_date: '2026-01-10',
+          calibration_expiry: '2027-01-10',
+          status: 'Disponível',
+          notes: 'Created via E2E Excel Sync'
+        },
+        {
+          asset_tag: existingAnalyzer.asset_tag,
+          calibration_date: '2026-06-01',
+          calibration_expiry: '2027-06-01',
+          notes: 'Updated calibration via E2E Excel Sync'
+        }
+      ]
+    };
+
+    const syncRes = await apiFetch('/api/analyzers/sync-excel', {
+      method: 'POST',
+      body: syncPayload
+    });
+
+    assertEqual(syncRes.status, 200, `Expected HTTP 200, got ${syncRes.status}`);
+    assert(syncRes.data.success === true, 'Expected success: true');
+    assert(syncRes.data.createdCount >= 1, `Expected at least 1 created, got ${syncRes.data.createdCount}`);
+    assert(syncRes.data.updatedCount >= 1, `Expected at least 1 updated, got ${syncRes.data.updatedCount}`);
+
+    const afterRes = await apiFetch('/api/analyzers');
+    const createdItem = afterRes.data.analyzers.find(a => a.asset_tag === newTag);
+    if (createdItem) trackAnalyzer(createdItem.id);
+
+    record('Excel analyzers batch sync & calibration dates', true, `Synchronized successfully: ${syncRes.data.createdCount} created, ${syncRes.data.updatedCount} updated`);
+  } catch (err) {
+    record('Excel analyzers batch sync & calibration dates', false, err.message);
   }
 
   return results;

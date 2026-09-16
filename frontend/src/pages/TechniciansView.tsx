@@ -424,67 +424,125 @@ export function TechniciansView({ technicians, onRefresh }: TechniciansViewProps
     }
   };
 
+  const pinCount = useMemo(() => technicians.filter(tech => Boolean(tech.pin)).length, [technicians]);
+
   return (
-    <section className="technicians-view animate-fade-in" onClick={() => openMenuId !== null && setOpenMenuId(null)}>
-      <div className="page-hero technicians-hero">
-        <div className="page-hero__copy">
-          <span className="eyebrow"><Users size={15} /> Gestão da equipe</span>
-          <h2>Técnicos & Acessos</h2>
-          <p>Gerencie contatos, permissões e altere os PINs de login e totem de cada profissional diretamente no banco de dados.</p>
+    <div className="technicians-view field-dashboard" onClick={() => openMenuId !== null && setOpenMenuId(null)}>
+      <header className="field-page-heading">
+        <div>
+          <span className="field-overline">Gestão da Equipe</span>
+          <h1>Técnicos & Acessos.</h1>
+          <p>Gerencie contatos, permissões e credenciais de login e totem de cada profissional diretamente no banco de dados.</p>
         </div>
         <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
           <button
+            type="button"
             onClick={() => { setShowPinManager(true); fetchCredentials(); }}
             className="btn btn-secondary"
-            style={{ background: '#f0fdf4', borderColor: '#86efac', color: '#166534', fontWeight: 600 }}
+            style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}
           >
             <KeyRound size={17} /> Gerenciar PINs & Acessos
           </button>
-          <button onClick={() => { setLinkTechId(null); setShowLinkModal(true); }} className="btn btn-secondary">
+          <button
+            type="button"
+            onClick={() => { setLinkTechId(null); setShowLinkModal(true); }}
+            className="btn btn-secondary"
+            style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}
+          >
             <Link2 size={17} /> Gerar link de acesso
           </button>
-          <button onClick={openCreateModal} className="btn btn-primary">
+          <button
+            type="button"
+            onClick={openCreateModal}
+            className="btn btn-primary"
+            style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}
+          >
             <Plus size={18} /> Novo técnico
           </button>
         </div>
-      </div>
+      </header>
 
       {notice && (
-        <div className="inline-notice inline-notice--success" role="status">
-          <CheckCircle2 size={17} /><span>{notice}</span>
-          <button type="button" onClick={() => setNotice('')} aria-label="Fechar aviso"><X size={16} /></button>
+        <div className="operations-notice is-success" role="status" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 18px', background: '#ecfdf5', border: '1px solid #a7f3d0', color: '#065f46', borderRadius: '8px', fontSize: '0.85rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <CheckCircle2 size={18} /><span>{notice}</span>
+          </div>
+          <button type="button" onClick={() => setNotice('')} aria-label="Fechar aviso" style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'currentColor' }}><X size={16} /></button>
         </div>
       )}
 
-      <div className="technicians-summary" aria-label="Resumo da equipe">
-        <div className="summary-card">
-          <span className="summary-card__icon summary-card__icon--blue"><Users size={20} /></span>
-          <div><strong>{technicians.length}</strong><span>Total cadastrado</span></div>
+      <section className="field-metrics" aria-label="Indicadores da equipe">
+        <div className="field-metric available">
+          <span className="field-metric-label">
+            Total cadastrado
+            <Users size={17} aria-hidden="true" />
+          </span>
+          <strong>{technicians.length}</strong>
+          <span className="field-metric-detail">Profissionais na base</span>
         </div>
-        <div className="summary-card">
-          <span className="summary-card__icon summary-card__icon--green"><CheckCircle2 size={20} /></span>
-          <div><strong>{activeCount}</strong><span>Profissionais ativos</span></div>
-        </div>
-        <div className="summary-card">
-          <span className="summary-card__icon summary-card__icon--cyan"><MessageCircleMore size={20} /></span>
-          <div><strong>{phoneCount}</strong><span>WhatsApp cadastrado</span></div>
-        </div>
-      </div>
 
-      <div className="technicians-toolbar">
-        <label className="technicians-search" aria-label="Buscar técnicos">
-          <Search size={18} />
-          <input value={search} onChange={event => setSearch(event.target.value)} placeholder="Buscar por nome, cargo, telefone ou e-mail" />
-          {search && (
-            <button type="button" onClick={() => setSearch('')} aria-label="Limpar busca">
-              <X size={16} />
-            </button>
-          )}
-        </label>
-      </div>
+        <div className="field-metric">
+          <span className="field-metric-label">
+            Técnicos ativos
+            <CheckCircle2 size={17} aria-hidden="true" />
+          </span>
+          <strong>{activeCount}</strong>
+          <span className="field-metric-detail">Habilitados para operações</span>
+        </div>
 
-      {filteredTechnicians.length ? (
-        <div className="technicians-grid">
+        <div className="field-metric">
+          <span className="field-metric-label">
+            WhatsApp configurado
+            <MessageCircleMore size={17} aria-hidden="true" />
+          </span>
+          <strong>{phoneCount}</strong>
+          <span className="field-metric-detail">Prontos para notificações</span>
+        </div>
+
+        <div className="field-metric">
+          <span className="field-metric-label">
+            PIN configurado
+            <Lock size={17} aria-hidden="true" />
+          </span>
+          <strong>{pinCount}</strong>
+          <span className="field-metric-detail">Totem e autenticação rápida</span>
+        </div>
+      </section>
+
+      <section className="field-surface" style={{ paddingBottom: '24px' }}>
+        <div className="field-section-heading" style={{ borderBottom: '1px solid var(--border-subtle)', marginBottom: '20px', flexWrap: 'wrap' }}>
+          <div>
+            <h2>
+              Quadro de Técnicos <span className="field-count">{filteredTechnicians.length}</span>
+            </h2>
+            <p>Selecione um profissional para ver contatos, alterar PIN ou editar perfil</p>
+          </div>
+
+          <div style={{ width: '100%', maxWidth: '360px', position: 'relative' }}>
+            <Search size={16} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)', pointerEvents: 'none' }} />
+            <input
+              className="input-field"
+              style={{ paddingLeft: '36px', height: '40px', fontSize: '0.84rem' }}
+              value={search}
+              onChange={event => setSearch(event.target.value)}
+              placeholder="Buscar por nome, cargo, celular ou e-mail..."
+            />
+            {search && (
+              <button
+                type="button"
+                onClick={() => setSearch('')}
+                aria-label="Limpar busca"
+                style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)' }}
+              >
+                <X size={15} />
+              </button>
+            )}
+          </div>
+        </div>
+
+        <div style={{ padding: '0 24px' }}>
+          {filteredTechnicians.length ? (
+            <div className="technicians-grid">
           {filteredTechnicians.map(tech => {
             const phoneConfigured = hasValue(tech.phone);
             const emailConfigured = hasValue(tech.email);
@@ -609,12 +667,14 @@ export function TechniciansView({ technicians, onRefresh }: TechniciansViewProps
           })}
         </div>
       ) : (
-        <div className="empty-state">
+        <div className="field-empty">
           <UserRound size={34} />
           <h3>Nenhum técnico encontrado</h3>
           <p>Ajuste o termo de busca ou cadastre um novo profissional.</p>
         </div>
       )}
+        </div>
+      </section>
 
       {/* MODAL DE CRIAÇÃO / EDIÇÃO DE TÉCNICO COM PIN */}
       {modalMode && (
@@ -1025,6 +1085,6 @@ export function TechniciansView({ technicians, onRefresh }: TechniciansViewProps
         technicians={technicians}
         defaultTechnicianId={linkTechId}
       />
-    </section>
+    </div>
   );
 }

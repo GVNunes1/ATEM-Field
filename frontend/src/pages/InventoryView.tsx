@@ -13,9 +13,12 @@ import {
   Edit2,
   Trash2,
   X,
-  AlertTriangle
+  AlertTriangle,
+  FileSpreadsheet,
+  Activity
 } from 'lucide-react';
 import { safeFetchJson } from '../lib/api';
+import { ExcelSyncModal } from '../components/ExcelSyncModal';
 
 import { AuthUser } from '../types/auth';
 
@@ -71,6 +74,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ analyzers, onRefre
   const [reservationOwnerFilter, setReservationOwnerFilter] = useState('ALL');
   const [calibrationFilter, setCalibrationFilter] = useState('ALL');
   const [showAddModal, setShowAddModal] = useState(false);
+  const [showExcelSyncModal, setShowExcelSyncModal] = useState(false);
 
   // New Analyzer form state
   const [formData, setFormData] = useState({
@@ -295,51 +299,118 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ analyzers, onRefre
     }
   };
 
+  const calibrationAlertsCount = useMemo(() => analyzers.filter(a => {
+    const st = getCalibrationFilter(a.calibration_expiry, todayIso, calibrationWarningIso);
+    return st === 'EXPIRING' || st === 'EXPIRED';
+  }).length, [analyzers, todayIso, calibrationWarningIso]);
+
   return (
-    <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-      
+    <div className="inventory-view field-dashboard">
+      <header className="field-page-heading">
+        <div>
+          <span className="field-overline">Controle de Patrimônio</span>
+          <h1>Inventário de padrões.</h1>
+          <p>Rastreabilidade de analisadores, calibrações vigentes e alocação da equipe técnica.</p>
+        </div>
+
+        {isAdmin && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+            <button
+              type="button"
+              onClick={() => setShowExcelSyncModal(true)}
+              className="btn btn-secondary inventory-excel-sync-button"
+              style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}
+              title="Sincronizar identificação e datas de calibração via Excel"
+            >
+              <FileSpreadsheet size={18} aria-hidden="true" /> Sincronizar Excel
+            </button>
+            <button
+              type="button"
+              onClick={() => setShowAddModal(true)}
+              className="btn btn-primary inventory-add-button"
+              style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}
+            >
+              <Plus size={18} aria-hidden="true" /> Cadastrar Patrimônio
+            </button>
+          </div>
+        )}
+      </header>
+
       {/* Feedback message */}
       {msg && (
-        <div style={{
-          padding: '12px 18px',
-          borderRadius: '12px',
-          background: msg.type === 'success' ? '#ecfdf5' : '#fef2f2',
-          border: `1px solid ${msg.type === 'success' ? '#a7f3d0' : '#fecaca'}`,
-          color: msg.type === 'success' ? '#065f46' : '#991b1b',
-          fontWeight: 600,
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center'
-        }}>
+        <div className={`operations-notice ${msg.type === 'success' ? 'is-success' : 'is-error'}`} role="status" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 18px', background: msg.type === 'success' ? '#ecfdf5' : '#fef2f2', border: `1px solid ${msg.type === 'success' ? '#a7f3d0' : '#fecaca'}`, color: msg.type === 'success' ? '#065f46' : '#991b1b', borderRadius: '8px', fontSize: '0.85rem' }}>
           <span>{msg.text}</span>
-          <button type="button" onClick={() => setMsg(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'currentColor' }}><X size={16} /></button>
+          <button type="button" onClick={() => setMsg(null)} aria-label="Fechar aviso" style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'currentColor' }}><X size={16} /></button>
         </div>
       )}
 
-      {/* Action & Filter Bar */}
-      <section className="glass-panel inventory-control-panel" aria-labelledby="inventory-title">
-        <div className="inventory-control-panel__header">
-          <div>
-            <h2 id="inventory-title" className="inventory-title">
-              <Box size={22} aria-hidden="true" /> Inventário de Patrimônios & Analisadores
-            </h2>
-            <p className="inventory-description">
-              Controle individual por número de patrimônio, rastreabilidade de calibração e status de alocação.
-            </p>
-            <p className="inventory-result-count" aria-live="polite">
-              Exibindo <strong>{filtered.length.toLocaleString('pt-BR')}</strong> de <strong>{analyzers.length.toLocaleString('pt-BR')}</strong> patrimônios carregados.
-              {activeFilterCount > 0 && <span> · {activeFilterCount} {activeFilterCount === 1 ? 'filtro ativo' : 'filtros ativos'}</span>}
-            </p>
-          </div>
+      {/* Metrics Strip */}
+      <section className="field-metrics" aria-label="Indicadores do inventário">
+        <button
+          type="button"
+          className="field-metric available"
+          onClick={() => setStatusFilter('ALL')}
+        >
+          <span className="field-metric-label">
+            Total no acervo
+            <Box size={17} aria-hidden="true" />
+          </span>
+          <strong>{analyzers.length}</strong>
+          <span className="field-metric-detail">Patrimônios cadastrados</span>
+        </button>
 
-          {isAdmin && (
-            <button onClick={() => setShowAddModal(true)} className="btn btn-primary inventory-add-button">
-              <Plus size={18} aria-hidden="true" /> Cadastrar Patrimônio
-            </button>
-          )}
+        <button
+          type="button"
+          className="field-metric"
+          onClick={() => setStatusFilter('Disponível')}
+        >
+          <span className="field-metric-label">
+            Disponíveis
+            <CheckCircle2 size={17} aria-hidden="true" />
+          </span>
+          <strong>{analyzers.filter(a => a.status === 'Disponível').length}</strong>
+          <span className="field-metric-detail">Prontos para saída</span>
+        </button>
+
+        <button
+          type="button"
+          className="field-metric"
+          onClick={() => setStatusFilter('Em Uso')}
+        >
+          <span className="field-metric-label">
+            Em campo / reserva
+            <Activity size={17} aria-hidden="true" />
+          </span>
+          <strong>{analyzers.filter(a => a.status === 'Em Uso' || a.status === 'Reservado').length}</strong>
+          <span className="field-metric-detail">Alocados com técnicos</span>
+        </button>
+
+        <button
+          type="button"
+          className="field-metric"
+          onClick={() => setCalibrationFilter('EXPIRING')}
+        >
+          <span className="field-metric-label">
+            Calibração em atenção
+            <AlertTriangle size={17} aria-hidden="true" />
+          </span>
+          <strong>{calibrationAlertsCount}</strong>
+          <span className="field-metric-detail">Vencendo ou vencidos</span>
+        </button>
+      </section>
+
+      {/* Filter Surface */}
+      <section className="field-surface" style={{ padding: '20px 24px' }}>
+        <div className="field-section-heading" style={{ padding: '0 0 16px 0', borderBottom: '1px solid var(--border-subtle)', flexWrap: 'wrap' }}>
+          <div>
+            <h2>
+              Acervo de Analisadores <span className="field-count">{filtered.length}</span>
+            </h2>
+            <p>Filtre por patrimônio, série, responsável ou validade de calibração</p>
+          </div>
         </div>
 
-        <div className="inventory-filters" role="search" aria-label="Filtros do inventário">
+        <div className="inventory-filters" style={{ marginTop: '16px' }} role="search" aria-label="Filtros do inventário">
           <label className="filter-field inventory-search-field">
             <span>Buscar patrimônio</span>
             <div className="inventory-search-input">
@@ -396,7 +467,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ analyzers, onRefre
         </div>
 
         {activeFilterCount > 0 && (
-          <div className="inventory-active-filters" aria-label="Filtros selecionados">
+          <div className="inventory-active-filters" style={{ marginTop: '16px' }} aria-label="Filtros selecionados">
             <span className="inventory-active-filters__label">Filtros aplicados:</span>
             {searchTerm.trim() && (
               <span className="inventory-filter-chip">
@@ -436,7 +507,8 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ analyzers, onRefre
       </section>
 
       {/* Grid of Analyzers */}
-      <div className="field-inventory-grid">
+      {filtered.length > 0 ? (
+        <div className="field-inventory-grid">
         {filtered.map(item => {
           const isReserved = item.status === 'Reservado';
           const isInUse = item.status === 'Em Uso';
@@ -578,18 +650,17 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ analyzers, onRefre
             </div>
           );
         })}
-
-        {filtered.length === 0 && (
-          <div className="inventory-empty-state">
-            <Filter size={24} aria-hidden="true" />
-            <h3>Nenhum patrimônio encontrado</h3>
-            <p>Revise os termos da busca ou remova alguns filtros para ampliar os resultados.</p>
-            <button type="button" className="btn btn-secondary" onClick={clearFilters}>
-              <RotateCcw size={16} aria-hidden="true" /> Limpar filtros
-            </button>
-          </div>
-        )}
-      </div>
+        </div>
+      ) : (
+        <div className="field-empty field-surface" style={{ padding: '48px 24px' }}>
+          <Box size={36} />
+          <h3>Nenhum patrimônio encontrado</h3>
+          <p>Revise os termos da busca ou limpe os filtros para ampliar os resultados.</p>
+          <button type="button" className="btn btn-secondary btn-sm" style={{ marginTop: '12px' }} onClick={clearFilters}>
+            <RotateCcw size={15} /> Limpar filtros
+          </button>
+        </div>
+      )}
 
       {/* Add Analyzer Modal */}
       {showAddModal && (
@@ -824,6 +895,17 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ analyzers, onRefre
           </div>
         </div>
       )}
+
+      {/* Excel Synchronization Modal */}
+      <ExcelSyncModal
+        isOpen={showExcelSyncModal}
+        onClose={() => setShowExcelSyncModal(false)}
+        onSuccess={() => {
+          onRefresh();
+          setMsg({ type: 'success', text: 'Sincronização de padrões via Excel concluída com sucesso!' });
+        }}
+        existingAnalyzers={analyzers}
+      />
 
     </div>
   );

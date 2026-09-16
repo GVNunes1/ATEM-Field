@@ -4,6 +4,12 @@ import path from 'path';
 import { supabaseAdmin } from '../services/supabase';
 import { isNonTechnicalAppointment } from '../utils/appointmentUtils';
 import {
+  parseAnalyzersExcelBuffer,
+  generateAnalyzersExcelTemplate,
+  mapRowToAnalyzer,
+  AnalyzerExcelRow
+} from '../utils/excelUtils';
+import {
   getGoogleCalendarSyncStatus,
   runGoogleCalendarSync,
   startGoogleCalendarAuthorization
@@ -909,6 +915,169 @@ router.get('/analyzers', async (req: Request, res: Response) => {
     });
 
     res.json({ success: true, analyzers: enriched });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+router.get('/analyzers/template-excel', async (_req: Request, res: Response) => {
+  try {
+    const buffer = generateAnalyzersExcelTemplate();
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition', 'attachment; filename="modelo_padroes_calibracao.xlsx"');
+    res.send(buffer);
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+router.post('/analyzers/sync-excel', async (req: Request, res: Response) => {
+  try {
+    let rowsToProcess: AnalyzerExcelRow[] = [];
+
+    if (req.body.fileBase64) {
+      const buffer = Buffer.from(req.body.fileBase64, 'base64');
+      rowsToProcess = parseAnalyzersExcelBuffer(buffer);
+    } else if (Array.isArray(req.body.rows)) {
+      req.body.rows.forEach((r: any, idx: number) => {
+        if (r.asset_tag) {
+          rowsToProcess.push({
+            asset_tag: String(r.asset_tag).trim().toUpperCase(),
+            name: String(r.name || `Analisador ${r.asset_tag}`).trim(),
+            type: String(r.type || 'Padrão Geral').trim(),
+            serial_number: String(r.serial_number || r.asset_tag).trim(),
+            brand_model: String(r.brand_model || r.name || '').trim(),
+            status: r.status || 'Disponível',
+            calibration_date: r.calibration_date || null,
+            calibration_expiry: r.calibration_expiry || null,
+            current_location: r.current_location || 'Almoxarifado Central',
+            notes: r.notes || '',
+            rawRowIndex: idx + 1
+          });
+        } else {
+          const mapped = mapRowToAnalyzer(r, idx + 1);
+          if (mapped) rowsToProcess.push(mapped);
+        }
+      });
+    } else {
+      return res.status(400).json({
+        success: false,
+        error: 'Nenhum dado de planilha enviado. Envie rows (array) ou fileBase64.'
+      });
+    }
+
+    if (rowsToProcess.length === 0) {
+      return res.status(400).json({
+        success: false,
+        error: 'Nenhuma linha válida de analisador/padrão encontrada na planilha. Verifique a coluna de Patrimônio.'
+      });
+    }
+
+    const { data: existingList, error: fetchErr } = await supabaseAdmin
+      .from('analyzers')
+      .select('*');
+
+    if (fetchErr) throw fetchErr;
+
+    const existingMap = new Map<string, any>();
+    for (const a of existingList || []) {
+      if (a.asset_tag) {
+        existingMap.set(a.asset_tag.toUpperCase().trim(), a);
+      }
+    }
+
+    let createdCount = 0;
+    let updatedCount = 0;
+    const errors: Array<{ asset_tag: string; error: string }> = [];
+    const details: Array<{ asset_tag: string; action: 'created' | 'updated' | 'error'; name: string; calibration_expiry?: string | null }> = [];
+
+    for (const row of rowsToProcess) {
+      try {
+        const existing = existingMap.get(row.asset_tag);
+
+        if (existing) {
+          const updates: Record<string, any> = {
+            name: row.name || existing.name,
+            type: row.type || existing.type,
+            serial_number: row.serial_number || existing.serial_number,
+            brand_model: row.brand_model || existing.brand_model || row.name,
+            current_location: row.current_location || existing.current_location || 'Almoxarifado Central',
+            notes: row.notes !== undefined && row.notes !== '' ? row.notes : existing.notes
+          };
+
+          if (row.calibration_date !== undefined) updates.calibration_date = row.calibration_date;
+          if (row.calibration_expiry !== undefined) {
+            updates.calibration_expiry = row.calibration_expiry;
+            updates.calibration_due = row.calibration_expiry;
+          }
+          if (row.status && existing.status !== 'Em Uso' && existing.status !== 'Reservado') {
+            updates.status = row.status;
+          }
+
+          const { error: updErr } = await supabaseAdmin
+            .from('analyzers')
+            .update(updates)
+            .eq('id', existing.id);
+
+          if (updErr) throw updErr;
+
+          updatedCount++;
+          details.push({
+            asset_tag: row.asset_tag,
+            action: 'updated',
+            name: row.name,
+            calibration_expiry: row.calibration_expiry ?? existing.calibration_expiry
+          });
+        } else {
+          const { data: insData, error: insErr } = await supabaseAdmin
+            .from('analyzers')
+            .insert({
+              asset_tag: row.asset_tag,
+              name: row.name,
+              type: row.type,
+              serial_number: row.serial_number,
+              brand_model: row.brand_model || row.name,
+              status: row.status || 'Disponível',
+              calibration_date: row.calibration_date || null,
+              calibration_expiry: row.calibration_expiry || null,
+              calibration_due: row.calibration_expiry || null,
+              current_location: row.current_location || 'Almoxarifado Central',
+              notes: row.notes || ''
+            })
+            .select('id, asset_tag')
+            .single();
+
+          if (insErr) throw insErr;
+
+          existingMap.set(row.asset_tag, { ...row, id: insData.id });
+          createdCount++;
+          details.push({
+            asset_tag: row.asset_tag,
+            action: 'created',
+            name: row.name,
+            calibration_expiry: row.calibration_expiry
+          });
+        }
+      } catch (err: any) {
+        errors.push({ asset_tag: row.asset_tag, error: err.message });
+        details.push({
+          asset_tag: row.asset_tag,
+          action: 'error',
+          name: row.name
+        });
+      }
+    }
+
+    res.json({
+      success: true,
+      message: `Sincronização concluída: ${updatedCount} atualizado(s), ${createdCount} criado(s), ${errors.length} erro(s).`,
+      total: rowsToProcess.length,
+      createdCount,
+      updatedCount,
+      errorCount: errors.length,
+      errors,
+      details
+    });
   } catch (err: any) {
     res.status(500).json({ success: false, error: err.message });
   }
