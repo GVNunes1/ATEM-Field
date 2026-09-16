@@ -8,6 +8,21 @@ export interface SupportSource {
   kind: 'faq' | 'catalog';
 }
 
+/**
+ * Procedimento operacional curado. Estes campos ficam separados da resposta
+ * curta para que o LLM consiga explicar pré-requisitos, passos, validações e
+ * resultado sem precisar inferir o fluxo a partir da interface.
+ */
+export interface SupportProcedure {
+  purpose?: string;
+  roles?: string;
+  prerequisites?: string[];
+  steps?: string[];
+  validations?: string[];
+  result?: string;
+  cautions?: string[];
+}
+
 export interface SupportMatch {
   score: number;
   question: string;
@@ -15,6 +30,7 @@ export interface SupportMatch {
   spokenSummary: string;
   source: SupportSource;
   keywords: string[];
+  procedure?: SupportProcedure;
 }
 
 interface SupportFaqEntry {
@@ -24,6 +40,7 @@ interface SupportFaqEntry {
   spokenSummary?: string;
   keywords: string[];
   source: SupportSource;
+  procedure?: SupportProcedure;
 }
 
 const FAQ_PATH = path.resolve(__dirname, '../../data/support-faq.json');
@@ -75,7 +92,8 @@ export function findSupportMatches(question: string, limit = 3): SupportMatch[] 
         answer: entry.answer,
         spokenSummary: entry.spokenSummary || entry.answer,
         source: entry.source,
-        keywords: overlap
+        keywords: overlap,
+        procedure: entry.procedure
       };
     })
     .filter(match => match.score > 0)
@@ -90,6 +108,25 @@ export function getBestSupportMatch(question: string): SupportMatch | null {
 
 export function buildSupportContext(matches: SupportMatch[]): string {
   return matches
-    .map(match => `Fonte: ${match.source.title}${match.source.section ? ` · ${match.source.section}` : ''}\nPergunta relacionada: ${match.question}\nConteúdo aprovado: ${match.answer}`)
+    .map(match => {
+      const procedure = match.procedure;
+      const sections = [
+        `Fonte: ${match.source.title}${match.source.section ? ` · ${match.source.section}` : ''}`,
+        `Pergunta relacionada: ${match.question}`,
+        `Conteúdo aprovado: ${match.answer}`
+      ];
+
+      if (!procedure) return sections.join('\n');
+      if (procedure.purpose) sections.push(`Objetivo da função: ${procedure.purpose}`);
+      if (procedure.roles) sections.push(`Perfil/permissão: ${procedure.roles}`);
+      if (procedure.prerequisites?.length) sections.push(`Pré-requisitos: ${procedure.prerequisites.join(' | ')}`);
+      if (procedure.steps?.length) {
+        sections.push(`Passo a passo:\n${procedure.steps.map((step, index) => `${index + 1}. ${step}`).join('\n')}`);
+      }
+      if (procedure.validations?.length) sections.push(`Validações do sistema: ${procedure.validations.join(' | ')}`);
+      if (procedure.result) sections.push(`Resultado esperado: ${procedure.result}`);
+      if (procedure.cautions?.length) sections.push(`Cuidados: ${procedure.cautions.join(' | ')}`);
+      return sections.join('\n');
+    })
     .join('\n\n');
 }

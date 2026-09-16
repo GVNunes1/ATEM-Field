@@ -14,6 +14,8 @@ import { ProfileView } from './pages/ProfileView';
 import { AuthUser } from './types/auth';
 import { safeFetchJson } from './lib/api';
 import { SupportAssistant } from './features/support/SupportAssistant';
+import { CalendarDays, ChevronRight, RefreshCw } from 'lucide-react';
+import { PageSkeleton } from './components/PageSkeleton';
 
 const noCacheFetchOptions: RequestInit = {
   cache: 'no-store',
@@ -67,6 +69,8 @@ export function App() {
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState('');
   const [supportOpen, setSupportOpen] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
 
   const handleLoginSuccess = (user: AuthUser, token: string) => {
     setCurrentUser(user);
@@ -152,6 +156,15 @@ export function App() {
       if (apptsData?.success) setAppointments(apptsData.appointments || []);
       if (catsData?.success) setCategories(catsData.categories || []);
       if (techsData?.success) setTechnicians(techsData.technicians || []);
+      const sources = [statsData, analyzersData, apptsData, catsData, techsData];
+      const unavailable = sources.filter(source => !source?.success).length;
+      if (unavailable) {
+        setLoadError(unavailable === sources.length
+          ? 'Não foi possível carregar a operação. Verifique sua conexão e tente novamente.'
+          : 'Alguns dados não puderam ser atualizados. Tente novamente para completar a consulta.');
+      } else {
+        setLastUpdated(new Date());
+      }
     } catch (err: any) {
       setLoadError(err.message || 'Falha ao carregar dados operacionais.');
     } finally {
@@ -177,6 +190,11 @@ export function App() {
       // Background inventory refresh error
     }
   }, []);
+
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    try { await fetchAllData(); } finally { setRefreshing(false); }
+  };
 
   useEffect(() => {
     if (publicPage) {
@@ -225,6 +243,7 @@ export function App() {
 
   return (
     <div className="app-layout">
+      <a href="#main-content" className="skip-link">Pular para o conteúdo</a>
       <Navigation
         activeTab={activeTab}
         setActiveTab={handleTabChange}
@@ -233,7 +252,14 @@ export function App() {
         onOpenSupport={openSupport}
       />
       <div className="app-content-wrapper">
-        <main className="app-main">
+        <header className="workspace-topbar">
+          <div className="workspace-breadcrumb"><span>ATEM Field</span><ChevronRight size={14} aria-hidden="true" /><strong>{({ dashboard: 'Dashboard', appointments: 'Agenda', operations: 'Reservas', inventory: 'Padrões', technicians: 'Técnicos', history: 'Histórico', templates: 'Templates', checklist: 'Templates', profile: 'Perfil' } as Record<string, string>)[activeTab] || 'Área de trabalho'}</strong></div>
+          <div className="workspace-tools">
+            <span className="workspace-date"><CalendarDays size={15} aria-hidden="true" />{new Date().toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' })}</span>
+            <button className="workspace-refresh" onClick={handleRefresh} disabled={refreshing} aria-label="Atualizar dados" title={lastUpdated ? `Atualizado às ${lastUpdated.toLocaleTimeString('pt-BR')}` : 'Atualizar dados'}><RefreshCw size={16} className={refreshing ? 'spin' : undefined} /><span>{refreshing ? 'Atualizando' : 'Atualizar'}</span></button>
+          </div>
+        </header>
+        <main id="main-content" tabIndex={-1} className="app-main" data-page={activeTab}>
           {loadError && (
             <div className="load-error" role="alert">
               <span>{loadError}</span>
@@ -242,17 +268,11 @@ export function App() {
           )}
 
           {loading && activeTab !== 'profile' ? (
-            <div className="loading-state" aria-live="polite">
-              <span className="loading-spinner" />
-              <div>
-                <strong>Carregando operação</strong>
-                <p>Buscando agenda, equipe e patrimônios.</p>
-              </div>
-            </div>
+            <PageSkeleton />
           ) : (
-            <>
+            <div key={activeTab} className="page-transition">
               {activeTab === 'dashboard' && (
-                <DashboardView stats={stats} recentReservations={recentReservations} onNavigate={handleTabChange} />
+                <DashboardView stats={stats} recentReservations={recentReservations} appointments={appointments} onNavigate={handleTabChange} onOpenReservation={handleOpenReservationForAppointment} onRetry={handleRefresh} />
               )}
               {activeTab === 'inventory' && (
                 <InventoryView analyzers={analyzers} onRefresh={fetchAllData} currentUser={currentUser} />
@@ -286,7 +306,7 @@ export function App() {
               {activeTab === 'profile' && (
                 <ProfileView currentUser={currentUser} />
               )}
-            </>
+            </div>
           )}
         </main>
 

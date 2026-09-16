@@ -49,7 +49,7 @@ export const ChecklistView: React.FC<ChecklistViewProps> = ({ categories, onRefr
     <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
       
       {/* Header Bar */}
-      <div className="glass-panel" style={{ padding: '20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '16px' }}>
+      <div className="field-template-heading">
         <div>
           <h2 style={{ fontSize: '1.25rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '10px' }}>
             <CheckSquare size={22} color="var(--primary)" /> Cadastro de Templates & Parâmetros por Categoria
@@ -65,10 +65,10 @@ export const ChecklistView: React.FC<ChecklistViewProps> = ({ categories, onRefr
       </div>
 
       {/* Grid of Equipment Categories */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 1fr))', gap: '20px' }}>
+      <div className="field-template-grid">
         {categories.map((cat: any) => (
           <div key={cat.id} className="glass-panel" style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <div className="field-template-card-heading">
               <h3 style={{ fontSize: '1.15rem', fontWeight: 700, color: 'var(--primary)', display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <Activity size={18} /> {cat.name}
               </h3>
@@ -89,7 +89,7 @@ export const ChecklistView: React.FC<ChecklistViewProps> = ({ categories, onRefr
                     </div>
 
                     <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '6px', fontWeight: 600 }}>
-                      📋 Parâmetros Obrigatórios a Testar:
+                      Parâmetros obrigatórios
                     </div>
 
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>

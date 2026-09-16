@@ -3,6 +3,9 @@ import ReactDOM from 'react-dom/client';
 import App from './App.tsx';
 import { TechnicianPortalView } from './pages/TechnicianPortalView.tsx';
 import './index.css';
+import '@fontsource-variable/geist';
+import '@fontsource-variable/jetbrains-mono';
+import './styles/taste.css';
 
 const isTechnicianPortal = window.location.pathname === '/portal-tecnico';
 

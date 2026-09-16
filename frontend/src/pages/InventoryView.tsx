@@ -436,11 +436,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ analyzers, onRefre
       </section>
 
       {/* Grid of Analyzers */}
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))',
-        gap: '16px'
-      }}>
+      <div className="field-inventory-grid">
         {filtered.map(item => {
           const isReserved = item.status === 'Reservado';
           const isInUse = item.status === 'Em Uso';

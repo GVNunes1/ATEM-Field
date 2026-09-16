@@ -105,19 +105,25 @@ export const LoginView: React.FC<LoginViewProps> = ({ technicians, onLoginSucces
   };
 
   return (
-    <div className="login-page-root">
+    <main className="login-page-root">
+      <section className="login-intro" aria-labelledby="login-intro-title">
+        <div className="login-intro-brand"><img src="/logomarca_azul_clinico_sem_fundo.png" alt="ATEM" /><span>Field</span></div>
+        <div className="login-intro-copy"><span className="field-overline">Assistência técnica</span><h2 id="login-intro-title">Mais clareza.<br />Em cada atendimento.</h2><p>Acompanhe sua agenda, organize os padrões e mantenha a equipe pronta para ir a campo.</p></div>
+        <div className="login-intro-footer"><Wrench size={17} /><span>Mult Med Equipamentos Hospitalares</span></div>
+      </section>
       <div className="login-card">
         {/* Brand Header */}
         <div className="login-brand-header">
           <img src="/logomarca_azul_clinico_sem_fundo.png" alt="ATEM" className="login-logo-img" />
-          <h2>Acesso ao Sistema</h2>
-          <p>ATEM Field · Assistência Técnica & Gestão de Campo</p>
+          <h1>Bem-vindo ao ATEM Field</h1>
+          <p>Escolha seu perfil para acessar a operação.</p>
         </div>
 
         {/* Tab Switcher */}
         <div className="login-tabs">
           <button
             type="button"
+            aria-pressed={activeTab === 'admin'}
             className={`login-tab-btn ${activeTab === 'admin' ? 'active' : ''}`}
             onClick={() => {
               setActiveTab('admin');
@@ -129,6 +135,7 @@ export const LoginView: React.FC<LoginViewProps> = ({ technicians, onLoginSucces
           </button>
           <button
             type="button"
+            aria-pressed={activeTab === 'technician'}
             className={`login-tab-btn ${activeTab === 'technician' ? 'active' : ''}`}
             onClick={() => {
               setActiveTab('technician');
@@ -144,7 +151,7 @@ export const LoginView: React.FC<LoginViewProps> = ({ technicians, onLoginSucces
         {error && (
           <div className="login-error-alert" role="alert">
             <span>{error}</span>
-            <button type="button" onClick={() => setError('')}><X size={15} /></button>
+            <button type="button" aria-label="Dispensar mensagem de erro" onClick={() => setError('')}><X size={15} /></button>
           </div>
         )}
 
@@ -158,6 +165,7 @@ export const LoginView: React.FC<LoginViewProps> = ({ technicians, onLoginSucces
                 <input
                   id="admin-pin-input"
                   type="password"
+                  autoComplete="current-password"
                   required
                   placeholder="Digite o PIN de administrador"
                   value={adminPin}
@@ -206,6 +214,7 @@ export const LoginView: React.FC<LoginViewProps> = ({ technicians, onLoginSucces
                 <input
                   id="tech-pin-input"
                   type="password"
+                  autoComplete="current-password"
                   placeholder="Digite seu PIN (padrão: 1234)"
                   value={techPin}
                   onChange={e => setTechPin(e.target.value)}
@@ -231,7 +240,7 @@ export const LoginView: React.FC<LoginViewProps> = ({ technicians, onLoginSucces
           </nav>
         </div>
       </div>
-    </div>
+    </main>
   );
 };
 

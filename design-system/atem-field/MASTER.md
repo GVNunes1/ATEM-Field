@@ -1,5 +1,7 @@
 # Design System Master File
 
+> Current visual direction: read `design-system/atem-field/TASTE.md`. The user approved a modern, uncluttered redesign with navigation animations; it supersedes conflicting typography, gradient and component examples below. The field-report PDF is protected and unchanged.
+
 > **LOGIC:** When building a specific page, first check `design-system/atem-field/pages/[page-name].md`.
 > If that file exists, its rules **override** this Master file.
 > If not, strictly follow the rules below.

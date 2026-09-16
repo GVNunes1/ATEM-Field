@@ -1,6 +1,7 @@
 import React from 'react';
 import {
   Box,
+  CheckSquare,
   Calendar,
   ClipboardList,
   CircleHelp,
@@ -36,6 +37,7 @@ export const Navigation: React.FC<NavigationProps> = ({
     { id: 'appointments', label: 'Agenda', icon: Calendar },
     { id: 'operations', label: 'Reservas', icon: PackageCheck },
     { id: 'inventory', label: 'Padrões', icon: Box },
+    { id: 'templates', label: 'Templates', icon: CheckSquare },
     ...(isAdmin ? [{ id: 'technicians', label: 'Técnicos', icon: Users }] : []),
     { id: 'history', label: 'Histórico', icon: ClipboardList }
   ];
@@ -60,10 +62,12 @@ export const Navigation: React.FC<NavigationProps> = ({
             }}
           />
         </div>
+        <span className="sidebar-product">Field<span>Gestão de campo</span></span>
       </div>
 
       {/* Navigation Links */}
       <nav className="sidebar-nav">
+        <span className="sidebar-section-label">Área de trabalho</span>
         {navItems.map(item => {
           const Icon = item.icon;
           const isActive = activeTab === item.id;

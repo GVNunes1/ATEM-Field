@@ -12,6 +12,7 @@ node_modules/
 .venv/
 dist/
 .npm-cache-local/
+.codex/tmp/
 *.log
 __pycache__/
 *.py[cod]

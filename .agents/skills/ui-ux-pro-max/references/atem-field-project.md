@@ -1,5 +1,7 @@
 # ATEM Field project profile
 
+For the current approved redesign, read `<project-root>/design-system/atem-field/TASTE.md` after MASTER.md. It supersedes the older Inter/gradient visual defaults below with Geist, quiet surfaces and animated navigation. Preserve the field-report PDF exactly.
+
 Load this file only when the workspace is the ATEM Field project. Confirm it by finding `frontend/package.json` with `name: quick-turing-frontend`.
 
 ## Product and users

@@ -1,183 +1,93 @@
-import React from 'react';
-import { Box, CheckCircle2, Clock, AlertTriangle, Calendar, Users, ArrowRight, Shield, PackageCheck } from 'lucide-react';
+import { ArrowDownLeft, ArrowRight, ArrowUpRight, Box, CalendarDays, CheckCircle2, Clock3, MapPin, PackageCheck, RefreshCw } from 'lucide-react';
+import { isNonTechnicalAppointment } from '../lib/appointmentUtils';
 
-interface DashboardViewProps {
-  stats: any;
-  recentReservations: any[];
-  onNavigate: (tab: string) => void;
+interface DashboardStats {
+  availableAnalyzers: number;
+  totalAnalyzers: number;
+  reservedAnalyzers: number;
+  inUseAnalyzers: number;
+  todayAppointments: number;
 }
+interface DashboardAppointment {
+  id: number;
+  appointment_date: string;
+  appointment_time?: string;
+  client_name?: string;
+  title?: string;
+  client_address?: string;
+  technician_names?: string;
+  technician_name?: string;
+  status?: string;
+}
+interface RecentReservation {
+  id: number | string;
+  asset_tag?: string;
+  analyzer_name?: string;
+  technician_name?: string;
+  client_name?: string;
+  status?: string;
+}
+interface DashboardViewProps {
+  stats: DashboardStats | null;
+  recentReservations: RecentReservation[];
+  appointments: DashboardAppointment[];
+  onNavigate: (tab: string) => void;
+  onOpenReservation: (id: number) => void;
+  onRetry: () => void;
+}
+const number = (value: number) => Number(value || 0).toLocaleString('pt-BR');
 
-export const DashboardView: React.FC<DashboardViewProps> = ({ stats, recentReservations, onNavigate }) => {
-  if (!stats) return <div style={{ color: 'var(--text-muted)', padding: '20px' }}>Carregando dados...</div>;
+export function DashboardView({ stats, recentReservations, appointments, onNavigate, onOpenReservation, onRetry }: DashboardViewProps) {
+  const now = new Date();
+  const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+  const todaysAppointments = appointments.filter(item => item.appointment_date === today && item.status?.toLocaleLowerCase('pt-BR') !== 'cancelado')
+    .sort((a, b) => (a.appointment_time || '').localeCompare(b.appointment_time || ''));
+  const available = Math.max(0, Number(stats?.availableAnalyzers || 0));
+  const total = Math.max(0, Number(stats?.totalAnalyzers || 0));
+  const availability = total ? Math.min(100, Math.round(available / total * 100)) : 0;
 
   return (
-    <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-      
-      {/* Hero Banner */}
-      <div className="glass-panel" style={{
-        padding: '24px 32px',
-        background: 'linear-gradient(135deg, #ffffff 0%, #eef5ff 100%)',
-        borderLeft: '5px solid var(--primary)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        flexWrap: 'wrap',
-        gap: '16px'
-      }}>
-        <div>
-          <h2 style={{ fontSize: '1.4rem', fontWeight: 700, marginBottom: '6px' }}>
-            Visão Geral das Operações & Controle de Patrimônio
-          </h2>
-          <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', maxWidth: '680px' }}>
-            Agenda sincronizada, controle de padrões por patrimônio e reservas feitas pelo administrador ou pelo portal individual de cada técnico.
-          </p>
-        </div>
-        <button onClick={() => onNavigate('operations')} className="btn btn-primary">
-          <PackageCheck size={18} /> Administrar reservas
-        </button>
+    <div className="field-dashboard">
+      <header className="field-page-heading">
+        <div><span className="field-overline">Visão operacional</span><h1>Seu dia em campo.</h1><p>Agenda, equipe e padrões. Tudo pronto para o próximo atendimento.</p></div>
+        <button onClick={() => onNavigate('operations')} className="btn btn-primary"><PackageCheck size={17} /> Administrar reservas <ArrowUpRight size={16} /></button>
+      </header>
+      {!stats ? (
+        <section className="field-unavailable" role="status"><Box size={28} /><h2>Indicadores indisponíveis</h2><p>Atualize os dados para consultar a situação dos padrões.</p><button className="btn btn-secondary" onClick={onRetry}><RefreshCw size={16} /> Tentar novamente</button></section>
+      ) : (
+        <section className="field-metrics" aria-label="Indicadores da operação">
+          {[
+            { label: 'Padrões disponíveis', value: available, detail: `de ${number(total)} cadastrados`, icon: CheckCircle2, destination: 'inventory', tone: 'available' },
+            { label: 'Reservados', value: stats.reservedAnalyzers, detail: 'Separados para atendimento', icon: PackageCheck, destination: 'operations', tone: '' },
+            { label: 'Em campo', value: stats.inUseAnalyzers, detail: 'Em uso pela equipe técnica', icon: Box, destination: 'inventory', tone: '' },
+            { label: 'Atendimentos hoje', value: stats.todayAppointments, detail: 'Horários e responsáveis', icon: CalendarDays, destination: 'appointments', tone: '' }
+          ].map(metric => <button className={`field-metric ${metric.tone}`} key={metric.label} onClick={() => onNavigate(metric.destination)}><span className="field-metric-label">{metric.label}<metric.icon size={17} aria-hidden="true" /></span><strong>{number(metric.value)}</strong><span className="field-metric-detail">{metric.detail}<ArrowUpRight size={14} aria-hidden="true" /></span></button>)}
+        </section>
+      )}
+      <div className="field-overview-grid">
+        <section className="field-agenda field-surface" aria-labelledby="daily-agenda-title">
+          <header className="field-section-heading"><div><h2 id="daily-agenda-title">Agenda de hoje <span className="field-count">{todaysAppointments.length}</span></h2><p>{now.toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' })}</p></div><button className="field-text-button" onClick={() => onNavigate('appointments')}>Ver agenda <ArrowRight size={16} /></button></header>
+          {todaysAppointments.length ? <div className="field-visit-list">{todaysAppointments.slice(0, 5).map(visit => (
+            <article className="field-visit" key={visit.id}>
+              <time className="field-visit-time"><Clock3 size={14} />{visit.appointment_time?.slice(0, 5) || 'A definir'}</time>
+              <div className="field-visit-info"><h3>{visit.client_name || visit.title || 'Atendimento'}</h3><p><MapPin size={13} />{visit.client_address || 'Endereço não informado'}</p><span>{visit.technician_names || visit.technician_name || 'Equipe a definir'}</span></div>
+              {isNonTechnicalAppointment(visit) ? <span className="field-visit-note">Sem padrão</span> : <button className="field-visit-action" onClick={() => onOpenReservation(visit.id)} aria-label={`Abrir reserva de ${visit.client_name || visit.title || 'atendimento'}`}><ArrowUpRight size={19} /></button>}
+            </article>
+          ))}</div> : <div className="field-empty"><CalendarDays size={30} /><h3>Agenda livre por aqui</h3><p>Nenhum atendimento encontrado para hoje. Consulte a agenda para planejar os próximos dias.</p><button className="field-text-button" onClick={() => onNavigate('appointments')}>Consultar agenda <ArrowRight size={16} /></button></div>}
+          {todaysAppointments.length > 5 && <button className="field-list-more" onClick={() => onNavigate('appointments')}>Ver mais {todaysAppointments.length - 5} atendimento(s)<ArrowRight size={15} /></button>}
+        </section>
+        <aside className="field-readiness field-surface" aria-labelledby="readiness-title">
+          <span className="field-overline">Patrimônio</span><h2 id="readiness-title">Prontos para sair.</h2><p>Disponibilidade dos padrões para a próxima operação.</p>
+          <div className="field-readiness-number"><strong>{stats ? `${availability}%` : 'N/D'}</strong><span>do acervo disponível</span></div>
+          <meter className="field-capacity" min={0} max={100} value={availability} aria-label="Percentual de padrões disponíveis" />
+          <dl className="field-availability-list"><div><dt>Disponíveis</dt><dd>{stats ? number(available) : 'N/D'}</dd></div><div><dt>Reservados</dt><dd>{stats ? number(stats.reservedAnalyzers) : 'N/D'}</dd></div><div><dt>Em uso</dt><dd>{stats ? number(stats.inUseAnalyzers) : 'N/D'}</dd></div></dl>
+          <button className="btn btn-secondary" onClick={() => onNavigate('inventory')}>Consultar padrões <ArrowUpRight size={16} /></button>
+        </aside>
       </div>
-
-      {/* KPI Cards Grid */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '16px' }}>
-        
-        <div className="glass-panel" style={{ padding: '20px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
-            <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)', fontWeight: 600 }}>DISPONÍVEIS</span>
-            <div style={{ padding: '8px', borderRadius: '10px', background: 'rgba(16, 185, 129, 0.15)', color: '#34d399' }}>
-              <CheckCircle2 size={20} />
-            </div>
-          </div>
-          <div style={{ fontSize: '2rem', fontWeight: 800, color: '#34d399' }}>{stats.availableAnalyzers}</div>
-          <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>de {stats.totalAnalyzers} analisadores cadastrados</span>
-        </div>
-
-        <div className="glass-panel" style={{ padding: '20px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
-            <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)', fontWeight: 600 }}>RESERVADOS</span>
-            <div style={{ padding: '8px', borderRadius: '10px', background: 'rgba(59, 130, 246, 0.15)', color: '#60a5fa' }}>
-              <Clock size={20} />
-            </div>
-          </div>
-          <div style={{ fontSize: '2rem', fontWeight: 800, color: '#60a5fa' }}>{stats.reservedAnalyzers}</div>
-          <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Patrimônios reservados por técnicos</span>
-        </div>
-
-        <div className="glass-panel" style={{ padding: '20px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
-            <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)', fontWeight: 600 }}>EM CAMPO (USO)</span>
-            <div style={{ padding: '8px', borderRadius: '10px', background: 'rgba(139, 92, 246, 0.15)', color: '#c084fc' }}>
-              <Box size={20} />
-            </div>
-          </div>
-          <div style={{ fontSize: '2rem', fontWeight: 800, color: '#c084fc' }}>{stats.inUseAnalyzers}</div>
-          <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Em atendimento com técnico</span>
-        </div>
-
-        <div className="glass-panel" style={{ padding: '20px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
-            <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)', fontWeight: 600 }}>ATENDIMENTOS HOJE</span>
-            <div style={{ padding: '8px', borderRadius: '10px', background: 'rgba(245, 158, 11, 0.15)', color: '#fbbf24' }}>
-              <Calendar size={20} />
-            </div>
-          </div>
-          <div style={{ fontSize: '2rem', fontWeight: 800, color: '#fbbf24' }}>{stats.todayAppointments}</div>
-          <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Sincronizados na Agenda</span>
-        </div>
-
-      </div>
-
-      {/* Main Content Sections Grid */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))', gap: '20px' }}>
-        
-        {/* Recent Reservations Log */}
-        <div className="glass-panel" style={{ padding: '24px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
-            <h3 style={{ fontSize: '1.1rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <Clock size={18} color="var(--primary)" /> Últimas Reservas de Patrimônio
-            </h3>
-            <button onClick={() => onNavigate('operations')} className="btn btn-secondary btn-sm">
-              Ver Todos <ArrowRight size={14} />
-            </button>
-          </div>
-
-          {recentReservations && recentReservations.length > 0 ? (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              {recentReservations.map((res: any) => (
-                <div key={res.id} style={{
-                  background: 'rgba(255, 255, 255, 0.03)',
-                  padding: '14px',
-                  borderRadius: '12px',
-                  border: '1px solid var(--border-color)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  gap: '12px'
-                }}>
-                  <div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <span className="badge badge-purple" style={{ fontFamily: 'var(--font-mono)' }}>{res.asset_tag}</span>
-                      <strong style={{ fontSize: '0.9rem' }}>{res.analyzer_name}</strong>
-                    </div>
-                    <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '4px' }}>
-                      Técnico: <span style={{ color: 'var(--text-main)' }}>{res.technician_name}</span> • Cliente: <span style={{ color: 'var(--text-main)' }}>{res.client_name}</span>
-                    </p>
-                  </div>
-                  <span className={`badge ${res.status === 'Em Uso' ? 'badge-warning' : res.status === 'Reservado' ? 'badge-info' : 'badge-success'}`}>
-                    {res.status}
-                  </span>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div style={{ color: 'var(--text-muted)', fontSize: '0.9rem', textAlign: 'center', padding: '20px' }}>
-              Nenhuma reserva registrada recentemente.
-            </div>
-          )}
-        </div>
-
-        {/* System Workflow Summary */}
-        <div className="glass-panel" style={{ padding: '24px' }}>
-          <h3 style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <Shield size={18} color="var(--secondary)" /> Fluxo Automatizado da Rotina
-          </h3>
-
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-            <div style={{ display: 'flex', gap: '14px' }}>
-              <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: 'rgba(59, 130, 246, 0.2)', color: '#60a5fa', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700 }}>1</div>
-              <div>
-                <h4 style={{ fontSize: '0.95rem', fontWeight: 600 }}>Agenda Online Sincronizada</h4>
-                <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>O supervisor cadastra os atendimentos na Agenda Online. O sistema importa automaticamente cliente, equipamentos e horários.</p>
-              </div>
-            </div>
-
-            <div style={{ display: 'flex', gap: '14px' }}>
-              <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: 'rgba(245, 158, 11, 0.2)', color: '#fbbf24', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700 }}>2</div>
-              <div>
-                <h4 style={{ fontSize: '0.95rem', fontWeight: 600 }}>Reserva administrativa</h4>
-                <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>O supervisor seleciona o atendimento, o técnico responsável e um patrimônio disponível diretamente no painel.</p>
-              </div>
-            </div>
-
-            <div style={{ display: 'flex', gap: '14px' }}>
-              <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: 'rgba(139, 92, 246, 0.2)', color: '#c084fc', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700 }}>3</div>
-              <div>
-                <h4 style={{ fontSize: '0.95rem', fontWeight: 600 }}>Portal individual do técnico</h4>
-                <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Por um acesso temporário e individual, o técnico visualiza somente seus atendimentos, confere os requisitos e reserva o patrimônio correto.</p>
-              </div>
-            </div>
-
-            <div style={{ display: 'flex', gap: '14px' }}>
-              <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: 'rgba(16, 185, 129, 0.2)', color: '#34d399', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700 }}>4</div>
-              <div>
-                <h4 style={{ fontSize: '0.95rem', fontWeight: 600 }}>WhatsApp com link da reserva</h4>
-                <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Próxima etapa: enviar às 17:00 e 07:00 um lembrete no WhatsApp com o link individual do portal e o resumo da agenda.</p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-      </div>
-
+      <section className="field-surface field-recent" aria-labelledby="recent-title">
+        <header className="field-section-heading"><div><h2 id="recent-title">Últimas reservas</h2><p>Movimentações recentes dos padrões da equipe.</p></div><button className="field-text-button" onClick={() => onNavigate('history')}>Histórico completo <ArrowRight size={16} /></button></header>
+        {recentReservations.length ? <div className="field-table-scroll"><table className="field-table"><thead><tr><th scope="col">Padrão / patrimônio</th><th scope="col">Responsável</th><th scope="col">Cliente</th><th scope="col">Situação</th></tr></thead><tbody>{recentReservations.slice(0, 6).map(reservation => <tr key={reservation.id}><td><div className="field-asset"><span className="field-asset-icon"><ArrowDownLeft size={18} /></span><div><strong>{reservation.analyzer_name || 'Padrão'}</strong><code>{reservation.asset_tag || 'Sem patrimônio'}</code></div></div></td><td>{reservation.technician_name || 'Não informado'}</td><td>{reservation.client_name || 'Não informado'}</td><td><span className={`badge ${reservation.status === 'Em Uso' ? 'badge-warning' : reservation.status === 'Reservado' ? 'badge-info' : 'badge-success'}`}>{reservation.status || 'Não informada'}</span></td></tr>)}</tbody></table></div> : <div className="field-empty field-empty--compact"><PackageCheck size={25} /><div><h3>Nenhuma reserva recente</h3><p>As movimentações aparecerão aqui após a primeira reserva.</p></div></div>}
+      </section>
     </div>
   );
-};
+}
