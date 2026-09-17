@@ -1,3 +1,4 @@
+import { ModalOverlay } from '../components/ModalOverlay';
 import React, { useMemo, useState } from 'react';
 import { CheckSquare, Plus, Activity, Sliders, Shield, X, CheckCircle2, AlertCircle } from 'lucide-react';
 import { safeFetchJson } from '../lib/api';
@@ -209,7 +210,7 @@ export const ChecklistView: React.FC<ChecklistViewProps> = ({ categories, onRefr
 
       {/* Modal Add Template */}
       {showAddModal && (
-        <div className="modal-overlay" role="presentation" onMouseDown={e => {
+        <ModalOverlay onDismiss={() => { if (!loading) setShowAddModal(false); }} className="modal-overlay" role="presentation" onMouseDown={e => {
           if (e.currentTarget === e.target) setShowAddModal(false);
         }}>
           <div className="modal-content" style={{ width: '100%', maxWidth: '520px', padding: '26px' }} role="dialog" aria-modal="true" aria-labelledby="modal-template-title">
@@ -291,7 +292,7 @@ export const ChecklistView: React.FC<ChecklistViewProps> = ({ categories, onRefr
               </div>
             </form>
           </div>
-        </div>
+        </ModalOverlay>
       )}
     </div>
   );

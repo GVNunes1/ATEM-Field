@@ -33,7 +33,7 @@
   .skip-link:focus { top: 12px; }
   .app-content-wrapper { padding: 0 36px 24px; }
   .app-main, .workspace-topbar, .app-footer { width: 100%; max-width: 1400px; margin-inline: auto; }
-  .app-main { padding-top: 30px; outline: none; }
+  .app-main { flex: 1 0 auto; padding-top: 30px; outline: none; }
   .app-footer { margin-top: 32px; padding: 20px 0 0; font-size: .75rem; text-align: left; color: var(--text-muted); }
   .workspace-topbar { min-height: 74px; display: flex; align-items: center; justify-content: space-between; gap: 16px; border-bottom: 1px solid var(--border-color); flex-shrink: 0; }
   .workspace-breadcrumb, .workspace-tools, .workspace-date, .workspace-refresh { display: flex; align-items: center; gap: 10px; }
@@ -337,7 +337,8 @@
     .skeleton-metrics { grid-template-columns: repeat(2, 1fr); gap: 16px; }
   }
   @media (prefers-reduced-motion: no-preference) {
-    .page-transition { animation: field-page-enter var(--motion-page) var(--ease-out) both; }
+    /* Release the animated containing block when entry completes. */
+    .page-transition { animation: field-page-enter var(--motion-page) var(--ease-out) backwards; }
     .sidebar-nav-item--active .sidebar-nav-icon { animation: field-nav-enter 260ms var(--ease-out); }
     .login-form { animation: field-page-enter 220ms var(--ease-out) both; }
     .page-skeleton { animation: field-skeleton-pulse 1.7s ease-in-out infinite alternate; }

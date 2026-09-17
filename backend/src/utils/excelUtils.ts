@@ -1,5 +1,12 @@
 import * as XLSX from 'xlsx';
 
+// Keep spreadsheet parsing bounded. These limits protect both the browser
+// preview and the backend sync endpoint from oversized or pathological files.
+export const MAX_EXCEL_FILE_BYTES = 5 * 1024 * 1024;
+export const MAX_EXCEL_BASE64_LENGTH = Math.ceil(MAX_EXCEL_FILE_BYTES / 3) * 4;
+export const MAX_EXCEL_SHEETS = 20;
+export const MAX_EXCEL_ROWS = 5000;
+
 export interface AnalyzerExcelRow {
   asset_tag: string;
   name: string;
@@ -237,8 +244,24 @@ export function mapRowToAnalyzer(rowObj: Record<string, any>, rowIndex: number):
  * (like PAT03-F1 - Controle de Calibração.xls) parse accurately.
  */
 export function parseAnalyzersExcelBuffer(buffer: Buffer, preferredSheetName?: string): AnalyzerExcelRow[] {
-  const workbook = XLSX.read(buffer, { type: 'buffer', cellDates: true });
+  if (!Buffer.isBuffer(buffer) || buffer.length === 0) {
+    throw new Error('O arquivo de planilha está vazio ou inválido.');
+  }
+  if (buffer.length > MAX_EXCEL_FILE_BYTES) {
+    throw new Error(`A planilha excede o limite de ${Math.floor(MAX_EXCEL_FILE_BYTES / (1024 * 1024))} MB.`);
+  }
+
+  const workbook = XLSX.read(buffer, {
+    type: 'buffer',
+    cellDates: true,
+    // Stop parsing after the supported row budget. This is enforced again
+    // when converting sheets to arrays, but prevents unnecessary work here.
+    sheetRows: MAX_EXCEL_ROWS + 1
+  });
   if (!workbook.SheetNames || workbook.SheetNames.length === 0) return [];
+  if (workbook.SheetNames.length > MAX_EXCEL_SHEETS) {
+    throw new Error(`A planilha excede o limite de ${MAX_EXCEL_SHEETS} abas.`);
+  }
 
   // Determine target sheet: use preferredSheetName if valid, or pick sheet with highest header score
   let targetSheetName = preferredSheetName && workbook.Sheets[preferredSheetName] ? preferredSheetName : '';

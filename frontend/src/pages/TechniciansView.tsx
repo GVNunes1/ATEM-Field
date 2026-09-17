@@ -1,3 +1,4 @@
+import { ModalOverlay } from '../components/ModalOverlay';
 import { FormEvent, useEffect, useMemo, useState } from 'react';
 import {
   ArrowRightLeft,
@@ -678,7 +679,7 @@ export function TechniciansView({ technicians, onRefresh }: TechniciansViewProps
 
       {/* MODAL DE CRIAÇÃO / EDIÇÃO DE TÉCNICO COM PIN */}
       {modalMode && (
-        <div className="modal-overlay" role="presentation" onMouseDown={event => {
+        <ModalOverlay onDismiss={closeProfileModal} className="modal-overlay" role="presentation" onMouseDown={event => {
           if (event.currentTarget === event.target) closeProfileModal();
         }}>
           <div className="modal-content technician-modal" role="dialog" aria-modal="true" aria-labelledby="technician-modal-title">
@@ -741,15 +742,15 @@ export function TechniciansView({ technicians, onRefresh }: TechniciansViewProps
               </div>
             </form>
           </div>
-        </div>
+        </ModalOverlay>
       )}
 
       {/* MODAL GERENCIADOR DE PINS E ACESSOS DO BANCO DE DADOS */}
       {showPinManager && (
-        <div className="modal-overlay" role="presentation" onMouseDown={event => {
+        <ModalOverlay onDismiss={() => setShowPinManager(false)} className="modal-overlay" role="presentation" onMouseDown={event => {
           if (event.currentTarget === event.target) setShowPinManager(false);
         }}>
-          <div className="modal-content" style={{ maxWidth: '680px', width: '95%' }} role="dialog" aria-modal="true">
+          <div className="modal-content" style={{ maxWidth: '680px', width: '95%' }} role="dialog" aria-modal="true" aria-label="Gerenciador de PINs de Login">
             <div className="modal-heading">
               <div>
                 <span className="eyebrow" style={{ color: '#16a34a' }}><KeyRound size={15} /> Banco de Credenciais</span>
@@ -896,15 +897,15 @@ export function TechniciansView({ technicians, onRefresh }: TechniciansViewProps
               <button type="button" onClick={() => setShowPinManager(false)} className="btn btn-secondary">Fechar</button>
             </div>
           </div>
-        </div>
+        </ModalOverlay>
       )}
 
       {/* MODAL CRIAR NOVO USUÁRIO / CREDENCIAL */}
       {showNewCredModal && (
-        <div className="modal-overlay" role="presentation" onMouseDown={event => {
+        <ModalOverlay onDismiss={() => { if (!saving) setShowNewCredModal(false); }} className="modal-overlay" role="presentation" onMouseDown={event => {
           if (event.currentTarget === event.target) setShowNewCredModal(false);
         }}>
-          <div className="modal-content" style={{ maxWidth: '480px', width: '95%' }} role="dialog" aria-modal="true">
+          <div className="modal-content" style={{ maxWidth: '480px', width: '95%' }} role="dialog" aria-modal="true" aria-label="Cadastrar Usuário e PIN">
             <div className="modal-heading">
               <div>
                 <span className="eyebrow" style={{ color: '#0284c7' }}><Plus size={15} /> Novo Acesso</span>
@@ -962,11 +963,11 @@ export function TechniciansView({ technicians, onRefresh }: TechniciansViewProps
               </div>
             </form>
           </div>
-        </div>
+        </ModalOverlay>
       )}
 
       {mergeSource && (
-        <div className="modal-overlay" role="presentation" onMouseDown={event => {
+        <ModalOverlay onDismiss={() => { if (!saving) setMergeSource(null); }} className="modal-overlay" role="presentation" onMouseDown={event => {
           if (event.currentTarget === event.target && !saving) setMergeSource(null);
         }}>
           <div className="modal-content merge-modal" role="dialog" aria-modal="true" aria-labelledby="merge-modal-title">
@@ -1041,11 +1042,11 @@ export function TechniciansView({ technicians, onRefresh }: TechniciansViewProps
               </div>
             </form>
           </div>
-        </div>
+        </ModalOverlay>
       )}
 
       {deleteTarget && (
-        <div className="modal-overlay" role="presentation" onMouseDown={event => {
+        <ModalOverlay onDismiss={() => { if (!saving) setDeleteTarget(null); }} className="modal-overlay" role="presentation" onMouseDown={event => {
           if (event.currentTarget === event.target && !saving) setDeleteTarget(null);
         }}>
           <div className="modal-content delete-technician-modal" role="alertdialog" aria-modal="true" aria-labelledby="delete-technician-title" aria-describedby="delete-technician-description">
@@ -1077,7 +1078,7 @@ export function TechniciansView({ technicians, onRefresh }: TechniciansViewProps
               </button>
             </div>
           </div>
-        </div>
+        </ModalOverlay>
       )}
       <TechnicianLinkModal
         isOpen={showLinkModal}

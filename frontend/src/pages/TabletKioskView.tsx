@@ -1,3 +1,4 @@
+import { ModalOverlay } from '../components/ModalOverlay';
 import React, { useEffect, useMemo, useState } from 'react';
 import { safeFetchJson } from '../lib/api';
 import {
@@ -557,7 +558,7 @@ export const TabletKioskView: React.FC<TabletKioskViewProps> = ({
 
         {/* MODAL DE DIGITAÇÃO DE PIN DO TÉCNICO */}
         {pinPromptTech && (
-          <div className="tablet-modal-overlay">
+          <ModalOverlay onDismiss={() => { setPinPromptTech(null); setEnteredPin(''); setPinError(''); }} role="dialog" aria-modal="true" aria-label="PIN do técnico" className="tablet-modal-overlay">
             <div className="tablet-pin-modal">
               <div className="tablet-pin-header">
                 <div className="tablet-tech-avatar large">
@@ -633,7 +634,7 @@ export const TabletKioskView: React.FC<TabletKioskViewProps> = ({
                 <X size={18} /> Cancelar / Trocar Técnico
               </button>
             </div>
-          </div>
+          </ModalOverlay>
         )}
 
         {/* CONTROLES FLUTUANTES DE SCROLL TÁTIL (STANDBY) */}
@@ -1037,7 +1038,7 @@ export const TabletKioskView: React.FC<TabletKioskViewProps> = ({
 
       {/* MODAL DE RESERVA TÁTIL DE PADRÕES */}
       {reserveModalAppt && (
-        <div className="tablet-modal-overlay">
+        <ModalOverlay onDismiss={() => { if (!isSubmittingReservation) setReserveModalAppt(null); }} role="dialog" aria-modal="true" aria-label="Reservar padrões" className="tablet-modal-overlay">
           <div className="tablet-modal-box">
             <div className="tablet-modal-header">
               <div>
@@ -1139,12 +1140,12 @@ export const TabletKioskView: React.FC<TabletKioskViewProps> = ({
               </button>
             </div>
           </div>
-        </div>
+        </ModalOverlay>
       )}
 
       {/* MODAL DE CHAMADO ESPONTÂNEO (TODOS OS TÉCNICOS) */}
       {showChamadoModal && (
-        <div className="tablet-modal-overlay">
+        <ModalOverlay onDismiss={() => { if (!isSubmittingChamado) setShowChamadoModal(false); }} role="dialog" aria-modal="true" aria-label="Chamado espontâneo" className="tablet-modal-overlay">
           <div className="tablet-modal-box">
             <div className="tablet-modal-header">
               <div>
@@ -1264,12 +1265,12 @@ export const TabletKioskView: React.FC<TabletKioskViewProps> = ({
               </button>
             </div>
           </div>
-        </div>
+        </ModalOverlay>
       )}
 
       {/* MODAL DE OPERAÇÕES ESPECIAIS (CALIBRAÇÃO / EMPRÉSTIMO) */}
       {specialOpType && (
-        <div className="tablet-modal-overlay">
+        <ModalOverlay onDismiss={() => { if (!isSubmittingSpecialOp) setSpecialOpType(null); }} role="dialog" aria-modal="true" aria-label="Operação especial" className="tablet-modal-overlay">
           <div className="tablet-modal-box">
             <div className="tablet-modal-header">
               <div>
@@ -1386,7 +1387,7 @@ export const TabletKioskView: React.FC<TabletKioskViewProps> = ({
               </button>
             </div>
           </div>
-        </div>
+        </ModalOverlay>
       )}
     </div>
   );

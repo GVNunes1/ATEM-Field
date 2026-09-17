@@ -1,0 +1,34 @@
+@media screen {
+  body:has(> .field-modal-layer),
+  body:has(> .field-modal-layer) .app-content-wrapper {
+    overflow: hidden;
+  }
+
+  .field-modal-layer {
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+    padding: max(16px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) max(16px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
+    overscroll-behavior: contain;
+    outline: none;
+  }
+
+  .field-modal-layer > :first-child {
+    min-width: 0;
+    max-height: calc(100dvh - 40px - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+
+  .field-modal-layer .link-result-input { min-width: 0; }
+  .field-modal-form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+  .field-modal-form-grid > div { min-width: 0; }
+  .field-modal-actions { display: flex; justify-content: flex-end; flex-wrap: wrap; gap: 10px; margin-top: 16px; }
+  @media (max-width: 600px) {
+    .field-modal-form-grid { grid-template-columns: minmax(0, 1fr); }
+  }
+}

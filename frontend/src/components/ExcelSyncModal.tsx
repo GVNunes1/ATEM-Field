@@ -48,6 +48,10 @@ const normalizeHeaderKey = (header: string): string =>
     .replace(/_+/g, '_')
     .replace(/^_|_$/g, '');
 
+const MAX_IMPORT_FILE_BYTES = 5 * 1024 * 1024;
+const MAX_IMPORT_SHEETS = 20;
+const MAX_IMPORT_ROWS = 5000;
+
 const parseCellDate = (value: any): string | null => {
   if (value === null || value === undefined || value === '') return null;
 
@@ -341,11 +345,26 @@ export const ExcelSyncModal: React.FC<ExcelSyncModalProps> = ({
     setFile(selectedFile);
 
     try {
+      const extension = selectedFile.name.toLowerCase().slice(selectedFile.name.lastIndexOf('.'));
+      if (!['.xls', '.xlsx', '.csv'].includes(extension)) {
+        throw new Error('Selecione um arquivo .xls, .xlsx ou .csv.');
+      }
+      if (selectedFile.size > MAX_IMPORT_FILE_BYTES) {
+        throw new Error('A planilha excede o limite de 5 MB.');
+      }
+
       const buffer = await selectedFile.arrayBuffer();
-      const wb = XLSX.read(buffer, { type: 'array', cellDates: true });
+      const wb = XLSX.read(buffer, {
+        type: 'array',
+        cellDates: true,
+        sheetRows: MAX_IMPORT_ROWS + 1
+      });
 
       if (!wb.SheetNames || wb.SheetNames.length === 0) {
         throw new Error('O arquivo não contém nenhuma planilha legível.');
+      }
+      if (wb.SheetNames.length > MAX_IMPORT_SHEETS) {
+        throw new Error(`A planilha excede o limite de ${MAX_IMPORT_SHEETS} abas.`);
       }
 
       setWorkbook(wb);

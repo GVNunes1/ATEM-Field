@@ -1,3 +1,4 @@
+import { ModalOverlay } from '../components/ModalOverlay';
 import { FormEvent, useEffect, useMemo, useState } from 'react';
 import { isNonTechnicalAppointment } from '../lib/appointmentUtils';
 import { safeFetchJson } from '../lib/api';
@@ -1006,7 +1007,7 @@ export function OperationsAdminView({
 
       {/* MODAL DE EDIÇÃO DE RESERVA (ADMIN) */}
       {isAdmin && editReservationModal && (
-        <div style={{
+        <ModalOverlay onDismiss={() => { if (!saving) setEditReservationModal(null); }} role="dialog" aria-modal="true" aria-label="Editar reserva" style={{
           position: 'fixed',
           top: 0, left: 0, right: 0, bottom: 0,
           background: 'rgba(0,0,0,0.75)',
@@ -1083,7 +1084,7 @@ export function OperationsAdminView({
               </div>
             </form>
           </div>
-        </div>
+        </ModalOverlay>
       )}
     </div>
   );

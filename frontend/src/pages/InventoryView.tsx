@@ -1,3 +1,4 @@
+import { ModalOverlay } from '../components/ModalOverlay';
 import React, { useMemo, useState } from 'react';
 import {
   Box,
@@ -664,7 +665,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ analyzers, onRefre
 
       {/* Add Analyzer Modal */}
       {showAddModal && (
-        <div style={{
+        <ModalOverlay onDismiss={() => { if (!loading) setShowAddModal(false); }} role="dialog" aria-modal="true" aria-label="Cadastrar novo padrão" style={{
           position: 'fixed',
           top: 0, left: 0, right: 0, bottom: 0,
           background: 'rgba(0,0,0,0.75)',
@@ -681,7 +682,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ analyzers, onRefre
             </h3>
 
             <form onSubmit={handleCreate} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+              <div className="field-modal-form-grid">
                 <div>
                   <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Nº de Patrimônio *</label>
                   <input
@@ -733,7 +734,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ analyzers, onRefre
                 </select>
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+              <div className="field-modal-form-grid">
                 <div>
                   <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Marca / Modelo</label>
                   <input
@@ -766,12 +767,12 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ analyzers, onRefre
             </form>
 
           </div>
-        </div>
+        </ModalOverlay>
       )}
 
       {/* Edit Analyzer Modal */}
       {editItem && (
-        <div style={{
+        <ModalOverlay onDismiss={() => { if (!loading) setEditItem(null); }} role="dialog" aria-modal="true" aria-label="Editar patrimônio" style={{
           position: 'fixed',
           top: 0, left: 0, right: 0, bottom: 0,
           background: 'rgba(0,0,0,0.75)',
@@ -793,7 +794,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ analyzers, onRefre
             </div>
 
             <form onSubmit={handleUpdate} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+              <div className="field-modal-form-grid">
                 <div>
                   <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Nº de Patrimônio *</label>
                   <input
@@ -830,7 +831,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ analyzers, onRefre
                 />
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+              <div className="field-modal-form-grid">
                 <div>
                   <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Marca / Modelo</label>
                   <input
@@ -851,7 +852,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ analyzers, onRefre
                 </div>
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+              <div className="field-modal-form-grid">
                 <div>
                   <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Data da Calibração</label>
                   <input
@@ -882,7 +883,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ analyzers, onRefre
                 />
               </div>
 
-              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '16px' }}>
+              <div className="field-modal-actions">
                 <button type="button" onClick={() => setEditItem(null)} className="btn btn-secondary">
                   Cancelar
                 </button>
@@ -893,7 +894,7 @@ export const InventoryView: React.FC<InventoryViewProps> = ({ analyzers, onRefre
             </form>
 
           </div>
-        </div>
+        </ModalOverlay>
       )}
 
       {/* Excel Synchronization Modal */}

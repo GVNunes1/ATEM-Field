@@ -7,7 +7,9 @@ import {
   parseAnalyzersExcelBuffer,
   generateAnalyzersExcelTemplate,
   mapRowToAnalyzer,
-  AnalyzerExcelRow
+  AnalyzerExcelRow,
+  MAX_EXCEL_BASE64_LENGTH,
+  MAX_EXCEL_ROWS
 } from '../utils/excelUtils';
 import {
   getGoogleCalendarSyncStatus,
@@ -931,14 +933,26 @@ router.get('/analyzers/template-excel', async (_req: Request, res: Response) => 
   }
 });
 
-router.post('/analyzers/sync-excel', async (req: Request, res: Response) => {
+router.post('/analyzers/sync-excel', requireAuthentication, requireRole(['admin']), async (req: Request, res: Response) => {
   try {
     let rowsToProcess: AnalyzerExcelRow[] = [];
 
     if (req.body.fileBase64) {
+      if (typeof req.body.fileBase64 !== 'string' || req.body.fileBase64.length > MAX_EXCEL_BASE64_LENGTH) {
+        return res.status(413).json({
+          success: false,
+          error: 'A planilha excede o limite de tamanho permitido.'
+        });
+      }
       const buffer = Buffer.from(req.body.fileBase64, 'base64');
       rowsToProcess = parseAnalyzersExcelBuffer(buffer);
     } else if (Array.isArray(req.body.rows)) {
+      if (req.body.rows.length > MAX_EXCEL_ROWS) {
+        return res.status(413).json({
+          success: false,
+          error: `A importação está limitada a ${MAX_EXCEL_ROWS} linhas.`
+        });
+      }
       req.body.rows.forEach((r: any, idx: number) => {
         if (r.asset_tag) {
           rowsToProcess.push({
@@ -970,6 +984,13 @@ router.post('/analyzers/sync-excel', async (req: Request, res: Response) => {
       return res.status(400).json({
         success: false,
         error: 'Nenhuma linha válida de analisador/padrão encontrada na planilha. Verifique a coluna de Patrimônio.'
+      });
+    }
+
+    if (rowsToProcess.length > MAX_EXCEL_ROWS) {
+      return res.status(413).json({
+        success: false,
+        error: `A importação está limitada a ${MAX_EXCEL_ROWS} linhas.`
       });
     }
 

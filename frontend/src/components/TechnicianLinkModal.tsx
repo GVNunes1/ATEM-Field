@@ -1,3 +1,4 @@
+import { ModalOverlay } from './ModalOverlay';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   Check,
@@ -116,7 +117,7 @@ export const TechnicianLinkModal: React.FC<TechnicianLinkModalProps> = ({
   };
 
   return (
-    <div className="link-modal-overlay" onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
+    <ModalOverlay onDismiss={onClose} role="dialog" aria-modal="true" aria-label="Gerador de link do técnico" className="link-modal-overlay" onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
       <div className="link-modal-card animate-fade-in">
         <div className="link-modal-header">
           <div>
@@ -216,6 +217,6 @@ export const TechnicianLinkModal: React.FC<TechnicianLinkModalProps> = ({
           ) : null}
         </div>
       </div>
-    </div>
+    </ModalOverlay>
   );
 };

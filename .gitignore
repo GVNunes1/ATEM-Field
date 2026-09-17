@@ -11,6 +11,7 @@
 node_modules/
 .venv/
 dist/
+frontend/test-results/
 .npm-cache-local/
 .codex/tmp/
 *.log

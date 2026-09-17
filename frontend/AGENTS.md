@@ -13,3 +13,7 @@ The user explicitly requires the field-report PDF to remain unchanged. Do not al
 ## Verification
 
 Run `npm run build`. Verify navigation and the affected screens on desktop and mobile, with reduced motion. Use isolated fixtures for browser tests of operational actions so no real reservations or reports are created. Report existing lint failures separately from changed-code failures.
+
+Use `ModalOverlay` for dialogs inside page components: it portals to `document.body`, manages nested focus and blocks background interaction. Do not render fixed overlays inside animated/overflow containers. Keep page-entry animations from retaining a transformed containing block after completion.
+
+Regression: run `npm run test:modals` with a local Vite server running (see `tests/README.md`).
