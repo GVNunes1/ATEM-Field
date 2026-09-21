@@ -194,6 +194,9 @@ BEGIN
   END IF;
 END $$;
 
+REVOKE SELECT, UPDATE ON public.appointments FROM PUBLIC, anon, authenticated;
+GRANT SELECT (id, external_id, title, client_name, client_address, client_contact, appointment_date, appointment_time, appointment_end_date, appointment_end_time, all_day, status, technician_names, technician_id, created_at, workflow_status, workflow_validated_at, commercial_confirmed_at, last_activity_at, vehicle_id, vehicle_assigned_at, google_calendar_id, google_event_id, google_etag, google_updated_at, calendar_writable, google_sync_status, google_sync_revision, google_sync_error) ON public.appointments TO anon, authenticated;
+GRANT UPDATE (id, external_id, title, client_name, client_address, client_contact, appointment_date, appointment_time, appointment_end_date, appointment_end_time, all_day, status, technician_names, technician_id, created_at, workflow_status, workflow_validated_at, commercial_confirmed_at, last_activity_at, vehicle_id, vehicle_assigned_at, google_calendar_id, google_event_id, google_etag, google_updated_at, calendar_writable) ON public.appointments TO anon, authenticated;
 REVOKE ALL ON FUNCTION public.calendar_lease(uuid,boolean),
   public.calendar_queue_edit(bigint,integer,jsonb,jsonb,text,boolean),
   public.calendar_ingest(text,jsonb,jsonb,bigint[],boolean,bigint,integer),

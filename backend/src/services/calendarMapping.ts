@@ -63,8 +63,7 @@ export function buildCalendarEdit(input: any, appointment: any, technicians: any
   const raw = appointment.google_event || {};
   const eventPatch: any = {};
   if (title !== appointment.title) eventPatch.summary = title;
-  if (address !== (appointment.client_address || '')) eventPatch.location = address;
-  if (clientName !== appointment.client_name || (eventPatch.summary && raw.extendedProperties?.private?.atem_client_name !== clientName)) {
+  if (clientName !== appointment.client_name || (eventPatch.summary && raw.extendedProperties?.private?.atem_client_name && raw.extendedProperties.private.atem_client_name !== clientName)) {
     eventPatch.extendedProperties = { private: { atem_client_name: clientName } };
   }
   const currentIds = (appointment.technician_ids || []).map(Number).sort((a,b) => a-b);
@@ -79,4 +78,62 @@ export function buildCalendarEdit(input: any, appointment: any, technicians: any
     eventPatch.end = allDay ? { date: values.appointment_end_date } : { dateTime: `${values.appointment_end_date}T${endTime}:00`, timeZone: CALENDAR_TIME_ZONE };
   }
   return { values, eventPatch };
+}
+
+export function buildCalendarInsert(input: any, technicians: any[], defaultCalendarId?: string) {
+  const title = String(input.title || '').trim();
+  const clientName = String(input.client_name || title).trim();
+  const address = String(input.client_address || '').trim();
+  const notes = String(input.notes || '').trim();
+  if (!title || title.length > 500 || clientName.length > 500 || address.length > 2000) {
+    throw new Error('Confira o título, cliente e endereço.');
+  }
+  const startDate = input.appointment_date;
+  const endDate = input.appointment_end_date || startDate;
+  if (!validDate(startDate) || !validDate(endDate)) {
+    throw new Error('Informe datas válidas de início e término.');
+  }
+  const allDay = Boolean(input.all_day);
+  const startTime = allDay ? '00:00' : (input.appointment_time || '08:00');
+  const endTime = allDay ? '00:00' : (input.appointment_end_time || '17:00');
+  if (![startTime, endTime].every(t => typeof t === 'string' && /^([01]\d|2[0-3]):[0-5]\d$/.test(t))) {
+    throw new Error('Informe horários válidos no formato HH:MM.');
+  }
+  if (`${endDate}T${endTime}` < `${startDate}T${startTime}`) {
+    throw new Error('O término deve ser igual ou posterior ao início.');
+  }
+
+  const ids = Array.isArray(input.technician_ids) ? [...new Set<number>(input.technician_ids.map(Number))].filter(id => Number.isSafeInteger(id) && id > 0) : [];
+  const team = ids.map(id => technicians.find(t => Number(t.id) === id)).filter(Boolean);
+
+  const teamBlock = team.length ? `[ATEM FIELD]\nTécnicos: ${team.map(t => t.name).join(', ')}\n[/ATEM FIELD]` : '';
+  const descriptionParts = [notes, teamBlock].filter(Boolean);
+  const description = descriptionParts.join('\n\n');
+
+  const eventPatch: any = {
+    summary: title,
+    location: address,
+    description,
+    extendedProperties: {
+      private: {
+        atem_client_name: clientName
+      }
+    },
+    start: allDay ? { date: startDate } : { dateTime: `${startDate}T${startTime}:00`, timeZone: CALENDAR_TIME_ZONE },
+    end: allDay ? { date: endDate } : { dateTime: `${endDate}T${endTime}:00`, timeZone: CALENDAR_TIME_ZONE }
+  };
+
+  const values = {
+    title,
+    client_name: clientName,
+    client_address: address,
+    appointment_date: startDate,
+    appointment_time: allDay ? null : startTime,
+    appointment_end_date: endDate,
+    appointment_end_time: allDay ? null : endTime,
+    all_day: allDay,
+    technician_ids: ids
+  };
+
+  return { values, eventPatch, calendarId: input.calendar_id || defaultCalendarId };
 }

@@ -45,7 +45,7 @@ def main():
 
     output_path = Path(args.output).resolve()
     output_path.write_text(
-        "GOOGLE_CALENDAR_TOKEN_JSON=" + credentials.to_json() + "\n",
+        credentials.to_json() + "\n",
         encoding="utf-8",
     )
     print(json.dumps({"success": True, "output": str(output_path)}, ensure_ascii=False))

@@ -26,7 +26,7 @@ import {
   TechnicianPortalAuthError
 } from '../services/telegramDashboard';
 import { syncOfficialTechniciansDatabase } from '../scripts/syncOfficialTechnicians';
-import { AuthService, CryptoService, requireAuthentication, requireRole } from '../security/authService';
+import { AuthService, CryptoService, requireAuthentication, requireRole, isManagementRole, requireManagement } from '../security/authService';
 import { calendarRouter, publicCalendarAppointment } from './calendar';
 
 const router = Router();
@@ -1349,6 +1349,11 @@ router.get('/appointments', requireAuthentication, async (req: Request, res: Res
   }
 });
 
+router.post('/appointments', (req: Request, res: Response, next) => {
+  req.url = '/appointments/calendar';
+  calendarRouter(req, res, next);
+});
+
 router.get('/appointments/:id/checklist', async (req: Request, res: Response) => {
   try {
     const apptId = Number(req.params.id);
@@ -1709,7 +1714,7 @@ router.post('/fleet/vehicles', requireAuthentication, requireRole(['admin']), as
   }
 });
 
-router.patch('/fleet/vehicles/:id', requireAuthentication, requireRole(['admin']), async (req: Request, res: Response) => {
+router.patch('/fleet/vehicles/:id', requireAuthentication, requireManagement, async (req: Request, res: Response) => {
   try {
     const id = parsePositiveId(req.params.id);
     if (!id) return res.status(400).json({ success: false, error: 'Veículo inválido.' });
@@ -1740,11 +1745,18 @@ router.post('/fleet/vehicles/:id/checkout', requireAuthentication, async (req: R
     const appointmentId = req.body?.appointment_id ? parsePositiveId(req.body.appointment_id) : null;
     const odometerPhotoData = parsePhotoData(req.body?.odometer_photo_data, 'A foto do hodômetro');
     const actor = (req as any).user || {};
+    const isManager = isManagementRole(actor.role);
+    const managerOverride = Boolean(req.body?.manager_override);
 
     const { data: vehicle, error: vehicleError } = await supabaseAdmin.from('fleet_vehicles').select('*').eq('id', vehicleId).maybeSingle();
     if (vehicleError) throw vehicleError;
     if (!vehicle) return res.status(404).json({ success: false, error: 'Veículo não encontrado.' });
-    if (/manuten|indispon|baixado|revis/i.test(vehicle.status || '')) return res.status(409).json({ success: false, error: `O veículo está com status “${vehicle.status}” e não pode ser retirado.` });
+
+    // Regra: "Qualquer problema ou avaria não deve travar o uso do veiculo"
+    // Apenas veículos permanentemente baixados são bloqueados.
+    if (/baixado/i.test(vehicle.status || '')) {
+      return res.status(409).json({ success: false, error: `O veículo está com status “${vehicle.status}” (baixado) e não pode ser retirado.` });
+    }
 
     const { data: activeUsage, error: activeUsageError } = await supabaseAdmin.from('fleet_usage').select('id, appointment_id, withdrawn_by_name').eq('vehicle_id', vehicleId).eq('status', 'Em Uso').maybeSingle();
     if (activeUsageError) throw activeUsageError;
@@ -1757,14 +1769,17 @@ router.post('/fleet/vehicles/:id/checkout', requireAuthentication, async (req: R
       if (!data) return res.status(404).json({ success: false, error: 'Agendamento não encontrado.' });
       appointment = data;
       const teamIds = await getAppointmentTeamIds(appointmentId);
-      if (!teamIds.includes(Number(actor.sub))) {
+      if (!isManager && !managerOverride && !teamIds.includes(Number(actor.sub))) {
         return res.status(403).json({ success: false, error: 'Somente um usuário escalado nesta agenda pode retirar o veículo reservado.' });
       }
       if (appointment.vehicle_id && Number(appointment.vehicle_id) !== vehicleId) {
-        return res.status(409).json({ success: false, error: 'Este agendamento já possui outro veículo reservado.' });
+        if (!isManager && !managerOverride) {
+          return res.status(409).json({ success: false, error: 'Este agendamento já possui outro veículo reservado.' });
+        }
       }
     }
 
+    // Validação de conflito de reserva/agenda
     const { data: scheduled, error: scheduledError } = await supabaseAdmin.from('appointments').select('id, client_name, appointment_date, appointment_time, workflow_status, status').eq('vehicle_id', vehicleId).gte('appointment_date', new Date().toISOString().slice(0, 10)).neq('status', 'Cancelado');
     if (scheduledError) throw scheduledError;
     const margin = Math.max(0, Number(process.env.FLEET_RETURN_MARGIN_MINUTES || 0));
@@ -1776,7 +1791,29 @@ router.post('/fleet/vehicles/:id/checkout', requireAuthentication, async (req: R
       const itemTime = appointmentTimeMinutes(item.appointment_time);
       return currentTime === null || itemTime === null || Math.abs(itemTime - currentTime) <= margin;
     });
-    if (conflicting) return res.status(409).json({ success: false, error: `O veículo está reservado para “${conflicting.client_name || 'outro atendimento'}” no mesmo horário.` });
+
+    // Administrador, gerente ou supervisores podem retirar mesmo que o veículo esteja em reserva
+    if (conflicting && !isManager && !managerOverride) {
+      return res.status(409).json({ success: false, error: `O veículo está reservado para “${conflicting.client_name || 'outro atendimento'}” no mesmo horário.` });
+    }
+
+    const usageType = req.body?.usage_type || 'Empresa (Trabalho e deslocamento residência)';
+    const cleanlinessOk = req.body?.cleanliness_ok !== undefined ? Boolean(req.body.cleanliness_ok) : true;
+    const revisionStatus = req.body?.revision_status || 'Em dia';
+    const fluidsChecked = req.body?.fluids_checked !== undefined ? Boolean(req.body.fluids_checked) : true;
+    const notesInput = normalizedOptionalValue(req.body?.notes) || '';
+    const hasReservationConflict = Boolean(conflicting && (isManager || managerOverride));
+    const overrideNote = hasReservationConflict ? `[Retirada autorizada por gestão com sobreposição de reserva de ${conflicting?.client_name || 'outro agendamento'}]` : '';
+    const finalNotes = [overrideNote, notesInput].filter(Boolean).join(' ');
+
+    const checkoutInspection = {
+      usage_type: usageType,
+      cleanliness_ok: cleanlinessOk,
+      revision_status: revisionStatus,
+      fluids_checked: fluidsChecked,
+      manager_override: hasReservationConflict,
+      ...(typeof req.body?.damage_inspection === 'object' ? req.body.damage_inspection : {})
+    };
 
     const { data: usage, error: insertError } = await supabaseAdmin.from('fleet_usage').insert({
       vehicle_id: vehicleId,
@@ -1788,8 +1825,8 @@ router.post('/fleet/vehicles/:id/checkout', requireAuthentication, async (req: R
       km_initial: kmInitial,
       odometer_photo_url: normalizedOptionalValue(req.body?.odometer_photo_url),
       odometer_photo_data: odometerPhotoData,
-      checkout_inspection: req.body?.damage_inspection || {},
-      notes: normalizedOptionalValue(req.body?.notes) || ''
+      checkout_inspection: checkoutInspection,
+      notes: finalNotes
     }).select('*').single();
     if (insertError) {
       if ((insertError as any).code === '23505') {
@@ -1814,14 +1851,28 @@ router.post('/fleet/usage/:id/checkin', requireAuthentication, async (req: Reque
     const { data: usage, error: usageError } = await supabaseAdmin.from('fleet_usage').select('*').eq('id', usageId).maybeSingle();
     if (usageError) throw usageError;
     if (!usage) return res.status(404).json({ success: false, error: 'Registro de retirada não encontrado.' });
-    if (usage.status !== 'Em Uso') return res.status(409).json({ success: false, error: 'Este veículo já foi devolvido ou está em revisão.' });
+    if (usage.status !== 'Em Uso') return res.status(409).json({ success: false, error: 'Este veículo já foi devolvido ou cancelado.' });
     if (kmFinal < Number(usage.km_initial)) return res.status(400).json({ success: false, error: 'O KM de retorno não pode ser menor que o KM de saída.' });
 
-    const returnInspection = req.body?.damage_inspection || {};
-    const hasPendingReview = Boolean(returnInspection.has_new_damage || returnInspection.requires_review || req.body?.fuel_checked === false || req.body?.tires_calibrated === false);
-    const nextStatus = hasPendingReview ? 'Devolvido com pendência' : 'Devolvido';
+    const hasNewDamage = Boolean(req.body?.has_new_damage || req.body?.damage_inspection?.has_new_damage);
+    const damageDescription = normalizedOptionalValue(req.body?.damage_description) || normalizedOptionalValue(req.body?.damage_inspection?.damage_description) || '';
+    const fuelChecked = req.body?.fuel_checked === undefined ? null : Boolean(req.body.fuel_checked);
+    const tiresCalibrated = req.body?.tires_calibrated === undefined ? null : Boolean(req.body.tires_calibrated);
+    const notesInput = normalizedOptionalValue(req.body?.notes) || '';
+
+    const returnInspection = {
+      has_new_damage: hasNewDamage,
+      damage_description: damageDescription,
+      fuel_checked: fuelChecked,
+      tires_calibrated: tiresCalibrated,
+      notes: notesInput,
+      ...(typeof req.body?.damage_inspection === 'object' ? req.body.damage_inspection : {})
+    };
+
+    const nextUsageStatus = hasNewDamage ? 'Devolvido com pendência' : 'Devolvido';
+
     const { data: updatedUsage, error: updateError } = await supabaseAdmin.from('fleet_usage').update({
-      status: nextStatus,
+      status: nextUsageStatus,
       returned_by_user_id: actor.sub ? String(actor.sub) : null,
       returned_by_name: actor.name || 'Usuário autenticado',
       checkin_at: new Date().toISOString(),
@@ -1829,14 +1880,108 @@ router.post('/fleet/usage/:id/checkin', requireAuthentication, async (req: Reque
       return_photo_url: normalizedOptionalValue(req.body?.return_photo_url),
       return_photo_data: returnPhotoData,
       return_inspection: returnInspection,
-      fuel_checked: req.body?.fuel_checked === undefined ? null : Boolean(req.body.fuel_checked),
-      tires_calibrated: req.body?.tires_calibrated === undefined ? null : Boolean(req.body.tires_calibrated),
-      notes: normalizedOptionalValue(req.body?.notes) || usage.notes || '',
+      fuel_checked: fuelChecked,
+      tires_calibrated: tiresCalibrated,
+      notes: notesInput || usage.notes || '',
       updated_at: new Date().toISOString()
     }).eq('id', usageId).select('*').single();
     if (updateError) throw updateError;
-    await supabaseAdmin.from('fleet_vehicles').update({ status: hasPendingReview ? 'Em revisão' : 'Disponível', current_km: kmFinal, updated_at: new Date().toISOString() }).eq('id', usage.vehicle_id);
-    res.json({ success: true, usage: updatedUsage, message: hasPendingReview ? 'Devolução registrada e enviada para revisão.' : 'Devolução registrada. Veículo disponível.' });
+
+    // Regra: "Qualquer problema ou avaria não deve travar o uso do veiculo"
+    // O veículo SEMPRE permanece com status "Disponível".
+    let vehicleNotesUpdate: string | undefined = undefined;
+    if (hasNewDamage && damageDescription) {
+      const damageNote = `[Avaria reportada em ${new Date().toLocaleDateString('pt-BR')} por ${actor.name || 'Usuário'}: ${damageDescription}]`;
+      const { data: curVehicle } = await supabaseAdmin.from('fleet_vehicles').select('notes').eq('id', usage.vehicle_id).maybeSingle();
+      vehicleNotesUpdate = curVehicle?.notes ? `${curVehicle.notes}\n${damageNote}` : damageNote;
+    }
+
+    await supabaseAdmin.from('fleet_vehicles').update({
+      status: 'Disponível',
+      current_km: kmFinal,
+      ...(vehicleNotesUpdate !== undefined ? { notes: vehicleNotesUpdate } : {}),
+      updated_at: new Date().toISOString()
+    }).eq('id', usage.vehicle_id);
+
+    res.json({
+      success: true,
+      usage: updatedUsage,
+      message: 'Devolução registrada. Veículo disponível para novas retiradas.'
+    });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+router.post('/fleet/usage/:id/cancel', requireAuthentication, requireManagement, async (req: Request, res: Response) => {
+  try {
+    const usageId = parsePositiveId(req.params.id);
+    if (!usageId) return res.status(400).json({ success: false, error: 'ID de retirada inválido.' });
+    const actor = (req as any).user || {};
+
+    const { data: usage, error: usageError } = await supabaseAdmin.from('fleet_usage').select('*').eq('id', usageId).maybeSingle();
+    if (usageError) throw usageError;
+    if (!usage) return res.status(404).json({ success: false, error: 'Registro de retirada não encontrado.' });
+    if (usage.status !== 'Em Uso') {
+      return res.status(409).json({ success: false, error: `A retirada já foi finalizada ou cancelada (status: ${usage.status}).` });
+    }
+
+    const cancelReason = normalizedOptionalValue(req.body?.reason) || 'Cancelada pela gestão';
+    const cancelNote = `[Cancelado por ${actor.name || 'Gestor'} em ${new Date().toLocaleString('pt-BR')}: ${cancelReason}]`;
+    const updatedNotes = usage.notes ? `${usage.notes}\n${cancelNote}` : cancelNote;
+
+    const { data: updatedUsage, error: updateError } = await supabaseAdmin.from('fleet_usage').update({
+      status: 'Cancelado',
+      notes: updatedNotes,
+      updated_at: new Date().toISOString()
+    }).eq('id', usageId).select('*').single();
+    if (updateError) throw updateError;
+
+    // Liberar veículo imediatamente
+    await supabaseAdmin.from('fleet_vehicles').update({
+      status: 'Disponível',
+      updated_at: new Date().toISOString()
+    }).eq('id', usage.vehicle_id);
+
+    res.json({ success: true, usage: updatedUsage, message: 'Retirada cancelada com sucesso. O veículo está disponível novamente.' });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+router.patch('/fleet/usage/:id/reassign', requireAuthentication, requireManagement, async (req: Request, res: Response) => {
+  try {
+    const usageId = parsePositiveId(req.params.id);
+    if (!usageId) return res.status(400).json({ success: false, error: 'ID de retirada inválido.' });
+    const actor = (req as any).user || {};
+
+    const newUserId = req.body?.new_user_id !== undefined && req.body?.new_user_id !== null ? String(req.body.new_user_id).trim() : null;
+    const newUserName = req.body?.new_user_name ? String(req.body.new_user_name).trim() : null;
+
+    if (!newUserName) {
+      return res.status(400).json({ success: false, error: 'Informe o nome do novo responsável pelo veículo.' });
+    }
+
+    const { data: usage, error: usageError } = await supabaseAdmin.from('fleet_usage').select('*').eq('id', usageId).maybeSingle();
+    if (usageError) throw usageError;
+    if (!usage) return res.status(404).json({ success: false, error: 'Registro de retirada não encontrado.' });
+    if (usage.status !== 'Em Uso') {
+      return res.status(409).json({ success: false, error: 'Apenas retiradas em andamento podem ter o responsável alterado.' });
+    }
+
+    const previousUser = usage.withdrawn_by_name || 'Usuário anterior';
+    const reassignNote = `[Responsável alterado de "${previousUser}" para "${newUserName}" por ${actor.name || 'Gestor'} em ${new Date().toLocaleString('pt-BR')}]`;
+    const updatedNotes = usage.notes ? `${usage.notes}\n${reassignNote}` : reassignNote;
+
+    const { data: updatedUsage, error: updateError } = await supabaseAdmin.from('fleet_usage').update({
+      withdrawn_by_user_id: newUserId,
+      withdrawn_by_name: newUserName,
+      notes: updatedNotes,
+      updated_at: new Date().toISOString()
+    }).eq('id', usageId).select('*').single();
+    if (updateError) throw updateError;
+
+    res.json({ success: true, usage: updatedUsage, message: `Veículo transferido para ${newUserName} com sucesso.` });
   } catch (err: any) {
     res.status(500).json({ success: false, error: err.message });
   }

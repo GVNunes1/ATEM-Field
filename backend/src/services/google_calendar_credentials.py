@@ -1,3 +1,4 @@
+import base64
 import json
 import os
 import pickle
@@ -28,6 +29,37 @@ class CalendarAuthenticationRequired(RuntimeError):
     """Raised when Google requires a new interactive authorization."""
 
 
+def _clean_env_json(raw, var_name=""):
+    """Sanitizes raw environment values that may contain KEY=, quotes or Base64."""
+    if not raw or not isinstance(raw, str):
+        return None, None
+    s = raw.strip()
+    if var_name:
+        if s.startswith(f"{var_name}="):
+            s = s[len(var_name) + 1:].strip()
+        elif s.startswith(f"export {var_name}="):
+            s = s[len(f"export {var_name}=") :].strip()
+    # Strip wrapping quotes
+    if (s.startswith("'") and s.endswith("'")) or (s.startswith('"') and s.endswith('"')):
+        s = s[1:-1].strip()
+    # Direct JSON attempt
+    try:
+        data = json.loads(s)
+        if isinstance(data, dict):
+            return data, json.dumps(data, ensure_ascii=False)
+    except Exception:
+        pass
+    # Base64 attempt
+    try:
+        decoded = base64.b64decode(s).decode("utf-8")
+        data = json.loads(decoded)
+        if isinstance(data, dict):
+            return data, json.dumps(data, ensure_ascii=False)
+    except Exception:
+        pass
+    return None, None
+
+
 def _legacy_directories():
     configured = os.environ.get("GOOGLE_CALENDAR_LEGACY_DIR", "").strip()
     directories = []
@@ -51,21 +83,49 @@ def _configured_path(environment_key, default_path):
 
 def token_path():
     configured_path = _configured_path("GOOGLE_CALENDAR_TOKEN_PATH", DEFAULT_TOKEN_PATH)
-    raw_env_token = os.environ.get("GOOGLE_CALENDAR_TOKEN_JSON", "").strip()
-    # A variável é a semente do contêiner. Depois do primeiro carregamento, o
-    # arquivo local passa a conter o access token renovado pela biblioteca.
-    # Não o sobrescreva com a cópia antiga da variável a cada subprocesso.
-    if raw_env_token and not configured_path.exists():
-        _atomic_write(configured_path, raw_env_token)
+    raw_env_token = os.environ.get("GOOGLE_CALENDAR_TOKEN_JSON", "")
+    parsed_env, clean_json = _clean_env_json(raw_env_token, "GOOGLE_CALENDAR_TOKEN_JSON")
+
+    if parsed_env and clean_json:
+        should_write = False
+        if not configured_path.exists():
+            should_write = True
+        else:
+            try:
+                disk_data = json.loads(configured_path.read_text(encoding="utf-8"))
+                # Se o token do ambiente tiver um refresh_token ou access_token diferente/novo, atualize o disco
+                if not isinstance(disk_data, dict):
+                    should_write = True
+                elif parsed_env.get("refresh_token") and parsed_env.get("refresh_token") != disk_data.get("refresh_token"):
+                    should_write = True
+            except Exception:
+                should_write = True
+
+        if should_write:
+            _atomic_write(configured_path, clean_json)
+
     return configured_path
 
 
 def credentials_path():
-    raw_env_credentials = os.environ.get("GOOGLE_CALENDAR_CREDENTIALS_JSON", "").strip()
-    if raw_env_credentials:
+    raw_env_credentials = os.environ.get("GOOGLE_CALENDAR_CREDENTIALS_JSON", "")
+    parsed_env, clean_json = _clean_env_json(raw_env_credentials, "GOOGLE_CALENDAR_CREDENTIALS_JSON")
+
+    if parsed_env and clean_json:
         DATA_DIR.mkdir(parents=True, exist_ok=True)
-        if not DEFAULT_CREDENTIALS_PATH.exists() or DEFAULT_CREDENTIALS_PATH.read_text(encoding="utf-8").strip() != raw_env_credentials:
-            DEFAULT_CREDENTIALS_PATH.write_text(raw_env_credentials, encoding="utf-8")
+        should_write = False
+        if not DEFAULT_CREDENTIALS_PATH.exists():
+            should_write = True
+        else:
+            try:
+                disk_data = json.loads(DEFAULT_CREDENTIALS_PATH.read_text(encoding="utf-8"))
+                if disk_data != parsed_env:
+                    should_write = True
+            except Exception:
+                should_write = True
+
+        if should_write:
+            DEFAULT_CREDENTIALS_PATH.write_text(clean_json, encoding="utf-8")
         return DEFAULT_CREDENTIALS_PATH
 
     configured = os.environ.get("GOOGLE_CALENDAR_CREDENTIALS_PATH", "").strip()

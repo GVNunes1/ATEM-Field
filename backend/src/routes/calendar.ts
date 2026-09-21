@@ -1,9 +1,40 @@
 import { Router, Response } from 'express';
 import { AuthenticatedRequest, requireAuthentication, requireRole } from '../security/authService';
-import { queueCalendarEdit, resolveCalendarConflict } from '../services/calendarSyncEngine';
+import { createCalendarAppointment, listWritableCalendars, queueCalendarEdit, resolveCalendarConflict } from '../services/calendarSyncEngine';
 import { getGoogleCalendarSyncStatus, runGoogleCalendarSync } from '../services/googleCalendarSync';
 
 export const calendarRouter = Router();
+
+calendarRouter.get('/calendar/calendars', requireAuthentication, async (_req: AuthenticatedRequest, res: Response) => {
+  try {
+    const calendars = await listWritableCalendars();
+    return res.json({ success: true, calendars });
+  } catch (error: any) {
+    return res.status(500).json({ success: false, error: error.message || 'Não foi possível carregar as agendas.' });
+  }
+});
+
+calendarRouter.post('/appointments/calendar',
+  requireAuthentication, requireRole(['admin', 'manager', 'supervisor']), async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const status = await getGoogleCalendarSyncStatus();
+      if (!status.write_authorized) {
+        return res.status(409).json({
+          success: false,
+          requires_write_auth: true,
+          error: 'Autorize a edição do Google Agenda antes de criar novos atendimentos.'
+        });
+      }
+      const appointment = await createCalendarAppointment(req.body, req.user!.sub);
+      return res.status(201).json({
+        success: true,
+        appointment: publicCalendarAppointment(appointment),
+        message: 'Atendimento criado e sincronizado com o Google Agenda.'
+      });
+    } catch (error) {
+      fail(res, error);
+    }
+  });
 
 function fail(res: Response, error: any) {
   const status = error.status || (error.code === '40001' || error.code === '23505' ? 409

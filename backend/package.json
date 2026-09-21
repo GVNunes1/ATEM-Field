@@ -8,6 +8,7 @@
     "start": "node dist/server.js",
     "dev": "ts-node-dev --respawn --transpile-only src/server.ts",
     "test:e2e": "node tests/e2e_runner.js",
+    "test:fleet": "node tests/fleet_management.test.js",
     "test:service-orders": "npm run build && node --test tests/service_orders_fallback.test.js",
     "test:calendar": "npm run build && node --test tests/calendar*.test.js",
     "db:migrate:workflow": "node scripts/apply_migration.js 002_workflow_fleet.sql",

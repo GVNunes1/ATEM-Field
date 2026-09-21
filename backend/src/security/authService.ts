@@ -19,7 +19,7 @@ export { CryptoService } from './cryptoService';
 
 export interface AuthenticatedUserPayload {
   sub: string;               // ID do Usuário ou Técnico
-  role: 'admin' | 'technician';
+  role: 'admin' | 'technician' | 'manager' | 'supervisor' | string;
   name: string;
   phone?: string | null;
   email?: string | null;
@@ -47,73 +47,56 @@ function getJwtSecret(): string {
 
 export class AuthService {
   /**
-   * Gera um Token JWT assinado criptograficamente para uma sessão de usuário.
-   */
-  public static generateSessionToken(
-    user: { id: string | number; role: 'admin' | 'technician'; name: string; email?: string | null; phone?: string | null },
-    expiresIn: string = '12h'
-  ): string {
-    const secret = getJwtSecret();
-    const payload: AuthenticatedUserPayload = {
-      sub: String(user.id),
-      role: user.role,
-      name: user.name,
-      phone: user.phone,
-      email: user.email
-    };
-
-    return jwt.sign(payload, secret, {
-      algorithm: 'HS256',
-      expiresIn: (expiresIn as any),
-      issuer: 'atem-field-security',
-      audience: 'atem-field-clients'
-    });
-  }
-
-  /**
-   * Valida e decodifica um Token JWT de forma segura.
-   * Lança exceções genéricas caso o token esteja expirado, adulterado ou com assinatura inválida.
-   */
-  public static verifySessionToken(token: string): AuthenticatedUserPayload {
-    if (!token) {
-      throw new Error('Token de autenticação não fornecido.');
-    }
-
-    try {
-      const secret = getJwtSecret();
-      return jwt.verify(token, secret, {
-        algorithms: ['HS256'],
-        issuer: 'atem-field-security',
-        audience: 'atem-field-clients'
-      }) as AuthenticatedUserPayload;
-    } catch {
-      throw new Error('Sessão inválida ou expirada. Faça login novamente.');
-    }
-  }
-
-  /**
-   * Executa a autenticação de forma resistente a ataques de força bruta e enumeração.
-   * Se o usuário não existir, executa verificação de hash simulada para garantir tempo de resposta uniforme.
+   * Valida credenciais comparando o hash de forma segura contra timing attacks.
    */
   public static async verifyUserCredentials(
-    plainPasswordOrPin: string,
-    storedHashOrPin: string | null | undefined
+    plainText: string,
+    storedHash: string | null | undefined
   ): Promise<boolean> {
-    if (!plainPasswordOrPin) return false;
+    const hashToCompare = storedHash || DUMMY_BCRYPT_HASH;
+    const isMatch = await CryptoService.verifySecret(plainText, hashToCompare);
+    return storedHash ? isMatch : false;
+  }
 
-    if (!storedHashOrPin) {
-      // Usuário não encontrado: executa Bcrypt fictício para neutralizar timing attack
-      await CryptoService.verifySecret(plainPasswordOrPin, DUMMY_BCRYPT_HASH);
-      return false;
+  /**
+   * Emite token JWT assinado para sessões de administradores e técnicos autenticados.
+   */
+  public static generateSessionToken(
+    user: { id: number | string; role: 'admin' | 'technician' | 'manager' | 'supervisor' | string; name: string; phone?: string | null; email?: string | null },
+    expiresIn = '12h'
+  ): string {
+    return jwt.sign(
+      {
+        sub: String(user.id),
+        role: user.role,
+        name: user.name,
+        phone: user.phone || null,
+        email: user.email || null
+      },
+      getJwtSecret(),
+      {
+        expiresIn: expiresIn as any,
+        algorithm: 'HS256',
+        issuer: 'atem-field-backend',
+        audience: 'atem-field-app'
+      }
+    );
+  }
+
+  /**
+   * Decodifica e verifica a autenticidade e validade do token JWT recebido.
+   */
+  public static verifySessionToken(token: string): AuthenticatedUserPayload {
+    try {
+      const decoded = jwt.verify(token, getJwtSecret(), {
+        algorithms: ['HS256'],
+        issuer: 'atem-field-backend',
+        audience: 'atem-field-app'
+      });
+      return decoded as AuthenticatedUserPayload;
+    } catch (err: any) {
+      throw new Error(`Token inválido ou expirado: ${err.message}`);
     }
-
-    // Se o segredo armazenado for um Hash Bcrypt (começa com $2a$, $2b$ ou $2y$)
-    if (storedHashOrPin.startsWith('$2')) {
-      return CryptoService.verifySecret(plainPasswordOrPin, storedHashOrPin);
-    }
-
-    // Se for comparação direta de PIN mestre seguro (via timingSafeCompare)
-    return CryptoService.timingSafeCompare(plainPasswordOrPin, storedHashOrPin);
   }
 }
 
@@ -123,20 +106,23 @@ export interface AuthenticatedRequest extends Request {
 }
 
 /**
- * Middleware Express: Exige que a requisição contenha um Token Bearer válido no Header Authorization.
+ * Middleware Express: Exige token JWT válido no cabeçalho Authorization (Bearer <token>).
  */
-export function requireAuthentication(req: AuthenticatedRequest, res: Response, next: NextFunction): void {
+export function requireAuthentication(
+  req: AuthenticatedRequest,
+  res: Response,
+  next: NextFunction
+): void {
   const authHeader = req.headers.authorization;
-
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
     res.status(401).json({
       success: false,
-      error: 'Acesso não autorizado. Token de autenticação ausente ou inválido.'
+      error: 'Autenticação necessária. Faça login para continuar.'
     });
     return;
   }
 
-  const token = authHeader.substring(7).trim();
+  const token = authHeader.split(' ')[1];
 
   try {
     const payload = AuthService.verifySessionToken(token);
@@ -151,9 +137,18 @@ export function requireAuthentication(req: AuthenticatedRequest, res: Response, 
 }
 
 /**
+ * Verifica se um papel de usuário é administrativo ou gerencial (admin, manager, gerente, supervisor).
+ */
+export function isManagementRole(role?: string): boolean {
+  if (!role) return false;
+  const normalized = String(role).trim().toLowerCase();
+  return ['admin', 'manager', 'gerente', 'supervisor'].includes(normalized);
+}
+
+/**
  * Middleware Express: Exige permissões específicas de Perfil (Role-Based Access Control - RBAC).
  */
-export function requireRole(allowedRoles: Array<'admin' | 'technician'>) {
+export function requireRole(allowedRoles: Array<'admin' | 'technician' | 'manager' | 'supervisor' | string>) {
   return (req: AuthenticatedRequest, res: Response, next: NextFunction): void => {
     if (!req.user) {
       res.status(401).json({ success: false, error: 'Acesso não autenticado.' });
@@ -170,4 +165,28 @@ export function requireRole(allowedRoles: Array<'admin' | 'technician'>) {
 
     next();
   };
+}
+
+/**
+ * Middleware Express: Exige papel de gestão (admin, gerente ou supervisor).
+ */
+export function requireManagement(
+  req: AuthenticatedRequest,
+  res: Response,
+  next: NextFunction
+): void {
+  if (!req.user) {
+    res.status(401).json({ success: false, error: 'Acesso não autenticado.' });
+    return;
+  }
+
+  if (!isManagementRole(req.user.role)) {
+    res.status(403).json({
+      success: false,
+      error: 'Acesso negado. Operação exclusiva para administradores, gerentes ou supervisores.'
+    });
+    return;
+  }
+
+  next();
 }

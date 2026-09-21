@@ -177,9 +177,34 @@ function stopServer(serverProcess) {
   }
 }
 
+let cachedAdminToken = null;
+
+async function getAdminToken() {
+  if (cachedAdminToken) return cachedAdminToken;
+  try {
+    const loginRes = await fetch(`${BASE_URL}/api/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ type: 'admin', pin: '3247' })
+    });
+    if (loginRes.ok) {
+      const data = await loginRes.json();
+      if (data.token) {
+        cachedAdminToken = data.token;
+        return cachedAdminToken;
+      }
+    }
+  } catch (_) {}
+  return null;
+}
+
 async function apiFetch(endpointPath, options = {}) {
   const url = `${BASE_URL}${endpointPath}`;
   const headers = { 'Content-Type': 'application/json', ...(options.headers || {}) };
+  if (!headers.Authorization && !options.noAuth && !endpointPath.startsWith('/api/auth/login')) {
+    const token = await getAdminToken();
+    if (token) headers.Authorization = `Bearer ${token}`;
+  }
   const config = { ...options, headers };
 
   if (config.body && typeof config.body === 'object') {

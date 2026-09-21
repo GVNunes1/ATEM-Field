@@ -1,5 +1,5 @@
-import { useState, type FormEvent } from 'react';
-import { AlertCircle, ArrowLeftRight, Check, X } from 'lucide-react';
+import { useEffect, useState, type FormEvent } from 'react';
+import { AlertCircle, ArrowLeftRight, Check, Plus, X } from 'lucide-react';
 import { ModalOverlay } from './ModalOverlay';
 import { safeFetchJson } from '../lib/api';
 
@@ -48,9 +48,17 @@ interface CalendarSaveResult {
   message?: string;
 }
 
+interface CalendarOption {
+  id: string;
+  name: string;
+  writable: boolean;
+  primary?: boolean;
+}
+
 interface CalendarEventEditorProps {
-  appointment: CalendarAppointment;
+  appointment?: CalendarAppointment | null;
   technicians: CalendarTechnician[];
+  initialDate?: string;
   onDismiss: () => void;
   onSaved: (message: string) => Promise<void>;
 }
@@ -60,6 +68,14 @@ function offsetDate(value: string, days: number) {
   const date = new Date(`${value}T12:00:00Z`);
   date.setUTCDate(date.getUTCDate() + days);
   return date.toISOString().slice(0, 10);
+}
+
+function todayDateString() {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  const day = String(now.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
 }
 
 function describeRemoteTime(event: GoogleEventSnapshot | null) {
@@ -76,28 +92,57 @@ function describeRemoteTime(event: GoogleEventSnapshot | null) {
   return event?.start?.dateTime ? `${format(event.start.dateTime)} a ${format(event.end?.dateTime)}` : 'Não informado';
 }
 
-export function CalendarEventEditor({ appointment, technicians, onDismiss, onSaved }: CalendarEventEditorProps) {
-  const [record, setRecord] = useState(appointment);
-  const isAllDay = Boolean(appointment.all_day);
+export function CalendarEventEditor({ appointment, technicians, initialDate, onDismiss, onSaved }: CalendarEventEditorProps) {
+  const isCreateMode = !appointment;
+  const [record, setRecord] = useState<CalendarAppointment | null>(appointment || null);
+  const isAllDay = Boolean(appointment?.all_day);
+  const defaultDate = initialDate || appointment?.appointment_date || todayDateString();
+
   const [form, setForm] = useState({
-    title: appointment.title || '',
-    client_name: appointment.client_name || '',
-    client_address: appointment.client_address || '',
-    appointment_date: appointment.appointment_date || '',
-    appointment_time: String(appointment.appointment_time || '').slice(0, 5),
-    appointment_end_date: isAllDay
-      ? offsetDate(appointment.appointment_end_date, -1) || appointment.appointment_date || ''
-      : appointment.appointment_end_date || appointment.appointment_date || '',
-    appointment_end_time: String(appointment.appointment_end_time || '').slice(0, 5),
+    title: appointment?.title || '',
+    client_name: appointment?.client_name || '',
+    client_address: appointment?.client_address || '',
+    appointment_date: appointment?.appointment_date || defaultDate,
+    appointment_time: appointment ? String(appointment.appointment_time || '').slice(0, 5) : '08:00',
+    appointment_end_date: appointment
+      ? (isAllDay ? offsetDate(appointment.appointment_end_date, -1) || appointment.appointment_date || '' : appointment.appointment_end_date || appointment.appointment_date || '')
+      : defaultDate,
+    appointment_end_time: appointment ? String(appointment.appointment_end_time || '').slice(0, 5) : '17:00',
     all_day: isAllDay,
-    technician_ids: (Array.isArray(appointment.technician_ids) ? appointment.technician_ids : [appointment.technician_id])
-      .filter(Boolean).map(Number) as number[]
+    technician_ids: appointment
+      ? ((Array.isArray(appointment.technician_ids) ? appointment.technician_ids : [appointment.technician_id]).filter(Boolean).map(Number) as number[])
+      : [],
+    notes: ''
   });
+
+  const [calendars, setCalendars] = useState<CalendarOption[]>([]);
+  const [selectedCalendarId, setSelectedCalendarId] = useState<string>('');
+  const [loadingCalendars, setLoadingCalendars] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
-  const conflict = record.google_sync_status === 'conflict' ? record.google_sync_conflict : null;
+
+  useEffect(() => {
+    if (isCreateMode) {
+      setLoadingCalendars(true);
+      safeFetchJson('/api/calendar/calendars')
+        .then(res => {
+          if (res?.success && Array.isArray(res.calendars)) {
+            const list: CalendarOption[] = res.calendars;
+            setCalendars(list);
+            const primary = list.find(c => c.primary) || list[0];
+            if (primary) setSelectedCalendarId(primary.id);
+          }
+        })
+        .catch(err => console.warn('Erro ao listar agendas Google:', err))
+        .finally(() => setLoadingCalendars(false));
+    }
+  }, [isCreateMode]);
+
+  const conflict = record?.google_sync_status === 'conflict' ? record.google_sync_conflict : null;
   const remote = conflict;
-  const canEdit = record.calendar_writable !== false && Boolean(record.google_event_id && record.google_calendar_id);
+  const canEdit = isCreateMode
+    ? true
+    : (record?.calendar_writable !== false && Boolean(record?.google_event_id && record?.google_calendar_id));
 
   const processResult = async (result: CalendarSaveResult) => {
     if (result.appointment && (result.success || result.appointment.google_sync_status === 'conflict')) setRecord(result.appointment);
@@ -122,18 +167,42 @@ export function CalendarEventEditor({ appointment, technicians, onDismiss, onSav
     if (end <= start) { setError('O término precisa ser posterior ao início do atendimento.'); return; }
     setBusy(true);
     try {
-      const result = await safeFetchJson(`/api/appointments/${record.id}/calendar`, {
-        method: 'PATCH', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          ...form,
-          title: form.title.trim(),
-          appointment_end_date: form.all_day ? offsetDate(form.appointment_end_date, 1) : form.appointment_end_date,
-          appointment_time: form.all_day ? null : form.appointment_time,
-          appointment_end_time: form.all_day ? null : form.appointment_end_time,
-          expected_revision: Number(record.google_sync_revision || 0)
-        })
-      });
-      await processResult(result);
+      if (isCreateMode) {
+        const result = await safeFetchJson('/api/appointments/calendar', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            title: form.title.trim(),
+            client_name: form.client_name.trim() || form.title.trim(),
+            client_address: form.client_address.trim(),
+            calendar_id: selectedCalendarId || undefined,
+            notes: form.notes.trim(),
+            all_day: form.all_day,
+            appointment_date: form.appointment_date,
+            appointment_time: form.all_day ? null : form.appointment_time,
+            appointment_end_date: form.all_day ? offsetDate(form.appointment_end_date, 1) : form.appointment_end_date,
+            appointment_end_time: form.all_day ? null : form.appointment_end_time,
+            technician_ids: form.technician_ids
+          })
+        });
+        if (!result.success) throw new Error(result.error || result.message || 'Não foi possível criar o atendimento.');
+        await onSaved(result.message || 'Atendimento criado e sincronizado com o Google Agenda.');
+        onDismiss();
+      } else {
+        const result = await safeFetchJson(`/api/appointments/${record!.id}/calendar`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            ...form,
+            title: form.title.trim(),
+            appointment_end_date: form.all_day ? offsetDate(form.appointment_end_date, 1) : form.appointment_end_date,
+            appointment_time: form.all_day ? null : form.appointment_time,
+            appointment_end_time: form.all_day ? null : form.appointment_end_time,
+            expected_revision: Number(record!.google_sync_revision || 0)
+          })
+        });
+        await processResult(result);
+      }
     } catch (requestError) {
       setError(requestError instanceof Error ? requestError.message : 'Não foi possível salvar o atendimento.');
     } finally { setBusy(false); }
@@ -156,13 +225,20 @@ export function CalendarEventEditor({ appointment, technicians, onDismiss, onSav
     <ModalOverlay className="calendar-editor-overlay" onDismiss={busy ? undefined : onDismiss}>
       <section className="calendar-editor" role="dialog" aria-modal="true" aria-labelledby="calendar-editor-title" aria-describedby="calendar-editor-description" aria-busy={busy}>
         <header className="calendar-editor__heading">
-          <div><span className="field-overline">Google Agenda · ATEM Field</span><h2 id="calendar-editor-title">{conflict ? 'Revisar alterações' : 'Editar atendimento'}</h2></div>
-          <button type="button" className="btn btn-secondary calendar-editor__close" aria-label="Fechar edição" disabled={busy} onClick={onDismiss}><X size={20} /></button>
+          <div>
+            <span className="field-overline">Google Agenda · ATEM Field</span>
+            <h2 id="calendar-editor-title">{isCreateMode ? 'Novo atendimento' : (conflict ? 'Revisar alterações' : 'Editar atendimento')}</h2>
+          </div>
+          <button type="button" className="btn btn-secondary calendar-editor__close" aria-label="Fechar" disabled={busy} onClick={onDismiss}><X size={20} /></button>
         </header>
-        <p id="calendar-editor-description">Data, horário, título, local e equipe são sincronizados entre as agendas. Os horários seguem o fuso de Brasília.</p>
-        {!canEdit && <p className="calendar-notice calendar-notice--warning"><AlertCircle size={18} />{record.calendar_writable === false ? 'Sua conexão Google não permite editar esta agenda.' : 'Sincronize a agenda para identificar o evento Google antes de editar.'}</p>}
+        <p id="calendar-editor-description">
+          {isCreateMode
+            ? 'O atendimento será cadastrado e enviado imediatamente ao Google Agenda com equipe e detalhes sincronizados.'
+            : 'Data, horário, título, local e equipe são sincronizados entre as agendas. Os horários seguem o fuso de Brasília.'}
+        </p>
+        {!isCreateMode && !canEdit && <p className="calendar-notice calendar-notice--warning"><AlertCircle size={18} />{record?.calendar_writable === false ? 'Sua conexão Google não permite editar esta agenda.' : 'Sincronize a agenda para identificar o evento Google antes de editar.'}</p>}
         {error && <p className="calendar-notice calendar-notice--error" role="alert"><AlertCircle size={18} />{error}</p>}
-        {conflict ? (
+        {conflict && record ? (
           <section className="calendar-conflict" aria-label="Comparação das alterações">
             <p><ArrowLeftRight size={18} /> O atendimento mudou nos dois sistemas. Escolha a versão que será mantida.</p>
             <div className="calendar-conflict__versions">
@@ -190,21 +266,111 @@ export function CalendarEventEditor({ appointment, technicians, onDismiss, onSav
         ) : (
           <form onSubmit={submit}>
             <fieldset className="calendar-editor__fields" disabled={busy || !canEdit}>
-              <label className="calendar-editor__field calendar-editor__field--wide">Título<input className="input-field" value={form.title} onChange={event => setForm({ ...form, title: event.target.value })} maxLength={500} required /></label>
-              <label className="calendar-editor__field">Cliente<input className="input-field" value={form.client_name} onChange={event => setForm({ ...form, client_name: event.target.value })} maxLength={500} /></label>
-              <label className="calendar-editor__field">Local / endereço<input className="input-field" value={form.client_address} onChange={event => setForm({ ...form, client_address: event.target.value })} maxLength={1000} /></label>
-              <label className="calendar-editor__check calendar-editor__field--wide"><input type="checkbox" checked={form.all_day} onChange={event => setForm({ ...form, all_day: event.target.checked })} />Dia inteiro</label>
-              <label className="calendar-editor__field">Data de início<input className="input-field" type="date" value={form.appointment_date} onChange={event => setForm({ ...form, appointment_date: event.target.value })} required /></label>
-              {!form.all_day && <label className="calendar-editor__field">Hora de início<input className="input-field" type="time" value={form.appointment_time} onChange={event => setForm({ ...form, appointment_time: event.target.value })} required /></label>}
-              <label className="calendar-editor__field">{form.all_day ? 'Último dia' : 'Data de término'}<input className="input-field" type="date" value={form.appointment_end_date} min={form.appointment_date} onChange={event => setForm({ ...form, appointment_end_date: event.target.value })} required /></label>
-              {!form.all_day && <label className="calendar-editor__field">Hora de término<input className="input-field" type="time" value={form.appointment_end_time} onChange={event => setForm({ ...form, appointment_end_time: event.target.value })} required /></label>}
-              <fieldset className="calendar-editor__team calendar-editor__field--wide"><legend>Equipe escalada</legend>
-                <div>{technicians.map(technician => <label className="calendar-editor__check" key={technician.id}><input type="checkbox" checked={form.technician_ids.includes(Number(technician.id))} onChange={event => setForm({ ...form, technician_ids: event.target.checked ? [...form.technician_ids, Number(technician.id)] : form.technician_ids.filter(id => id !== Number(technician.id)) })} />{technician.name}</label>)}</div>
+              {isCreateMode && (
+                <label className="calendar-editor__field calendar-editor__field--wide">
+                  Agenda Google de destino
+                  <select
+                    className="select-field input-field"
+                    value={selectedCalendarId}
+                    onChange={event => setSelectedCalendarId(event.target.value)}
+                    disabled={busy || loadingCalendars}
+                  >
+                    {calendars.length === 0 ? (
+                      <option value="">{loadingCalendars ? 'Carregando agendas...' : 'Agenda Geral (tecnicosmultmed@gmail.com)'}</option>
+                    ) : (
+                      calendars.map(cal => (
+                        <option key={cal.id} value={cal.id}>
+                          {cal.name}{cal.primary ? ' (Principal)' : ''}
+                        </option>
+                      ))
+                    )}
+                  </select>
+                </label>
+              )}
+              <label className="calendar-editor__field calendar-editor__field--wide">
+                Título do atendimento
+                <input className="input-field" value={form.title} onChange={event => setForm({ ...form, title: event.target.value })} placeholder="Ex: Manutenção Preventiva - Philips Epiq 7" maxLength={500} required />
+              </label>
+              <label className="calendar-editor__field">
+                Cliente / Unidade
+                <input className="input-field" value={form.client_name} onChange={event => setForm({ ...form, client_name: event.target.value })} placeholder="Nome do hospital ou cliente" maxLength={500} />
+              </label>
+              <label className="calendar-editor__field">
+                Local / endereço
+                <input className="input-field" value={form.client_address} onChange={event => setForm({ ...form, client_address: event.target.value })} placeholder="Endereço da unidade" maxLength={1000} />
+              </label>
+              <label className="calendar-editor__check calendar-editor__field--wide">
+                <input type="checkbox" checked={form.all_day} onChange={event => setForm({ ...form, all_day: event.target.checked })} />
+                Dia inteiro
+              </label>
+              <label className="calendar-editor__field">
+                Data de início
+                <input className="input-field" type="date" value={form.appointment_date} onChange={event => setForm({ ...form, appointment_date: event.target.value })} required />
+              </label>
+              {!form.all_day && (
+                <label className="calendar-editor__field">
+                  Hora de início
+                  <input className="input-field" type="time" value={form.appointment_time} onChange={event => setForm({ ...form, appointment_time: event.target.value })} required />
+                </label>
+              )}
+              <label className="calendar-editor__field">
+                {form.all_day ? 'Último dia' : 'Data de término'}
+                <input className="input-field" type="date" value={form.appointment_end_date} min={form.appointment_date} onChange={event => setForm({ ...form, appointment_end_date: event.target.value })} required />
+              </label>
+              {!form.all_day && (
+                <label className="calendar-editor__field">
+                  Hora de término
+                  <input className="input-field" type="time" value={form.appointment_end_time} onChange={event => setForm({ ...form, appointment_end_time: event.target.value })} required />
+                </label>
+              )}
+              <fieldset className="calendar-editor__team calendar-editor__field--wide">
+                <legend>Equipe escalada</legend>
+                <div>
+                  {technicians.map(technician => (
+                    <label className="calendar-editor__check" key={technician.id}>
+                      <input
+                        type="checkbox"
+                        checked={form.technician_ids.includes(Number(technician.id))}
+                        onChange={event => setForm({
+                          ...form,
+                          technician_ids: event.target.checked
+                            ? [...form.technician_ids, Number(technician.id)]
+                            : form.technician_ids.filter(id => id !== Number(technician.id))
+                        })}
+                      />
+                      {technician.name}
+                    </label>
+                  ))}
+                </div>
                 {!technicians.length && <p className="calendar-editor__hint">Nenhum técnico disponível para seleção.</p>}
               </fieldset>
+              {isCreateMode && (
+                <label className="calendar-editor__field calendar-editor__field--wide">
+                  Observações adicionais
+                  <textarea
+                    className="input-field"
+                    rows={3}
+                    value={form.notes}
+                    onChange={event => setForm({ ...form, notes: event.target.value })}
+                    placeholder="Observações do atendimento (são incluídas na descrição do evento Google)..."
+                    maxLength={2000}
+                    style={{ resize: 'vertical', minHeight: '64px' }}
+                  />
+                </label>
+              )}
             </fieldset>
-            <p className="calendar-editor__hint">A atualização não envia convites ou e-mails aos participantes do Google.</p>
-            <footer className="calendar-editor__actions"><button className="btn btn-secondary" type="button" disabled={busy} onClick={onDismiss}>Cancelar</button><button className="btn btn-primary" type="submit" disabled={busy || !canEdit}><Check size={17} />{busy ? 'Salvando…' : 'Salvar e sincronizar'}</button></footer>
+            <p className="calendar-editor__hint">
+              {isCreateMode
+                ? 'Ao criar, o evento é registrado no banco ATEM e criado imediatamente no Google Agenda.'
+                : 'A atualização não envia convites ou e-mails aos participantes do Google.'}
+            </p>
+            <footer className="calendar-editor__actions">
+              <button className="btn btn-secondary" type="button" disabled={busy} onClick={onDismiss}>Cancelar</button>
+              <button className="btn btn-primary" type="submit" disabled={busy || !canEdit}>
+                {isCreateMode ? <Plus size={17} /> : <Check size={17} />}
+                {busy ? (isCreateMode ? 'Criando…' : 'Salvando…') : (isCreateMode ? 'Criar e sincronizar' : 'Salvar e sincronizar')}
+              </button>
+            </footer>
           </form>
         )}
       </section>

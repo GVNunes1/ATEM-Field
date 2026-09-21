@@ -13,6 +13,7 @@ import {
   Clock3,
   MapPin,
   Pencil,
+  Plus,
   RefreshCw,
   Search,
   UserRound,
@@ -60,12 +61,15 @@ export function AppointmentsView({ appointments, onOpenChecklistModal, currentUs
   const [technicians, setTechnicians] = useState<CalendarTechnician[]>([]);
   const [workflowActionId, setWorkflowActionId] = useState<number | null>(null);
   const [editingAppointment, setEditingAppointment] = useState<CalendarAppointment | null>(null);
+  const [isCreating, setIsCreating] = useState(false);
+  const [createDate, setCreateDate] = useState<string | undefined>(undefined);
   const [syncStatus, setSyncStatus] = useState<GoogleSyncStatus | null>(null);
   const [syncing, setSyncing] = useState(false);
   const [connecting, setConnecting] = useState(false);
   const [notice, setNotice] = useState('');
   const [actionError, setActionError] = useState('');
   const isAdmin = currentUser?.role === 'admin';
+  const canManage = isAdmin || ['manager', 'gerente', 'supervisor'].includes(String(currentUser?.role || '').toLowerCase());
 
   const loadSyncStatus = useCallback(async () => {
     try {
@@ -245,6 +249,16 @@ export function AppointmentsView({ appointments, onOpenChecklistModal, currentUs
           >
             Hoje
           </button>
+          {canManage && (
+            <button
+              type="button"
+              className="btn btn-primary btn-sm"
+              onClick={() => { setCreateDate(undefined); setIsCreating(true); }}
+              style={{ height: '38px', padding: '0 16px', display: 'inline-flex', alignItems: 'center', gap: '6px', fontWeight: 600 }}
+            >
+              <Plus size={16} /> Novo Atendimento
+            </button>
+          )}
         </div>
       </header>
 
@@ -356,6 +370,17 @@ export function AppointmentsView({ appointments, onOpenChecklistModal, currentUs
                 <header className="agenda-day__date">
                   <strong>{pad(date.getDate())}</strong><span>{weekday}</span><small>{shortMonth}</small>
                   {isToday && <em>Hoje</em>}
+                  {canManage && (
+                    <button
+                      type="button"
+                      className="btn btn-secondary btn-sm"
+                      style={{ marginTop: '8px', padding: '3px 6px', fontSize: '0.72rem', display: 'flex', alignItems: 'center', gap: '3px', width: '100%', justifyContent: 'center' }}
+                      title={`Novo atendimento em ${day}`}
+                      onClick={() => { setCreateDate(day); setIsCreating(true); }}
+                    >
+                      <Plus size={13} /> Novo
+                    </button>
+                  )}
                 </header>
 
                 <div className="agenda-day__appointments">
@@ -401,7 +426,7 @@ export function AppointmentsView({ appointments, onOpenChecklistModal, currentUs
                         <div className="agenda-appointment-card__sync">
                           <span className={`calendar-state calendar-state--${['synced', 'pending', 'error', 'conflict'].includes(eventSyncStatus) ? eventSyncStatus : 'unlinked'}`}><span aria-hidden="true" />{eventSyncLabel}</span>
                           {appointment.google_sync_error && <span className="agenda-appointment-card__sync-error">{appointment.google_sync_error}</span>}
-                          {isAdmin && <button type="button" className="btn btn-secondary btn-sm" aria-label={`${eventSyncStatus === 'conflict' ? 'Revisar alterações de' : 'Editar atendimento de'} ${displayTitle}`} onClick={() => setEditingAppointment(appointment)}><Pencil size={14} />{eventSyncStatus === 'conflict' ? 'Revisar alterações' : 'Editar atendimento'}</button>}
+                          {canManage && <button type="button" className="btn btn-secondary btn-sm" aria-label={`${eventSyncStatus === 'conflict' ? 'Revisar alterações de' : 'Editar atendimento de'} ${displayTitle}`} onClick={() => setEditingAppointment(appointment)}><Pencil size={14} />{eventSyncStatus === 'conflict' ? 'Revisar alterações' : 'Editar atendimento'}</button>}
                         </div>
                         {!isNonTech && (
                           <div className="agenda-appointment-card__equipment">
@@ -425,7 +450,19 @@ export function AppointmentsView({ appointments, onOpenChecklistModal, currentUs
           <p>Ajuste os filtros ou selecione outro mês no controle de navegação.</p>
         </div>
       )}
-      {editingAppointment && <CalendarEventEditor appointment={editingAppointment} technicians={technicians} onDismiss={() => setEditingAppointment(null)} onSaved={async message => { setNotice(message); setActionError(''); await Promise.all([onRefresh?.(), loadSyncStatus()]); }} />}
+      {(editingAppointment || isCreating) && (
+        <CalendarEventEditor
+          appointment={editingAppointment}
+          initialDate={createDate}
+          technicians={technicians}
+          onDismiss={() => { setEditingAppointment(null); setIsCreating(false); }}
+          onSaved={async message => {
+            setNotice(message);
+            setActionError('');
+            await Promise.all([onRefresh?.(), loadSyncStatus()]);
+          }}
+        />
+      )}
     </div>
   );
 }

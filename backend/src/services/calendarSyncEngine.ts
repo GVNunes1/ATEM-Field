@@ -1,6 +1,7 @@
 import { randomUUID } from 'crypto';
 import { supabaseAdmin } from './supabase';
-import { buildCalendarEdit, mapGoogleEvent } from './calendarMapping';
+import { executeCalendarPython } from './calendarConnector';
+import { buildCalendarEdit, buildCalendarInsert, mapGoogleEvent } from './calendarMapping';
 
 type Connector = (file: string, args?: string[], timeout?: number, input?: unknown) => Promise<any>;
 async function rpc(name: string, input: Record<string, unknown>) {
@@ -120,4 +121,70 @@ export async function resolveCalendarConflict(id: number, input: any, actorId: s
   }
   await ingest(appointment.google_calendar_id, appointment.google_sync_conflict, await technicians(), appointment.calendar_writable, id, input.expected_revision);
   return getCalendarAppointment(id);
+}
+
+export async function listWritableCalendars(execute: Connector = executeCalendarPython) {
+  try {
+    const result = await execute('import_agenda.py', ['--list-calendars'], 30_000);
+    if (result && Array.isArray(result.calendars)) {
+      return result.calendars;
+    }
+  } catch (err: any) {
+    console.warn('[Google Agenda] Não foi possível listar agendas via conector:', err?.message);
+  }
+  const { data } = await supabaseAdmin.from('appointments')
+    .select('google_calendar_id')
+    .not('google_calendar_id', 'is', null);
+  const distinct = [...new Set((data || []).map(r => r.google_calendar_id).filter(Boolean))];
+  if (!distinct.length) {
+    distinct.push(process.env.GOOGLE_CALENDAR_ID || 'tecnicosmultmed@gmail.com');
+  }
+  return distinct.map(id => ({
+    id,
+    name: id === 'tecnicosmultmed@gmail.com' ? 'Geral (tecnicosmultmed@gmail.com)' : id,
+    writable: true,
+    primary: id === 'tecnicosmultmed@gmail.com'
+  }));
+}
+
+export async function createCalendarAppointment(input: any, actorId: string, execute: Connector = executeCalendarPython) {
+  const teamList = await technicians();
+  const defaultCalendar = process.env.GOOGLE_CALENDAR_ID || 'tecnicosmultmed@gmail.com';
+  let insertData;
+  try {
+    insertData = buildCalendarInsert(input, teamList, defaultCalendar);
+  } catch (error: any) {
+    throw Object.assign(error, { status: 400 });
+  }
+  const { values, eventPatch, calendarId } = insertData;
+  if (!calendarId) {
+    throw Object.assign(new Error('Agenda de destino não informada.'), { status: 400 });
+  }
+
+  const operationId = randomUUID();
+  let output: any;
+  try {
+    output = await execute('write_calendar_event.py', [], 60_000, {
+      operation: 'insert',
+      calendar_id: calendarId,
+      operation_id: operationId,
+      event_patch: eventPatch
+    });
+  } catch (error: any) {
+    throw Object.assign(
+      new Error(error.message || 'Falha ao criar evento no Google Agenda.'),
+      { status: error.authRequired ? 401 : 502, details: error.details }
+    );
+  }
+
+  if (!output || !output.event) {
+    throw Object.assign(new Error('Resposta inválida do Google Agenda ao criar evento.'), { status: 502 });
+  }
+
+  const change = await ingest(calendarId, output.event, teamList, true);
+  if (!change || !change.id) {
+    throw Object.assign(new Error('Falha ao registrar agendamento no banco de dados.'), { status: 500 });
+  }
+
+  return getCalendarAppointment(change.id);
 }

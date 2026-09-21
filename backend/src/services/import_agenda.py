@@ -173,6 +173,18 @@ def main():
             continue
         calendars.append(calendar)
 
+    if "--list-calendars" in sys.argv:
+        emit({
+            "success": True,
+            "calendars": [{
+                "id": item.get("id"),
+                "name": item.get("summary") or "Google Calendar",
+                "writable": bool(write_authorized and calendar_can_write(item)),
+                "time_zone": item.get("timeZone"),
+                "primary": bool(item.get("primary", False)),
+            } for item in calendars],
+        })
+
     sync_state = {} if "--full" in sys.argv else read_json_file(SYNC_STATE_PATH, {})
     if not isinstance(sync_state, dict):
         sync_state = {}

@@ -341,6 +341,36 @@ class CredentialTests(unittest.TestCase):
         self.assertFalse(result["write_authorized"])
         self.assertTrue(result["requires_write_auth"])
 
+    def test_clean_env_json_strips_prefixes_and_quotes(self):
+        sample = {"token": "ya29.test", "refresh_token": "1//test"}
+        # Raw json
+        parsed, cleaned = credentials_module._clean_env_json(json.dumps(sample), "GOOGLE_CALENDAR_TOKEN_JSON")
+        self.assertEqual(parsed, sample)
+
+        # With variable prefix
+        with_prefix = f"GOOGLE_CALENDAR_TOKEN_JSON={json.dumps(sample)}"
+        parsed, cleaned = credentials_module._clean_env_json(with_prefix, "GOOGLE_CALENDAR_TOKEN_JSON")
+        self.assertEqual(parsed, sample)
+
+        # With export and quotes
+        with_export = f"export GOOGLE_CALENDAR_TOKEN_JSON='{json.dumps(sample)}'"
+        parsed, cleaned = credentials_module._clean_env_json(with_export, "GOOGLE_CALENDAR_TOKEN_JSON")
+        self.assertEqual(parsed, sample)
+
+    def test_token_path_updates_when_env_token_has_new_refresh_token(self):
+        old_token = {"token": "old", "refresh_token": "old-ref"}
+        new_token = {"token": "new", "refresh_token": "new-ref"}
+        with tempfile.TemporaryDirectory() as directory:
+            disk_path = Path(directory) / "google-calendar-token.json"
+            disk_path.write_text(json.dumps(old_token))
+            with patch.object(credentials_module, "_configured_path", return_value=disk_path), \
+                    patch.dict(os.environ, {"GOOGLE_CALENDAR_TOKEN_JSON": f"GOOGLE_CALENDAR_TOKEN_JSON={json.dumps(new_token)}"}):
+                res_path = credentials_module.token_path()
+                self.assertEqual(res_path, disk_path)
+                updated_disk = json.loads(disk_path.read_text())
+                self.assertEqual(updated_disk["refresh_token"], "new-ref")
+
 
 if __name__ == "__main__":
     unittest.main()
+
