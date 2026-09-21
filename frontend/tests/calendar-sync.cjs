@@ -63,6 +63,10 @@ const baseAppointment = {
       const page = await context.newPage();
       page.on('pageerror', error => errors.push(error.message));
       await page.goto(`${baseUrl}/agenda`);
+      // The monthly board is the default view; switch to the detail cards for
+      // editor/conflict assertions so this fixture tests the same interaction
+      // regardless of the user's persisted view preference.
+      await page.getByRole('button', { name: 'Cartões', exact: true }).click();
       const edit = page.getByRole('button', { name: 'Editar atendimento de Cliente de teste', exact: true });
       await edit.click();
       const dialog = page.getByRole('dialog', { name: 'Editar atendimento', exact: true });
@@ -72,10 +76,10 @@ const baseAppointment = {
       const rect = await dialog.boundingBox();
       assert.ok(rect.x >= 0 && rect.y >= 0 && rect.x + rect.width <= viewport.width + 1 && rect.y + rect.height <= viewport.height + 1, 'Dialog fits viewport');
       assert.equal(await dialog.evaluate(el => el.scrollWidth <= el.clientWidth + 1), true, 'No dialog horizontal overflow');
-      await dialog.getByLabel('Título', { exact: true }).fill('Manutenção reagendada');
+      await dialog.getByLabel('Título do atendimento', { exact: true }).fill('Manutenção reagendada');
       await dialog.getByRole('button', { name: 'Salvar e sincronizar' }).click();
       await dialog.getByRole('alert').filter({ hasText: 'O técnico está reservado' }).waitFor();
-      assert.equal(await dialog.getByLabel('Título', { exact: true }).inputValue(), 'Manutenção reagendada', 'Rejected edit keeps input');
+      assert.equal(await dialog.getByLabel('Título do atendimento', { exact: true }).inputValue(), 'Manutenção reagendada', 'Rejected edit keeps input');
       assert.equal(writes[0].body.expected_revision, 3);
       mode = 'save';
       await dialog.getByLabel('Dia inteiro', { exact: true }).check();

@@ -252,24 +252,22 @@ export function AppointmentsView({ appointments, onOpenChecklistModal, currentUs
           <p>Atendimentos por dia, com equipe, equipamentos e reservas vinculadas.</p>
         </div>
 
-        <div className="agenda-month-navigation" aria-label="Navegação por mês" style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+        <div className="agenda-month-navigation" aria-label="Navegação por mês">
           <button
             type="button"
             className="btn btn-secondary btn-sm"
             onClick={() => setSelectedMonth(moveMonth(selectedMonth, -1))}
             aria-label="Mês anterior"
-            style={{ width: '38px', height: '38px', padding: 0, display: 'grid', placeItems: 'center' }}
           >
             <ChevronLeft size={18} />
           </button>
-          <label className="agenda-month-picker" style={{ display: 'flex', alignItems: 'center', position: 'relative', cursor: 'pointer', padding: '0 14px', minHeight: '38px', border: '1px solid var(--border-color)', borderRadius: '8px', background: '#fff' }}>
-            <span style={{ fontWeight: 600, fontSize: '0.84rem', color: 'var(--text-main)', textTransform: 'capitalize' }}>{monthLabel(selectedMonth)}</span>
+          <label className="agenda-month-picker">
+            <span>{monthLabel(selectedMonth)}</span>
             <input
               type="month"
               value={selectedMonth}
               onChange={event => event.target.value && setSelectedMonth(event.target.value)}
               aria-label="Selecionar mês"
-              style={{ position: 'absolute', opacity: 0, width: '100%', height: '100%', inset: 0, cursor: 'pointer' }}
             />
           </label>
           <button
@@ -277,7 +275,6 @@ export function AppointmentsView({ appointments, onOpenChecklistModal, currentUs
             className="btn btn-secondary btn-sm"
             onClick={() => setSelectedMonth(moveMonth(selectedMonth, 1))}
             aria-label="Próximo mês"
-            style={{ width: '38px', height: '38px', padding: 0, display: 'grid', placeItems: 'center' }}
           >
             <ChevronRight size={18} />
           </button>
@@ -285,33 +282,16 @@ export function AppointmentsView({ appointments, onOpenChecklistModal, currentUs
             type="button"
             className="btn btn-secondary btn-sm"
             onClick={() => setSelectedMonth(monthKey(new Date()))}
-            style={{ height: '38px', padding: '0 14px' }}
           >
             Hoje
           </button>
           <div
             className="agenda-view-selector"
-            style={{
-              display: 'inline-flex',
-              background: 'var(--bg-tertiary, #f1f5f9)',
-              padding: '3px',
-              borderRadius: '8px',
-              border: '1px solid var(--border-color)',
-              gap: '2px'
-            }}
           >
             <button
               type="button"
               className={`btn btn-sm ${viewMode === 'spreadsheet' ? 'btn-primary' : 'btn-secondary'}`}
               onClick={() => changeViewMode('spreadsheet')}
-              style={{
-                height: '32px',
-                padding: '0 10px',
-                fontSize: '0.78rem',
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '5px'
-              }}
               title="Visualização em planilha mensal (layout idêntico ao quadro físico)"
             >
               <Table size={14} /> Planilha Mensal
@@ -320,14 +300,6 @@ export function AppointmentsView({ appointments, onOpenChecklistModal, currentUs
               type="button"
               className={`btn btn-sm ${viewMode === 'cards' ? 'btn-primary' : 'btn-secondary'}`}
               onClick={() => changeViewMode('cards')}
-              style={{
-                height: '32px',
-                padding: '0 10px',
-                fontSize: '0.78rem',
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '5px'
-              }}
               title="Visualização detalhada em cartões"
             >
               <LayoutGrid size={14} /> Cartões
@@ -338,7 +310,6 @@ export function AppointmentsView({ appointments, onOpenChecklistModal, currentUs
               type="button"
               className="btn btn-primary btn-sm"
               onClick={() => { setCreateDate(undefined); setIsCreating(true); }}
-              style={{ height: '38px', padding: '0 16px', display: 'inline-flex', alignItems: 'center', gap: '6px', fontWeight: 600 }}
             >
               <Plus size={16} /> Novo Atendimento
             </button>
@@ -402,12 +373,11 @@ export function AppointmentsView({ appointments, onOpenChecklistModal, currentUs
 
       <section className="field-surface agenda-filters">
         <div className="agenda-filters__controls">
-          <div style={{ position: 'relative' }}>
-            <Search size={16} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)', pointerEvents: 'none' }} />
+          <div className="agenda-search-field">
+            <Search size={16} aria-hidden="true" />
             <input
               type="search"
               className="input-field"
-              style={{ paddingLeft: '36px', height: '40px', fontSize: '0.84rem' }}
               value={searchTerm}
               onChange={event => setSearchTerm(event.target.value)}
               placeholder="Buscar por hospital, cidade, título ou técnico..."
@@ -418,7 +388,6 @@ export function AppointmentsView({ appointments, onOpenChecklistModal, currentUs
           <div>
             <select
               className="select-field"
-              style={{ height: '40px', fontSize: '0.84rem' }}
               value={selectedTech}
               aria-label="Filtrar por técnico"
               onChange={event => setSelectedTech(event.target.value)}
@@ -432,7 +401,6 @@ export function AppointmentsView({ appointments, onOpenChecklistModal, currentUs
             <button
               type="button"
               className="btn btn-secondary btn-sm"
-              style={{ height: '40px' }}
               onClick={() => { setSearchTerm(''); setSelectedTech('ALL'); }}
             >
               Limpar
@@ -513,7 +481,7 @@ export function AppointmentsView({ appointments, onOpenChecklistModal, currentUs
                           </div>
                           <div className="agenda-workflow-status" title="Etapa do fluxo de agendamento"><span>{workflowStatus}</span>{isAdmin && nextStatus && <button type="button" className="btn btn-secondary btn-sm" disabled={workflowActionId === Number(appointment.id)} onClick={() => void advanceWorkflow(appointment)}><CheckCircle2 size={14} /> {workflowActionId === Number(appointment.id) ? 'Salvando…' : 'Avançar'}</button>}</div>
                           {isNonTech ? (
-                            <span className="badge" style={{ alignSelf: 'flex-start', padding: '0.4rem 0.75rem', fontSize: '0.8rem', background: 'rgba(255, 255, 255, 0.05)', color: 'var(--text-muted)', border: '1px solid var(--border-color)', borderRadius: '6px' }}>
+                            <span className="agenda-no-checklist badge">
                               Não requer padrão
                             </span>
                           ) : (
@@ -525,7 +493,7 @@ export function AppointmentsView({ appointments, onOpenChecklistModal, currentUs
                         <div className="agenda-appointment-card__sync">
                           <span className={`calendar-state calendar-state--${['synced', 'pending', 'error', 'conflict'].includes(eventSyncStatus) ? eventSyncStatus : 'unlinked'}`}><span aria-hidden="true" />{eventSyncLabel}</span>
                           {appointment.google_sync_error && <span className="agenda-appointment-card__sync-error">{appointment.google_sync_error}</span>}
-                          <div style={{ marginLeft: 'auto', display: 'flex', gap: '6px', alignItems: 'center' }}>
+                          {canManage && <div className="agenda-appointment-actions">
                             <button
                               type="button"
                               className="btn btn-secondary btn-sm"
@@ -537,8 +505,7 @@ export function AppointmentsView({ appointments, onOpenChecklistModal, currentUs
                             </button>
                             <button
                               type="button"
-                              className="btn btn-secondary btn-sm"
-                              style={{ color: '#ef4444', borderColor: 'rgba(239, 68, 68, 0.3)' }}
+                              className="btn btn-secondary btn-sm agenda-delete-button"
                               aria-label={`Excluir atendimento de ${displayTitle}`}
                               title={`Excluir atendimento de ${displayTitle}`}
                               disabled={deletingId === Number(appointment.id)}
@@ -547,7 +514,7 @@ export function AppointmentsView({ appointments, onOpenChecklistModal, currentUs
                               <Trash2 size={14} />
                               {deletingId === Number(appointment.id) ? 'Excluindo…' : 'Excluir'}
                             </button>
-                          </div>
+                          </div>}
                         </div>
                         {!isNonTech && (
                           <div className="agenda-appointment-card__equipment">
@@ -565,7 +532,7 @@ export function AppointmentsView({ appointments, onOpenChecklistModal, currentUs
           })}
         </section>
       ) : (
-        <div className="field-empty field-surface" style={{ padding: '48px 24px' }}>
+        <div className="field-empty field-surface agenda-empty-state--month">
           <CalendarDays size={36} />
           <h3>Nenhum atendimento neste mês</h3>
           <p>Ajuste os filtros ou selecione outro mês no controle de navegação.</p>

@@ -119,7 +119,7 @@ export function CalendarEventEditor({ appointment, technicians, initialDate, can
 
   const [calendars, setCalendars] = useState<CalendarOption[]>([]);
   const [selectedCalendarId, setSelectedCalendarId] = useState<string>('');
-  const [loadingCalendars, setLoadingCalendars] = useState(false);
+  const [loadingCalendars, setLoadingCalendars] = useState(isCreateMode);
   const [busy, setBusy] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState('');
@@ -153,7 +153,6 @@ export function CalendarEventEditor({ appointment, technicians, initialDate, can
 
   useEffect(() => {
     if (isCreateMode) {
-      setLoadingCalendars(true);
       safeFetchJson('/api/calendar/calendars')
         .then(res => {
           if (res?.success && Array.isArray(res.calendars)) {
@@ -170,9 +169,9 @@ export function CalendarEventEditor({ appointment, technicians, initialDate, can
 
   const conflict = record?.google_sync_status === 'conflict' ? record.google_sync_conflict : null;
   const remote = conflict;
-  const canEdit = isCreateMode
+  const canEdit = canManage && (isCreateMode
     ? true
-    : (record?.calendar_writable !== false && Boolean(record?.google_event_id && record?.google_calendar_id));
+    : (record?.calendar_writable !== false && Boolean(record?.google_event_id && record?.google_calendar_id)));
 
   const processResult = async (result: CalendarSaveResult) => {
     if (result.appointment && (result.success || result.appointment.google_sync_status === 'conflict')) setRecord(result.appointment);
@@ -259,21 +258,11 @@ export function CalendarEventEditor({ appointment, technicians, initialDate, can
             <span className="field-overline">Google Agenda · ATEM Field</span>
             <h2 id="calendar-editor-title">{isCreateMode ? 'Novo atendimento' : (conflict ? 'Revisar alterações' : 'Editar atendimento')}</h2>
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <div className="calendar-editor__heading-actions">
             {!isCreateMode && (
               <button
                 type="button"
-                className="btn btn-secondary btn-sm"
-                style={{
-                  color: '#ef4444',
-                  borderColor: 'rgba(239, 68, 68, 0.4)',
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '6px',
-                  fontWeight: 600,
-                  height: '34px',
-                  padding: '0 12px'
-                }}
+                className="btn btn-secondary btn-sm calendar-editor__delete"
                 disabled={busy || deleting}
                 onClick={() => void handleDelete()}
                 title="Excluir este atendimento"

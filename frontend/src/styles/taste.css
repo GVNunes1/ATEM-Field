@@ -381,6 +381,9 @@
   .calendar-editor-overlay { background: rgb(20 34 54 / 38%); backdrop-filter: blur(3px); }
   .calendar-editor { width: min(760px, 100%); padding: 28px; border: 1px solid var(--border-color); border-radius: 16px; background: white; color: var(--text-main); box-shadow: 0 24px 70px rgb(20 40 70 / 18%); }
   .calendar-editor__heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
+  .calendar-editor__heading-actions { display: flex; min-width: 0; align-items: center; justify-content: flex-end; gap: 8px; flex-wrap: wrap; }
+  .calendar-editor__delete { min-height: 36px; padding-inline: 12px; color: var(--status-critical); border-color: #efc2bd; }
+  .calendar-editor__delete:hover:not(:disabled) { color: #fff; border-color: var(--status-critical); background: var(--status-critical); }
   .calendar-editor__heading h2 { font-size: 1.55rem; font-weight: 650; letter-spacing: -.035em; margin: 6px 0 0; }
   .calendar-editor__close { min-width: 44px; min-height: 44px; padding: 8px; }
   .calendar-editor > p { margin: 16px 0; line-height: 1.6; font-size: .84rem; color: var(--text-muted); }
@@ -416,11 +419,51 @@
     .agenda-appointment-card__sync { grid-column: 1; }
     .agenda-appointment-card__sync > .btn { margin-left: 0; }
     .agenda-sync__actions { width: 100%; }
-    .agenda-sync__actions > .btn { flex: 1 1 auto; }
+  .agenda-sync__actions > .btn { flex: 1 1 auto; }
     .calendar-editor { padding: 20px; }
+    .calendar-editor__heading-actions { flex-wrap: nowrap; }
+    .calendar-editor__delete { width: 40px; min-width: 40px; padding: 0; overflow: hidden; font-size: 0; }
     .calendar-editor__fields, .calendar-conflict__versions { grid-template-columns: minmax(0, 1fr); }
     .calendar-editor__field .input-field { font-size: 1rem; }
     .calendar-editor__team > div { grid-template-columns: minmax(0, 1fr); }
     .calendar-editor__actions > .btn { flex: 1 1 auto; }
+  }
+
+  /* Monthly agenda controls keep a clear two-level hierarchy on wide screens
+     and become a compact, full-width toolbar before the board reflows. */
+  .agenda-month-navigation { display: flex; align-items: center; justify-content: flex-end; gap: 8px; flex-wrap: wrap; }
+  .agenda-month-navigation > .btn { min-height: 40px; }
+  .agenda-month-navigation > .btn[aria-label] { display: inline-grid; width: 40px; padding: 0; place-items: center; }
+  .agenda-month-picker { position: relative; display: grid; min-width: 172px; min-height: 40px; place-items: center; padding: 0 14px; overflow: hidden; color: var(--text-main); cursor: pointer; border: 1px solid #cbd5e1; border-radius: 8px; background: #fff; transition: border-color 160ms ease, background 160ms ease, box-shadow 160ms ease; }
+  .agenda-month-picker:hover { border-color: #9bb8e8; background: var(--primary-soft); }
+  .agenda-month-picker:focus-within { border-color: var(--primary); box-shadow: 0 0 0 3px rgb(23 92 211 / 12%); }
+  .agenda-month-picker span { color: var(--primary); font-size: .8rem; font-weight: 650; text-transform: capitalize; }
+  .agenda-month-picker input { position: absolute; inset: 0; width: 100%; height: 100%; cursor: pointer; opacity: 0; }
+  .agenda-view-selector { display: inline-flex; align-items: center; gap: 2px; padding: 3px; border: 1px solid var(--border-color); border-radius: 9px; background: var(--bg-tertiary); }
+  .agenda-view-selector .btn { display: inline-flex; min-height: 32px; align-items: center; gap: 5px; padding: 0 10px; font-size: .73rem; }
+  .agenda-view-selector .btn-secondary { border-color: transparent; background: transparent; }
+  .agenda-view-selector .btn-secondary:hover { color: var(--primary); background: #fff; }
+  .agenda-search-field { position: relative; min-width: 0; }
+  .agenda-search-field > svg { position: absolute; top: 50%; left: 12px; color: var(--text-muted); pointer-events: none; transform: translateY(-50%); }
+  .agenda-search-field .input-field { height: 44px; padding-left: 36px; font-size: .84rem; }
+  .agenda-no-checklist { align-self: flex-start; padding: 7px 10px; color: var(--text-muted); border: 1px solid var(--border-color); background: var(--bg-tertiary); }
+  .agenda-appointment-actions { display: flex; align-items: center; gap: 6px; margin-left: auto; }
+  .agenda-delete-button { color: var(--status-critical); border-color: #f1c7c3; }
+  .agenda-delete-button:hover:not(:disabled) { color: #fff; border-color: var(--status-critical); background: var(--status-critical); }
+  .agenda-empty-state--month { min-height: 260px; padding: 48px 24px; }
+  .agenda-empty-state--month svg { color: var(--primary); }
+  @media (max-width: 1120px) {
+    .field-page-heading { align-items: flex-start; flex-direction: column; }
+    .agenda-month-navigation { width: 100%; justify-content: flex-start; }
+    .agenda-month-picker { flex: 1 1 170px; }
+  }
+  @media (max-width: 680px) {
+    .agenda-month-navigation { display: grid; grid-template-columns: 40px minmax(0, 1fr) 40px; width: 100%; }
+    .agenda-month-navigation > .btn[aria-label] { width: 40px; }
+    .agenda-month-navigation > .btn:not([aria-label]), .agenda-view-selector, .agenda-month-navigation > .btn-primary { grid-column: 1 / -1; width: 100%; }
+    .agenda-view-selector { display: grid; grid-template-columns: 1fr 1fr; }
+    .agenda-view-selector .btn { justify-content: center; }
+    .agenda-appointment-actions { width: 100%; margin-left: 0; }
+    .agenda-appointment-actions .btn { flex: 1 1 auto; }
   }
 }

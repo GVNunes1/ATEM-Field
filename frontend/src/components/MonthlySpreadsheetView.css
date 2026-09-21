@@ -1,411 +1,110 @@
-/* Monthly Spreadsheet View - Layout estilo planilha idêntico ao quadro físico / Excel */
-
+/* Monthly agenda board. This is screen-only UI; field-report PDF styles are not
+   imported here and remain unchanged. */
 .monthly-spreadsheet-wrapper {
-  background: #ffffff;
-  border-radius: 12px;
-  border: 1px solid var(--border-color);
-  box-shadow: var(--shadow-sm);
-  padding: 16px;
-  margin-top: 18px;
-  margin-bottom: 24px;
-}
-
-.monthly-spreadsheet-toolbar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  flex-wrap: wrap;
-  gap: 12px;
-  margin-bottom: 14px;
-  padding-bottom: 12px;
-  border-bottom: 1px solid var(--border-color);
-}
-
-.monthly-spreadsheet-toolbar__title {
-  display: flex;
-  align-items: baseline;
-  gap: 10px;
-}
-
-.monthly-spreadsheet-toolbar__title h2 {
-  font-size: 1.05rem;
-  font-weight: 700;
-  color: var(--text-main);
+  width: 100%;
+  min-width: 0;
   margin: 0;
-  text-transform: capitalize;
-}
-
-.monthly-spreadsheet-toolbar__title span {
-  font-size: 0.78rem;
-  color: var(--text-muted);
-}
-
-.monthly-spreadsheet-legend {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  flex-wrap: wrap;
-  font-size: 0.74rem;
-  color: var(--text-secondary);
-}
-
-.legend-item {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-}
-
-.legend-swatch {
-  width: 14px;
-  height: 14px;
-  border-radius: 3px;
-  border: 1px solid rgba(0, 0, 0, 0.2);
-  display: inline-block;
-}
-
-.legend-swatch--green {
-  background-color: #e2f0d9;
-}
-
-.legend-swatch--yellow {
-  background-color: #fff2cc;
-}
-
-.legend-swatch--red {
-  background-color: #fee2e2;
-  border-color: #f87171;
-}
-
-.legend-swatch--today {
-  background-color: var(--primary-soft);
-  border-color: var(--primary);
-}
-
-.monthly-spreadsheet-scroll {
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
-  width: 100%;
-  border: 1px solid #94a3b8;
-  border-radius: 4px;
-  background: #ffffff;
-}
-
-/* Grade com as 4 colunas clássicas da empresa */
-.monthly-spreadsheet-grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  min-width: 1200px;
-  border-left: 3.5px solid #cc0000;
-  border-right: 3.5px solid #cc0000;
-  background: #ffffff;
-}
-
-.monthly-spreadsheet-col {
-  display: flex;
-  flex-direction: column;
-}
-
-/* Divisores vermelhos verticais entre as 4 colunas */
-.monthly-spreadsheet-col:not(:last-child) {
-  border-right: 3.5px solid #cc0000;
-}
-
-.spreadsheet-day-block {
-  width: 100%;
-  border-bottom: 2.5px solid #1e293b;
-  box-sizing: border-box;
-}
-
-.spreadsheet-day-block:last-child {
-  border-bottom: none;
-}
-
-.spreadsheet-day-table {
-  width: 100%;
-  border-collapse: collapse;
-  table-layout: fixed;
-  font-size: 0.74rem;
-}
-
-.col-w-dia {
-  width: 102px;
-}
-
-.col-w-local {
-  width: auto;
-}
-
-.col-w-hora {
-  width: 58px;
-}
-
-.col-w-tecs {
-  width: 140px;
-}
-
-/* Cabeçalho do dia: DIA X | LOCAL | HORA | TECNICOS */
-.spreadsheet-day-header th {
-  background: #f1f3f5;
-  color: #0f172a;
-  font-weight: 700;
-  font-size: 0.72rem;
-  letter-spacing: 0.02em;
-  text-transform: uppercase;
-  padding: 3px 6px;
-  border: 1px solid #94a3b8;
-  border-bottom: 1.5px solid #000000;
-  vertical-align: middle;
-  text-align: left;
-  user-select: none;
-  height: 24px;
-  box-sizing: border-box;
-}
-
-.spreadsheet-day-header th.col-dia {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 3px;
-  white-space: nowrap;
-}
-
-.spreadsheet-day-header th.col-hora {
-  text-align: center;
-}
-
-.day-header-title {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-}
-
-.day-header-today-pill {
-  font-size: 0.62rem;
-  font-weight: 700;
-  background: var(--primary);
-  color: #ffffff;
-  padding: 1px 4px;
-  border-radius: 4px;
-  text-transform: uppercase;
-}
-
-.day-add-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 17px;
-  height: 17px;
-  border-radius: 3px;
-  border: 1px solid #cbd5e1;
-  background: #ffffff;
-  color: var(--primary);
-  cursor: pointer;
-  padding: 0;
-  transition: all 120ms;
-}
-
-.day-add-btn:hover {
-  background: var(--primary);
-  color: #ffffff;
-  border-color: var(--primary);
-}
-
-/* Linhas de agendamentos */
-.spreadsheet-row {
-  border: 1px solid #94a3b8;
-  transition: background-color 100ms;
-}
-
-.spreadsheet-row td {
-  padding: 2px 6px;
-  border: 1px solid #94a3b8;
-  vertical-align: middle;
+  padding: 20px;
   overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  font-size: 0.73rem;
-  height: 24px;
-  box-sizing: border-box;
+  border: 1px solid var(--border-color);
+  border-radius: 14px;
+  background: var(--bg-card, #fff);
+  box-shadow: var(--shadow-sm);
+}
+.monthly-spreadsheet-toolbar { display: flex; align-items: flex-start; justify-content: space-between; gap: 18px; margin-bottom: 16px; padding-bottom: 15px; border-bottom: 1px solid var(--border-color); }
+.monthly-spreadsheet-toolbar__title { min-width: 0; }
+.monthly-spreadsheet-toolbar__title h2 { margin: 0; color: var(--text-main); font-size: 1.02rem; font-weight: 650; letter-spacing: -.025em; text-transform: capitalize; }
+.monthly-spreadsheet-toolbar__title span { display: block; margin-top: 4px; color: var(--text-muted); font-size: .74rem; }
+.monthly-spreadsheet-legend { display: flex; align-items: center; justify-content: flex-end; gap: 9px 14px; flex-wrap: wrap; color: var(--text-muted); font-size: .7rem; }
+.legend-item { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
+.legend-swatch { width: 10px; height: 10px; flex: 0 0 auto; border: 1px solid currentColor; border-radius: 3px; }
+.legend-swatch--green { color: var(--calendar-teal, #0e9f6e); background: #e9f7f1; }
+.legend-swatch--yellow { color: var(--calendar-amber, #a96908); background: #fff7e5; }
+.legend-swatch--red { color: var(--calendar-danger, #b42318); background: #fff1f0; }
+.legend-swatch--today { color: var(--primary); background: var(--primary-soft); }
+.monthly-spreadsheet-legend .btn { min-height: 32px; padding-inline: 10px; font-size: .7rem; }
+.monthly-spreadsheet-scroll { width: 100%; overflow-x: hidden; border: 1px solid var(--border-color); border-radius: 10px; background: var(--bg-tertiary, #f0f3f7); }
+.monthly-spreadsheet-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); min-width: 0; border-left: 2px solid var(--primary); background: var(--bg-tertiary, #f0f3f7); }
+.monthly-spreadsheet-col { min-width: 0; display: flex; flex-direction: column; }
+.monthly-spreadsheet-col:not(:last-child) { border-right: 2px solid var(--primary); }
+.spreadsheet-day-block { min-width: 0; border-bottom: 1px solid var(--border-color); background: var(--bg-card, #fff); transition: background 180ms ease, box-shadow 180ms ease; }
+.spreadsheet-day-block:last-child { border-bottom: 0; }
+.spreadsheet-day-block.is-green-day { background: #f4fbf8; }
+.spreadsheet-day-block.is-today { position: relative; z-index: 1; background: var(--primary-soft); box-shadow: inset 3px 0 0 var(--primary); }
+.spreadsheet-day-table { width: 100%; table-layout: fixed; border-collapse: collapse; color: var(--text-main); font-size: .7rem; }
+.col-w-dia { width: 26%; }
+.col-w-local { width: 38%; }
+.col-w-hora { width: 14%; }
+.col-w-tecs { width: 22%; }
+.spreadsheet-day-header th { height: 30px; padding: 5px 7px; overflow: hidden; color: var(--text-secondary); font-size: .63rem; font-weight: 700; letter-spacing: .04em; text-align: left; text-overflow: ellipsis; text-transform: uppercase; white-space: nowrap; border: 0; border-bottom: 1px solid var(--border-color); background: rgba(244, 247, 251, .92); }
+.is-green-day .spreadsheet-day-header th { background: #eaf7f1; }
+.is-today .spreadsheet-day-header th { color: var(--primary); background: #e3edfd; }
+.spreadsheet-day-header th.col-dia { display: table-cell; }
+.spreadsheet-day-header th.col-hora { text-align: center; }
+.day-header-title { display: inline-flex; align-items: center; gap: 4px; min-width: 0; }
+.day-header-title > span:first-child { color: var(--text-muted); font-size: .63rem; font-weight: 550; }
+.day-header-today-pill { padding: 2px 5px; color: var(--primary); font-size: .57rem; font-weight: 700; border-radius: 4px; background: #d6e5fb; text-transform: none; }
+.day-add-btn { display: inline-grid; width: 24px; height: 24px; float: right; place-items: center; padding: 0; color: var(--primary); cursor: pointer; border: 1px solid #b9cdef; border-radius: 6px; background: #fff; transition: color 160ms ease, background 160ms ease, border-color 160ms ease; }
+.day-add-btn:hover { color: #fff; border-color: var(--primary); background: var(--primary); }
+.spreadsheet-row { border-bottom: 1px solid var(--border-subtle); transition: background 160ms ease; }
+.spreadsheet-row:last-child { border-bottom: 0; }
+.spreadsheet-row td { height: 28px; padding: 4px 7px; overflow: hidden; border: 0; border-right: 1px solid var(--border-subtle); text-overflow: ellipsis; vertical-align: middle; white-space: nowrap; }
+.spreadsheet-row td:last-child { border-right: 0; }
+.cell-label { color: var(--text-muted); font-size: .62rem; font-weight: 600; }
+.cell-hora { color: var(--text-secondary); font-family: var(--font-mono); font-size: .64rem; text-align: center; }
+.cell-local { position: relative; min-width: 0; }
+.cell-local-text, .cell-tecs { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cell-tecs { color: var(--text-secondary); font-size: .64rem; }
+.is-green-day .spreadsheet-row { background: rgba(233, 247, 241, .58); }
+.is-normal-day .spreadsheet-row { background: var(--bg-card, #fff); }
+.spreadsheet-row:hover, .is-green-day .spreadsheet-row:hover { background: #edf4fd; }
+.spreadsheet-row.row-yellow { color: #7b5208; background: #fff8e8; }
+.spreadsheet-row.row-yellow:hover { background: #fff0c9; }
+.spreadsheet-row.row-cancelled { background: #fff4f3; }
+.text-cancelled { color: var(--calendar-danger, #b42318) !important; font-weight: 650; }
+.row-occupied { position: relative; cursor: pointer; }
+.row-occupied:focus-visible, .row-empty:focus-visible { outline: 2px solid var(--primary); outline-offset: -2px; }
+.row-occupied .cell-local { display: flex; align-items: center; justify-content: space-between; gap: 4px; }
+.cell-local-text { flex: 1 1 auto; min-width: 0; }
+.slot-actions { display: none; align-items: center; gap: 2px; flex: 0 0 auto; margin-left: 4px; padding: 2px; border: 1px solid #cbd8e7; border-radius: 6px; background: #fff; box-shadow: var(--shadow-xs); }
+.row-occupied:hover .slot-actions, .row-occupied:focus-within .slot-actions { display: inline-flex; }
+.slot-action-btn { display: inline-grid; width: 26px; height: 26px; place-items: center; padding: 0; color: var(--text-muted); cursor: pointer; border: 0; border-radius: 5px; background: transparent; transition: color 160ms ease, background 160ms ease; }
+.slot-action-btn:hover { color: var(--primary); background: var(--primary-soft); }
+.slot-action-btn--delete:hover { color: var(--calendar-danger, #b42318); background: #fff1f0; }
+.row-empty { cursor: pointer; background: rgba(255,255,255,.72); }
+.empty-slot-content { display: inline-flex; align-items: center; gap: 4px; color: var(--primary); font-size: .63rem; font-weight: 550; opacity: .24; transition: opacity 160ms ease; }
+.row-empty:hover .empty-slot-content, .row-empty:focus .empty-slot-content { opacity: .95; }
+
+@media (max-width: 1120px) {
+  .monthly-spreadsheet-wrapper { padding: 16px; }
+  .monthly-spreadsheet-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .monthly-spreadsheet-col:nth-child(2) { border-right: 0; }
+  .monthly-spreadsheet-col:nth-child(-n + 2) { border-bottom: 2px solid var(--primary); }
+}
+@media (max-width: 680px) {
+  .monthly-spreadsheet-wrapper { padding: 12px; border-radius: 12px; }
+  .monthly-spreadsheet-toolbar { flex-direction: column; gap: 12px; }
+  .monthly-spreadsheet-legend { justify-content: flex-start; }
+  .monthly-spreadsheet-grid { grid-template-columns: minmax(0, 1fr); border-left-width: 0; }
+  .monthly-spreadsheet-col, .monthly-spreadsheet-col:nth-child(2) { border-right: 0; border-bottom: 2px solid var(--primary); }
+  .monthly-spreadsheet-col:last-child { border-bottom: 0; }
+  .spreadsheet-day-header th { height: 34px; }
+  .spreadsheet-row td { height: 34px; padding: 5px 6px; }
+  .col-w-dia { width: 25%; }
+  .col-w-local { width: 39%; }
+  .col-w-hora { width: 14%; }
+  .col-w-tecs { width: 22%; }
+  .slot-actions { display: inline-flex; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .spreadsheet-day-block, .spreadsheet-row, .slot-action-btn, .day-add-btn { transition-duration: .01ms; }
 }
 
-.cell-label {
-  font-weight: 600;
-  color: #475569;
-  font-size: 0.68rem;
-  white-space: nowrap;
-  user-select: none;
-}
-
-.cell-hora {
-  text-align: center;
-  font-family: var(--font-mono);
-  font-size: 0.72rem;
-  font-weight: 500;
-  color: #1e293b;
-}
-
-.cell-local {
-  position: relative;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.cell-tecs {
-  font-size: 0.71rem;
-  color: #334155;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-/* Cor verde clássica de finais de semana e sobreaviso */
-.is-green-day .spreadsheet-row {
-  background-color: #e2f0d9;
-}
-
-.is-green-day .spreadsheet-row:hover {
-  background-color: #d1e7c5;
-}
-
-/* Dias normais de semana */
-.is-normal-day .spreadsheet-row {
-  background-color: #ffffff;
-}
-
-.is-normal-day .spreadsheet-row:hover {
-  background-color: #f1f5f9;
-}
-
-/* Destaque amarelo para provas / treinamentos / alertas */
-.spreadsheet-row.row-yellow {
-  background-color: #fff2cc !important;
-  color: #78350f !important;
-  font-weight: 700;
-}
-
-.spreadsheet-row.row-yellow:hover {
-  background-color: #fee999 !important;
-}
-
-/* Agendamentos cancelados em vermelho */
-.text-cancelled {
-  color: #dc2626 !important;
-  font-weight: 600;
-}
-
-/* Slot ocupado e ações rápidas */
-.row-occupied {
-  cursor: pointer;
-  position: relative;
-}
-
-.row-occupied .cell-local {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 4px;
-}
-
-.cell-local-text {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  flex: 1 1 auto;
-}
-
-.slot-actions {
-  display: none;
-  align-items: center;
-  gap: 2px;
-  background: rgba(255, 255, 255, 0.95);
-  border: 1px solid #94a3b8;
-  border-radius: 4px;
-  padding: 1px 3px;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.12);
-  margin-left: 4px;
-  flex-shrink: 0;
-}
-
-.row-occupied:hover .slot-actions {
-  display: inline-flex;
-}
-
-.slot-action-btn {
-  border: none;
-  background: transparent;
-  padding: 2px 3px;
-  border-radius: 3px;
-  cursor: pointer;
-  color: #475569;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 100ms;
-}
-
-.slot-action-btn:hover {
-  background: #e2e8f0;
-  color: var(--primary);
-}
-
-.slot-action-btn--delete:hover {
-  background: #fee2e2;
-  color: #dc2626;
-}
-
-/* Slot vazio: clique para agendar */
-.row-empty {
-  cursor: pointer;
-}
-
-.empty-slot-content {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  opacity: 0;
-  color: var(--primary);
-  font-size: 0.68rem;
-  font-weight: 500;
-  transition: opacity 100ms;
-}
-
-.row-empty:hover .empty-slot-content {
-  opacity: 0.85;
-}
-
-/* Estilo para impressão (Ctrl+P / Salvar PDF) */
 @media print {
-  body {
-    background: #ffffff !important;
-    font-size: 9pt !important;
-  }
-
-  .monthly-spreadsheet-wrapper {
-    box-shadow: none !important;
-    border: none !important;
-    padding: 0 !important;
-    margin: 0 !important;
-  }
-
-  .monthly-spreadsheet-toolbar,
-  .slot-actions,
-  .day-add-btn {
-    display: none !important;
-  }
-
-  .monthly-spreadsheet-scroll {
-    overflow: visible !important;
-    border: none !important;
-  }
-
-  .monthly-spreadsheet-grid {
-    min-width: 100% !important;
-    width: 100% !important;
-  }
-
-  @page {
-    size: landscape;
-    margin: 6mm;
-  }
+  .monthly-spreadsheet-wrapper { margin: 0; padding: 0; border: 0; box-shadow: none; }
+  .monthly-spreadsheet-toolbar, .slot-actions, .day-add-btn { display: none !important; }
+  .monthly-spreadsheet-scroll { overflow: visible; border: 0; }
+  .monthly-spreadsheet-grid { min-width: 100%; border-left: 0; }
+  .monthly-spreadsheet-col:not(:last-child) { border-right: 1px solid #000; }
+  @page { size: landscape; margin: 6mm; }
 }

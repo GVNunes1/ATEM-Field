@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { Calendar, ClipboardCheck, Pencil, Plus, Printer, Trash2 } from 'lucide-react';
+import { ClipboardCheck, Pencil, Plus, Printer, Trash2 } from 'lucide-react';
 import { isNonTechnicalAppointment } from '../lib/appointmentUtils';
 import type { CalendarAppointment, CalendarTechnician } from './CalendarEventEditor';
 import './MonthlySpreadsheetView.css';
@@ -103,7 +103,7 @@ export function MonthlySpreadsheetView({
   }, [year, month]);
 
   return (
-    <div className="monthly-spreadsheet-wrapper">
+    <div className={`monthly-spreadsheet-wrapper${canManage ? '' : ' is-readonly'}`}>
       <div className="monthly-spreadsheet-toolbar">
         <div className="monthly-spreadsheet-toolbar__title">
           <h2>Planilha Mensal de Atendimentos — {monthLabel}</h2>
@@ -167,14 +167,15 @@ export function MonthlySpreadsheetView({
                   ));
                   const isGreenDay = isWeekend || hasSobreaviso;
 
-                  // Sempre exibe no mínimo 5 linhas (1º ao 5º agendamento), ou mais se houver
-                  const totalSlots = Math.max(5, dayAppointments.length);
+                  // Mantém o quadro compacto: dias livres exibem uma linha de entrada;
+                  // linhas adicionais surgem conforme os atendimentos são cadastrados.
+                  const totalSlots = Math.max(1, dayAppointments.length);
                   const slotIndices = Array.from({ length: totalSlots }, (_, i) => i);
 
                   return (
                     <article
                       key={dayKey}
-                      className={`spreadsheet-day-block ${isGreenDay ? 'is-green-day' : 'is-normal-day'}`}
+                      className={`spreadsheet-day-block ${isGreenDay ? 'is-green-day' : 'is-normal-day'}${isToday ? ' is-today' : ''}`}
                     >
                       <table className="spreadsheet-day-table">
                         <colgroup>
@@ -218,7 +219,10 @@ export function MonthlySpreadsheetView({
                                 <tr
                                   key={`empty-${dayKey}-${index}`}
                                   className="spreadsheet-row row-empty"
+                                  tabIndex={0}
+                                  aria-label={`Agendar atendimento no dia ${dayNum}, ${slotLabel}`}
                                   onClick={() => onCreateAppointment(dayKey)}
+                                  onKeyDown={event => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); onCreateAppointment(dayKey); } }}
                                   title={`Clique para agendar novo atendimento no dia ${dayNum}`}
                                 >
                                   <td className="cell-label">{slotLabel}</td>
@@ -266,8 +270,11 @@ export function MonthlySpreadsheetView({
                             return (
                               <tr
                                 key={appt.id}
-                                className={`spreadsheet-row row-occupied ${isYellowHighlight ? 'row-yellow' : ''}`}
-                                onClick={() => onEditAppointment(appt)}
+                                className={`spreadsheet-row row-occupied ${isYellowHighlight ? 'row-yellow' : ''}${isCancelled ? ' row-cancelled' : ''}`}
+                                tabIndex={canManage ? 0 : undefined}
+                                aria-label={canManage ? `Editar ${displayTitle}, ${timeDisplay}, ${techNames || 'técnico não informado'}` : `${displayTitle}, ${timeDisplay}, ${techNames || 'técnico não informado'}`}
+                                onClick={canManage ? () => onEditAppointment(appt) : undefined}
+                                onKeyDown={canManage ? event => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); onEditAppointment(appt); } } : undefined}
                                 title={`${displayTitle}${hasDifferentTitle ? ` (${appt.title})` : ''}\nHorário: ${timeDisplay}\nEndereço: ${appt.client_address || 'Não informado'}\nTécnicos: ${techNames || 'Não informado'}`}
                               >
                                 <td className="cell-label">{slotLabel}</td>
@@ -275,7 +282,7 @@ export function MonthlySpreadsheetView({
                                   <div className={`cell-local-text ${isCancelled ? 'text-cancelled' : ''}`}>
                                     {displayTitle}
                                   </div>
-                                  <div className="slot-actions" onClick={e => e.stopPropagation()}>
+                                  {canManage && <div className="slot-actions" onClick={e => e.stopPropagation()}>
                                     <button
                                       type="button"
                                       className="slot-action-btn"
@@ -303,7 +310,7 @@ export function MonthlySpreadsheetView({
                                     >
                                       <Trash2 size={11} />
                                     </button>
-                                  </div>
+                                  </div>}
                                 </td>
                                 <td className="cell-hora">
                                   <span className={isCancelled ? 'text-cancelled' : ''}>
