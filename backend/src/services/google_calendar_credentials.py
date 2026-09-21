@@ -9,7 +9,14 @@ from google.auth.exceptions import RefreshError
 from google.oauth2.credentials import Credentials
 
 
-SCOPES = ["https://www.googleapis.com/auth/calendar.readonly"]
+SCOPES = [
+    "https://www.googleapis.com/auth/calendar.events",
+    "https://www.googleapis.com/auth/calendar.calendarlist.readonly",
+]
+WRITE_SCOPES = {
+    "https://www.googleapis.com/auth/calendar",
+    "https://www.googleapis.com/auth/calendar.events",
+}
 SERVICE_DIR = Path(__file__).resolve().parent
 BACKEND_DIR = SERVICE_DIR.parent.parent
 DATA_DIR = BACKEND_DIR / "data"
@@ -88,7 +95,29 @@ def _atomic_write(path, content):
 
 
 def save_credentials(credentials):
-    _atomic_write(token_path(), credentials.to_json())
+    serialized = json.loads(credentials.to_json())
+    # OAuth may grant fewer scopes than requested. Persist the granted set so a
+    # reload never mistakes the requested permissions for actual write access.
+    serialized["scopes"] = credential_scopes(credentials)
+    _atomic_write(token_path(), json.dumps(serialized))
+
+
+def credential_scopes(credentials):
+    if not credentials:
+        return []
+    granted = getattr(credentials, "granted_scopes", None)
+    scopes = granted if granted is not None else getattr(credentials, "scopes", None)
+    if isinstance(scopes, str):
+        scopes = scopes.split()
+    return sorted(set(scopes or []))
+
+
+def credentials_can_write(credentials):
+    return bool(WRITE_SCOPES.intersection(credential_scopes(credentials)))
+
+
+def calendar_can_write(calendar):
+    return calendar.get("accessRole") in {"owner", "writer"}
 
 
 def _migrate_legacy_pickle():
@@ -118,7 +147,9 @@ def load_credentials(refresh=True):
     credentials = None
     if stored_token.is_file():
         try:
-            credentials = Credentials.from_authorized_user_file(str(stored_token), SCOPES)
+            # Do not substitute the newly requested scopes for scopes previously
+            # authorized by the user. Read-only tokens stay read-only until OAuth.
+            credentials = Credentials.from_authorized_user_file(str(stored_token))
         except Exception:
             credentials = None
 
@@ -146,12 +177,16 @@ def auth_status(refresh=True):
     try:
         credentials = load_credentials(refresh=refresh)
         authenticated = bool(credentials and credentials.valid)
+        write_authorized = authenticated and credentials_can_write(credentials)
         return {
             "configured": configured,
             "authenticated": authenticated,
             "refreshable": bool(credentials and credentials.refresh_token),
             "expires_at": credentials.expiry.isoformat() + "Z" if credentials and credentials.expiry else None,
             "requires_auth": not authenticated,
+            "write_authorized": write_authorized,
+            "requires_write_auth": not write_authorized,
+            "granted_scopes": credential_scopes(credentials),
         }
     except Exception as error:
         return {
@@ -160,6 +195,8 @@ def auth_status(refresh=True):
             "refreshable": False,
             "expires_at": None,
             "requires_auth": True,
+            "write_authorized": False,
+            "requires_write_auth": True,
             "error": str(error),
         }
 

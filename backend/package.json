@@ -9,6 +9,8 @@
     "dev": "ts-node-dev --respawn --transpile-only src/server.ts",
     "test:e2e": "node tests/e2e_runner.js",
     "test:service-orders": "npm run build && node --test tests/service_orders_fallback.test.js",
+    "test:calendar": "npm run build && node --test tests/calendar*.test.js",
+    "db:migrate:workflow": "node scripts/apply_migration.js 002_workflow_fleet.sql",
     "sync:checklists": "node scripts/sync-preventive-checklists.js"
   },
   "dependencies": {
@@ -29,6 +31,7 @@
     "xlsx": "https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz"
   },
   "devDependencies": {
+    "@electric-sql/pglite": "0.5.8",
     "@types/bcryptjs": "^2.4.6",
     "@types/jsonwebtoken": "^9.0.10",
     "ts-node-dev": "^2.0.0"

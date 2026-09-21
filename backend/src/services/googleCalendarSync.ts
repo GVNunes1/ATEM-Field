@@ -4,6 +4,7 @@ import path from 'path';
 import cron from 'node-cron';
 import { supabaseAdmin } from './supabase';
 import { parseAndMatchTechnicians } from './technicianMatcher';
+import { calendarSyncCounts, synchronizeCalendar } from './calendarSyncEngine';
 
 const SAO_PAULO_TIME_ZONE = 'America/Sao_Paulo';
 const DEFAULT_SYNC_SCHEDULE = '*/10 * * * *';
@@ -84,14 +85,16 @@ function parsePythonJson(stdout: string, stderr = '') {
   throw new Error(`O conector Google retornou uma resposta inválida${details ? ': ' + details : '.'}`);
 }
 
-function executePython(fileName: string, args: string[] = [], timeoutMs = 300_000): Promise<any> {
+export function executeCalendarPython(fileName: string, args: string[] = [], timeoutMs = 300_000, input?: unknown): Promise<any> {
   return new Promise((resolve, reject) => {
-    const python = process.env.PYTHON_EXECUTABLE?.trim() || 'python3';
+    const python = process.env.PYTHON_EXECUTABLE?.trim() || (process.platform === 'win32' ? 'python' : 'python3');
     const child = spawn(python, ['-u', scriptPath(fileName), ...args], {
       cwd: path.resolve(__dirname, '../..'),
       windowsHide: true,
       env: process.env
     });
+    child.stdin.on('error', () => { /* spawn/exit handlers report connector failures */ });
+    child.stdin.end(input === undefined ? '' : JSON.stringify(input));
     let stdout = '';
     let stderr = '';
     let finished = false;
@@ -131,6 +134,8 @@ function executePython(fileName: string, args: string[] = [], timeoutMs = 300_00
     });
   });
 }
+
+const executePython = executeCalendarPython;
 
 function normalizeNameKey(value: string) {
   return value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLocaleLowerCase('pt-BR').replace(/[^a-z0-9]/g, '');
@@ -389,20 +394,7 @@ async function synchronize(trigger: SyncTrigger) {
   runtimeStatus.lastAttemptAt = new Date().toISOString();
   runtimeStatus.lastTrigger = trigger;
   try {
-    let parsed: ImportResult;
-    try {
-      parsed = await executePython('import_agenda.py');
-    } catch (firstError: any) {
-      if (firstError?.authRequired) throw firstError;
-      console.warn('[Google Agenda] Primeira tentativa falhou; repetindo uma vez.', firstError?.message || firstError);
-      parsed = await executePython('import_agenda.py');
-    }
-    const persisted = await persistCalendarChangesInBatches(parsed);
-    const result = {
-      ...persisted,
-      calendars: parsed.calendar_count || 0,
-      warnings: parsed.warnings || []
-    };
+    const result = await synchronizeCalendar(executeCalendarPython);
     runtimeStatus.lastSuccessAt = new Date().toISOString();
     runtimeStatus.lastError = null;
     runtimeStatus.lastResult = result;
@@ -435,7 +427,7 @@ export async function getGoogleCalendarSyncStatus() {
       error: error?.message || String(error)
     };
   }
-  return { ...runtimeStatus, ...authentication };
+  return { ...runtimeStatus, ...authentication, bidirectional: true, ...(await calendarSyncCounts()) };
 }
 
 export function startGoogleCalendarAuthorization(): Promise<{ auth_url: string }> {

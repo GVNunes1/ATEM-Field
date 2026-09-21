@@ -10,6 +10,8 @@ from google_calendar_credentials import (
     CalendarAuthenticationRequired,
     DATA_DIR,
     auth_status,
+    calendar_can_write,
+    credentials_can_write,
     load_credentials,
     read_json_file,
     save_credentials,
@@ -55,7 +57,7 @@ def initial_time_min():
     return datetime(year, month, 1, tzinfo=timezone.utc).isoformat().replace("+00:00", "Z")
 
 
-def event_payload(event, calendar_name):
+def event_payload(event, calendar, write_authorized=False):
     start = event.get("start", {}).get("dateTime") or event.get("start", {}).get("date")
     if not start:
         return None
@@ -73,14 +75,19 @@ def event_payload(event, calendar_name):
         "appointment_date": date_part,
         "appointment_time": time_part,
         "technicians_raw": description,
-        "calendar_name": calendar_name,
+        "calendar_name": calendar.get("summary") or "Google Calendar",
+        "google_calendar_id": calendar.get("id"),
+        "google_event_id": event.get("id"),
+        "google_etag": event.get("etag"),
+        "google_updated_at": event.get("updated"),
+        "google_event": event,
+        "calendar_writable": bool(write_authorized and calendar_can_write(calendar)),
         "is_sobreaviso": "sobreaviso" in summary.lower(),
     }
 
 
-def fetch_calendar_changes(service, calendar, sync_token):
+def fetch_calendar_changes(service, calendar, sync_token, write_authorized=False):
     calendar_id = calendar.get("id")
-    calendar_name = calendar.get("summary") or "Google Calendar"
     extracted = []
     deleted = []
     page_token = None
@@ -101,11 +108,15 @@ def fetch_calendar_changes(service, calendar, sync_token):
 
         response = service.events().list(**arguments).execute()
         for event in response.get("items", []):
-            external_id = "GGCAL-{}".format(event.get("id"))
             if event.get("status") == "cancelled":
-                deleted.append(external_id)
+                deleted.append({
+                    "calendar_id": calendar_id,
+                    "event_id": event.get("id"),
+                    "etag": event.get("etag"),
+                    "updated": event.get("updated"),
+                })
                 continue
-            parsed = event_payload(event, calendar_name)
+            parsed = event_payload(event, calendar, write_authorized)
             if parsed:
                 extracted.append(parsed)
 
@@ -117,7 +128,23 @@ def fetch_calendar_changes(service, calendar, sync_token):
     return extracted, deleted, latest_sync_token
 
 
+def commit_checkpoint(payload):
+    if not isinstance(payload, dict):
+        raise ValueError("O checkpoint de sincronização deve ser um objeto JSON.")
+    state = payload.get("next_sync_state", payload)
+    if not isinstance(state, dict) or any(
+        not isinstance(key, str) or not key or not isinstance(value, str) or not value
+        for key, value in state.items()
+    ):
+        raise ValueError("O checkpoint contém uma agenda ou token inválido.")
+    write_json_file(SYNC_STATE_PATH, state)
+    return {"success": True, "checkpoint_committed": True}
+
+
 def main():
+    if "--commit-checkpoint" in sys.argv:
+        emit(commit_checkpoint(json.load(sys.stdin)))
+
     if "--status" in sys.argv:
         emit({"success": True, **auth_status(refresh=True)})
 
@@ -131,6 +158,7 @@ def main():
 
     save_credentials(credentials)
     service = build("calendar", "v3", credentials=credentials, cache_discovery=False)
+    write_authorized = credentials_can_write(credentials)
     all_calendars = list_calendars(service)
     configured_calendar_ids = {
         item.strip() for item in os.environ.get("GOOGLE_CALENDAR_IDS", "").split(",") if item.strip()
@@ -145,7 +173,9 @@ def main():
             continue
         calendars.append(calendar)
 
-    sync_state = read_json_file(SYNC_STATE_PATH, {})
+    sync_state = {} if "--full" in sys.argv else read_json_file(SYNC_STATE_PATH, {})
+    if not isinstance(sync_state, dict):
+        sync_state = {}
     next_state = dict(sync_state)
     extracted = []
     deleted = []
@@ -158,10 +188,10 @@ def main():
         sync_token = sync_state.get(calendar_id)
         try:
             try:
-                items, removed, next_token = fetch_calendar_changes(service, calendar, sync_token)
+                items, removed, next_token = fetch_calendar_changes(service, calendar, sync_token, write_authorized)
             except HttpError as error:
                 if sync_token and getattr(error.resp, "status", None) == 410:
-                    items, removed, next_token = fetch_calendar_changes(service, calendar, None)
+                    items, removed, next_token = fetch_calendar_changes(service, calendar, None, write_authorized)
                 else:
                     raise
             extracted.extend(items)
@@ -181,7 +211,8 @@ def main():
             "warnings": warnings,
         }, 1)
 
-    write_json_file(SYNC_STATE_PATH, next_state)
+    if "--defer-checkpoint" not in sys.argv:
+        write_json_file(SYNC_STATE_PATH, next_state)
     emit({
         "success": True,
         "incremental": bool(sync_state),
@@ -189,7 +220,17 @@ def main():
         "deleted_count": len(deleted),
         "calendar_count": synchronized_calendars,
         "data": extracted,
-        "deleted_external_ids": sorted(set(deleted)),
+        "deleted_external_ids": sorted({"GGCAL-{}".format(item["event_id"]) for item in deleted}),
+        "deleted_events": deleted,
+        "next_sync_state": next_state,
+        "checkpoint_deferred": "--defer-checkpoint" in sys.argv,
+        "write_authorized": write_authorized,
+        "calendars": [{
+            "id": item.get("id"),
+            "name": item.get("summary") or "Google Calendar",
+            "writable": bool(write_authorized and calendar_can_write(item)),
+            "time_zone": item.get("timeZone"),
+        } for item in calendars],
         "warnings": warnings,
     })
 

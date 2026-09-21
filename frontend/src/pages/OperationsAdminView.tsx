@@ -295,6 +295,7 @@ export function OperationsAdminView({
 
     setSaving(true); setError(''); setNotice('');
     let completed = 0;
+    let calibrationWarnings = 0;
     try {
       for (const analyzerId of selectedAnalyzerIds) {
         const payload: any = {
@@ -322,10 +323,13 @@ export function OperationsAdminView({
           body: JSON.stringify(payload)
         });
         if (!data.success) throw new Error(data.error || 'Não foi possível criar a reserva.');
+        if (data.calibration_warning) calibrationWarnings += 1;
         completed += 1;
       }
       setNotice(
-        operationType !== 'Atendimento' && isEqat && !isAdmin
+        calibrationWarnings
+          ? `${completed} ${completed === 1 ? 'padrão registrado' : 'padrões registrados'}. Atenção: ${calibrationWarnings} item(ns) estão com calibração/certificado vencido; confirme a condição antes da retirada.`
+          : operationType !== 'Atendimento' && isEqat && !isAdmin
           ? `Solicitação de ${operationType} enviada com sucesso! Aguarde aprovação do Administrador Geral para liberação física.`
           : `${completed} ${completed === 1 ? 'padrão registrado' : 'padrões registrados'} com sucesso.`
       );

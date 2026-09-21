@@ -1,6 +1,7 @@
 import React from 'react';
 import {
   Box,
+  CarFront,
   CheckSquare,
   Calendar,
   ClipboardList,
@@ -37,6 +38,7 @@ export const Navigation: React.FC<NavigationProps> = ({
     { id: 'appointments', label: 'Agenda', icon: Calendar },
     { id: 'operations', label: 'Reservas', icon: PackageCheck },
     { id: 'inventory', label: 'Padrões', icon: Box },
+    { id: 'fleet', label: 'Frota', icon: CarFront },
     { id: 'templates', label: 'Templates', icon: CheckSquare },
     ...(isAdmin ? [{ id: 'technicians', label: 'Técnicos', icon: Users }] : []),
     { id: 'history', label: 'Histórico', icon: ClipboardList }

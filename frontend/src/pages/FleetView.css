@@ -1,0 +1,60 @@
+.fleet-page { display: grid; gap: 24px; }
+.fleet-heading { align-items: flex-end; }
+.fleet-heading .btn { display: inline-flex; align-items: center; gap: 8px; }
+.fleet-summary { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+.fleet-summary > div { display: grid; gap: 5px; padding: 18px; background: #fff; border: 1px solid var(--border-color); border-radius: 12px; box-shadow: var(--shadow-xs); }
+.fleet-summary span { color: var(--text-muted); font-size: .76rem; }
+.fleet-summary strong { color: var(--text-main); font-size: 1.45rem; letter-spacing: -.04em; }
+.fleet-notice { display: flex; align-items: center; gap: 9px; padding: 12px 14px; border: 1px solid; border-radius: 10px; font-size: .82rem; }
+.fleet-notice button { margin-left: auto; display: inline-grid; place-items: center; width: 32px; height: 32px; border: 0; background: transparent; color: inherit; cursor: pointer; }
+.fleet-notice--success { color: #176346; border-color: #b8e1cf; background: #f0fbf5; }
+.fleet-notice--error { color: #9a3c3c; border-color: #f0c7c7; background: #fff5f5; }
+.fleet-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+.fleet-card { display: grid; gap: 13px; padding: 20px; border: 1px solid var(--border-color); border-radius: 14px; background: #fff; box-shadow: var(--shadow-sm); min-height: 250px; }
+.fleet-card-top, .fleet-section-title, .fleet-modal-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.fleet-card-top > svg { color: var(--primary); }
+.fleet-status { width: fit-content; padding: 4px 9px; border-radius: 999px; color: #43617e; background: #eef3f8; font-size: .68rem; font-weight: 650; }
+.fleet-status--disponível { color: #176346; background: #e8f7ef; }
+.fleet-status--em-uso { color: #245fa8; background: #ebf3ff; }
+.fleet-status--em-revisão { color: #9b5d1d; background: #fff5dd; }
+.fleet-card h2 { margin: 0; color: var(--text-main); font-size: 1.04rem; letter-spacing: -.02em; }
+.fleet-plate { margin: -7px 0 0; color: var(--text-muted); font-size: .76rem; }
+.fleet-km { display: flex; align-items: center; gap: 7px; color: var(--text-muted); font-size: .74rem; }
+.fleet-km strong { margin-left: auto; color: var(--text-main); font-family: var(--font-mono); font-size: .83rem; }
+.fleet-action, .fleet-submit { display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
+.fleet-active { display: grid; gap: 10px; padding: 12px; border-radius: 10px; background: #f3f7fd; color: var(--text-secondary); font-size: .74rem; }
+.fleet-active > span { display: inline-flex; align-items: center; gap: 6px; }
+.fleet-scheduled { display: grid; gap: 3px; padding-top: 4px; border-top: 1px solid var(--border-subtle); }
+.fleet-scheduled span, .fleet-scheduled small { color: var(--text-muted); font-size: .68rem; }
+.fleet-scheduled strong { color: var(--text-secondary); font-size: .74rem; }
+.fleet-empty { display: grid; place-items: center; gap: 8px; min-height: 220px; padding: 32px; border: 1px dashed #cbd5e1; border-radius: 14px; background: #fff; color: var(--text-muted); text-align: center; }
+.fleet-empty svg { color: var(--primary); }
+.fleet-empty strong { color: var(--text-main); }
+.fleet-history { display: grid; gap: 14px; padding: 22px; border: 1px solid var(--border-color); border-radius: 14px; background: #fff; }
+.fleet-section-title h2 { margin: 3px 0 0; font-size: 1rem; color: var(--text-main); }
+.fleet-history-list { display: grid; gap: 2px; }
+.fleet-history-list > div { display: flex; align-items: flex-start; gap: 11px; padding: 11px 0; border-top: 1px solid var(--border-subtle); }
+.fleet-history-list > div:first-child { border-top: 0; }
+.fleet-history-list strong, .fleet-history-list small { display: block; }
+.fleet-history-list strong { color: var(--text-secondary); font-size: .78rem; font-weight: 600; }
+.fleet-history-list small { margin-top: 3px; color: var(--text-muted); font-size: .7rem; }
+.fleet-dot { width: 8px; height: 8px; flex: 0 0 8px; margin-top: 5px; border-radius: 50%; background: #98a5b7; }
+.fleet-dot--active { background: var(--primary); box-shadow: 0 0 0 4px #e8f1ff; }
+.fleet-dot--warning { background: #d17b18; box-shadow: 0 0 0 4px #fff3db; }
+.fleet-dot--done { background: #23855d; box-shadow: 0 0 0 4px #e4f6ed; }
+.fleet-modal { width: min(100%, 520px); max-height: min(88dvh, 760px); overflow: auto; padding: 24px; border-radius: 16px; background: #fff; box-shadow: 0 20px 60px rgb(25 45 80 / 20%); }
+.fleet-modal h2 { margin: 3px 0 0; color: var(--text-main); font-size: 1.25rem; }
+.fleet-form { display: grid; gap: 16px; margin-top: 22px; }
+.fleet-form > label, .fleet-form fieldset { display: grid; gap: 7px; color: var(--text-secondary); font-size: .77rem; font-weight: 550; }
+.fleet-form input[type='text'], .fleet-form input[type='number'], .fleet-form input:not([type]), .fleet-form select, .fleet-form textarea { width: 100%; min-height: 44px; padding: 10px 12px; border: 1px solid var(--border-color); border-radius: 8px; color: var(--text-main); background: #fff; font: inherit; font-weight: 400; }
+.fleet-form textarea { resize: vertical; }
+.fleet-form fieldset { padding: 12px; border: 1px solid var(--border-color); border-radius: 10px; }
+.fleet-form legend { padding: 0 5px; color: var(--text-main); }
+.fleet-form fieldset label { display: flex; align-items: flex-start; gap: 8px; color: var(--text-secondary); font-size: .76rem; font-weight: 400; }
+.fleet-form input[type='checkbox'] { width: 17px; height: 17px; margin: 0; accent-color: var(--primary); }
+.fleet-file { display: flex !important; flex-wrap: wrap; align-items: center; gap: 8px !important; padding: 12px; border: 1px dashed #b9c5d6; border-radius: 9px; color: var(--text-secondary); cursor: pointer; }
+.fleet-file input { width: 100%; font-size: .73rem; font-weight: 400; }
+.icon-button { display: inline-grid; place-items: center; width: 38px; height: 38px; border: 1px solid var(--border-color); border-radius: 8px; background: #fff; color: var(--text-secondary); cursor: pointer; }
+.icon-button:hover { color: var(--primary); background: var(--primary-soft); }
+@media (max-width: 1050px) { .fleet-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 700px) { .fleet-summary { grid-template-columns: repeat(2, minmax(0, 1fr)); } .fleet-grid { grid-template-columns: 1fr; } .fleet-heading { align-items: flex-start; flex-direction: column; } .fleet-modal { padding: 20px; } }

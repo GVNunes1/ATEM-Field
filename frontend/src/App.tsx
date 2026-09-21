@@ -11,6 +11,7 @@ import { TabletKioskView } from './pages/TabletKioskView';
 import { LoginView } from './pages/LoginView';
 import { PublicInfoView, PublicPage } from './pages/PublicInfoView';
 import { ProfileView } from './pages/ProfileView';
+import { FleetView } from './pages/FleetView';
 import { AuthUser } from './types/auth';
 import { safeFetchJson } from './lib/api';
 import { SupportAssistant } from './features/support/SupportAssistant';
@@ -31,6 +32,7 @@ function getInitialTab(): string {
   if (path === 'padroes' || path === 'inventory' || path === 'diagnostico') return 'inventory';
   if (path === 'tecnicos' || path === 'usuarios' || path === 'technicians') return 'technicians';
   if (path === 'historico' || path === 'history') return 'history';
+  if (path === 'frota' || path === 'fleet') return 'fleet';
   if (path === 'agenda' || path === 'appointments') return 'appointments';
   const urlParams = new URLSearchParams(window.location.search);
   const tabParam = urlParams.get('tab');
@@ -115,6 +117,8 @@ export function App() {
         window.history.pushState({}, '', '/tecnicos');
       } else if (tab === 'history') {
         window.history.pushState({}, '', '/historico');
+      } else if (tab === 'fleet') {
+        window.history.pushState({}, '', '/frota');
       } else if (tab === 'profile') {
         window.history.pushState({}, '', '/perfil');
         window.dispatchEvent(new PopStateEvent('popstate'));
@@ -202,7 +206,7 @@ export function App() {
       return;
     }
     void fetchAllData();
-  }, [fetchAllData, publicPage]);
+  }, [fetchAllData, publicPage, currentUser?.id]);
 
   useEffect(() => {
     if (publicPage) return;
@@ -253,7 +257,7 @@ export function App() {
       />
       <div className="app-content-wrapper">
         <header className="workspace-topbar">
-          <div className="workspace-breadcrumb"><span>ATEM Field</span><ChevronRight size={14} aria-hidden="true" /><strong>{({ dashboard: 'Dashboard', appointments: 'Agenda', operations: 'Reservas', inventory: 'Padrões', technicians: 'Técnicos', history: 'Histórico', templates: 'Templates', checklist: 'Templates', profile: 'Perfil' } as Record<string, string>)[activeTab] || 'Área de trabalho'}</strong></div>
+          <div className="workspace-breadcrumb"><span>ATEM Field</span><ChevronRight size={14} aria-hidden="true" /><strong>{({ dashboard: 'Dashboard', appointments: 'Agenda', operations: 'Reservas', inventory: 'Padrões', fleet: 'Frota', technicians: 'Técnicos', history: 'Histórico', templates: 'Templates', checklist: 'Templates', profile: 'Perfil' } as Record<string, string>)[activeTab] || 'Área de trabalho'}</strong></div>
           <div className="workspace-tools">
             <span className="workspace-date"><CalendarDays size={15} aria-hidden="true" />{new Date().toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' })}</span>
             <button className="workspace-refresh" onClick={handleRefresh} disabled={refreshing} aria-label="Atualizar dados" title={lastUpdated ? `Atualizado às ${lastUpdated.toLocaleTimeString('pt-BR')}` : 'Atualizar dados'}><RefreshCw size={16} className={refreshing ? 'spin' : undefined} /><span>{refreshing ? 'Atualizando' : 'Atualizar'}</span></button>
@@ -277,8 +281,11 @@ export function App() {
               {activeTab === 'inventory' && (
                 <InventoryView analyzers={analyzers} onRefresh={fetchAllData} currentUser={currentUser} />
               )}
+              {activeTab === 'fleet' && (
+                <FleetView appointments={appointments} currentUser={currentUser} onRefresh={fetchAllData} />
+              )}
               {activeTab === 'appointments' && (
-                <AppointmentsView appointments={appointments} onOpenChecklistModal={handleOpenReservationForAppointment} />
+                <AppointmentsView appointments={appointments} onOpenChecklistModal={handleOpenReservationForAppointment} currentUser={currentUser} onRefresh={fetchAllData} />
               )}
               {(activeTab === 'templates' || activeTab === 'checklist') && (
                 <ChecklistView categories={categories} onRefresh={fetchAllData} />
