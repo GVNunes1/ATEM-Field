@@ -4,7 +4,7 @@ const path = require('path');
 const { getSupabaseConfig } = require('./supabase-env');
 
 const fileName = process.argv[2];
-if (!/^\d{3}_[a-z0-9_]+\.sql$/i.test(fileName || '')) {
+if (!/^(?:\d{3}|\d{14})_[a-z0-9_]+\.sql$/i.test(fileName || '')) {
   throw new Error('Informe uma migração, por exemplo: node scripts/apply_migration.js 002_workflow_fleet.sql');
 }
 

@@ -169,7 +169,7 @@ function sourcePayload(matches: SupportMatch[]) {
   }));
 }
 
-router.use(requireAuthentication, requireRole(['admin', 'technician']));
+router.use(requireAuthentication, requireRole(['admin', 'technician', 'supervisor', 'manager', 'commercial']));
 
 router.post('/chat', async (req: AuthenticatedRequest, res: Response) => {
   const question = validateQuestion(req.body?.question);

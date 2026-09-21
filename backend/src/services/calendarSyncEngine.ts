@@ -78,6 +78,11 @@ export async function synchronizeCalendar(execute: Connector) {
         result.exported++;
       } catch (error: any) {
         await renew();
+        if (error.details?.remote_event?.status === 'cancelled') {
+          await ingest(job.calendar_id, error.details.remote_event, teamList, false);
+          result.cancelled++;
+          continue;
+        }
         await rpc('calendar_fail', { p_operation: job.id, p_error: error.message || 'Falha ao atualizar Google Agenda.', p_remote: error.details?.remote_event || null });
         result.warnings.push(error.message || 'Uma edição aguarda sincronização.');
       }
@@ -119,7 +124,8 @@ export async function resolveCalendarConflict(id: number, input: any, actorId: s
   if (input.resolution === 'atem') {
     return rpc('calendar_queue_edit', { p_id: id, p_revision: input.expected_revision, p_values: {}, p_patch: {}, p_actor: actorId, p_resolution: true });
   }
-  await ingest(appointment.google_calendar_id, appointment.google_sync_conflict, await technicians(), appointment.calendar_writable, id, input.expected_revision);
+  const change = await ingest(appointment.google_calendar_id, appointment.google_sync_conflict, await technicians(), appointment.calendar_writable, id, input.expected_revision);
+  if (change.deleted) return { id, deleted: true, google_sync_status: 'synced' };
   return getCalendarAppointment(id);
 }
 
@@ -205,25 +211,12 @@ export async function deleteCalendarAppointment(id: number, actorId: string, exe
         operation_id: operationId
       });
     } catch (gErr: any) {
-      console.warn('[Google Agenda] Aviso ao excluir evento remoto:', gErr.message || gErr);
+      throw Object.assign(new Error('Não foi possível excluir no Google. O atendimento foi mantido para nova tentativa.'), { status: 502 });
     }
   }
 
-  // 2. Limpar calendar_outbox (que tem ON DELETE RESTRICT)
-  await supabaseAdmin.from('calendar_outbox').delete().eq('appointment_id', id);
-
-  // 3. Limpar tabelas associadas
-  await Promise.all([
-    supabaseAdmin.from('appointment_technicians').delete().eq('appointment_id', id),
-    supabaseAdmin.from('appointment_equipments').delete().eq('appointment_id', id),
-    supabaseAdmin.from('reservations').delete().eq('appointment_id', id),
-    supabaseAdmin.from('notification_logs').delete().eq('appointment_id', id)
-  ]);
-
-  // 4. Deletar o agendamento
-  const { error: delError } = await supabaseAdmin.from('appointments').delete().eq('id', id);
-  if (delError) throw delError;
+  // Atomic removal preserves loans and history and releases only reservations.
+  await rpc('calendar_remove_appointment', { p_id: id });
 
   return { success: true, message: 'Atendimento excluído com sucesso.' };
 }
-

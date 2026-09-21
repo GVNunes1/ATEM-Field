@@ -3,6 +3,8 @@ import { isNonTechnicalAppointment } from '../lib/appointmentUtils';
 import { safeFetchJson } from '../lib/api';
 import { CalendarEventEditor, type CalendarAppointment, type CalendarTechnician } from '../components/CalendarEventEditor';
 import { MonthlySpreadsheetView } from '../components/MonthlySpreadsheetView';
+import { canAdvanceSchedule, canCreateSchedule, canManageSchedule } from '../lib/permissions';
+import { appointmentStage } from '../lib/calendarMonth';
 import {
   AlertCircle,
   ArrowLeftRight,
@@ -94,7 +96,8 @@ export function AppointmentsView({ appointments, onOpenChecklistModal, currentUs
   };
 
   const isAdmin = currentUser?.role === 'admin';
-  const canManage = isAdmin || ['manager', 'gerente', 'supervisor'].includes(String(currentUser?.role || '').toLowerCase());
+  const canManage = canManageSchedule(currentUser?.role);
+  const canCreate = canCreateSchedule(currentUser?.role);
 
   const handleDeleteAppointment = async (appointment: CalendarAppointment) => {
     const displayTitle = appointment.client_name || appointment.title || 'este atendimento';
@@ -178,7 +181,6 @@ export function AppointmentsView({ appointments, onOpenChecklistModal, currentUs
   const monthAppointments = useMemo(() => appointments.filter(appointment => (
     typeof appointment.appointment_date === 'string'
     && appointment.appointment_date.startsWith(selectedMonth)
-    && String(appointment.status || '').toLocaleLowerCase('pt-BR') !== 'cancelado'
   )), [appointments, selectedMonth]);
 
   const filtered = useMemo(() => {
@@ -314,7 +316,7 @@ export function AppointmentsView({ appointments, onOpenChecklistModal, currentUs
               <LayoutGrid size={15} /> Cartões
             </button>
           </div>
-          {canManage && (
+          {canCreate && (
             <button
               type="button"
               className="btn btn-primary btn-sm"
@@ -399,6 +401,10 @@ export function AppointmentsView({ appointments, onOpenChecklistModal, currentUs
           appointments={appointments}
           technicians={technicians}
           canManage={canManage}
+          canCreate={canCreate}
+          canAdvanceAppointment={appointment => canAdvanceSchedule(currentUser?.role, appointment.workflow_status || 'Data provisória') && Boolean(workflowNextStatus(appointment.workflow_status || 'Data provisória'))}
+          onAdvanceAppointment={appointment => { void advanceWorkflow(appointment); }}
+          workflowActionId={workflowActionId}
           isAdmin={isAdmin}
           searchTerm={searchTerm}
           selectedTech={selectedTech}
@@ -421,7 +427,7 @@ export function AppointmentsView({ appointments, onOpenChecklistModal, currentUs
                 <header className="agenda-day__date">
                   <strong>{pad(date.getDate())}</strong><span>{weekday}</span><small>{shortMonth}</small>
                   {isToday && <em>Hoje</em>}
-                  {canManage && (
+                  {canCreate && (
                     <button
                       type="button"
                       className="btn btn-secondary btn-sm"
@@ -443,7 +449,7 @@ export function AppointmentsView({ appointments, onOpenChecklistModal, currentUs
                     const reservationCount = appointment.reservations?.length || 0;
 
                     const isNonTech = isNonTechnicalAppointment(appointment);
-                    const workflowStatus = appointment.workflow_status || 'Data provisória';
+                    const workflowStatus = appointmentStage(appointment).full;
                     const nextStatus = workflowNextStatus(workflowStatus);
                     const eventSyncStatus = appointment.google_sync_status || 'unlinked';
                     const eventSyncLabel = ({ synced: 'Sincronizado', pending: 'Envio pendente', error: 'Falha no envio', conflict: 'Revisar alterações', unlinked: 'Vínculo pendente' } as Record<string, string>)[eventSyncStatus] || 'Vínculo pendente';
@@ -463,7 +469,7 @@ export function AppointmentsView({ appointments, onOpenChecklistModal, currentUs
                               {technicianList.map(name => <span key={name}><UserRound size={12} /> {name}</span>)}
                             </div>
                           </div>
-                          <div className="agenda-workflow-status" title="Etapa do fluxo de agendamento"><span>{workflowStatus}</span>{isAdmin && nextStatus && <button type="button" className="btn btn-secondary btn-sm" disabled={workflowActionId === Number(appointment.id)} onClick={() => void advanceWorkflow(appointment)}><CheckCircle2 size={14} /> {workflowActionId === Number(appointment.id) ? 'Salvando…' : 'Avançar'}</button>}</div>
+                          <div className="agenda-workflow-status" title="Etapa do fluxo de agendamento"><span>{workflowStatus}</span>{canAdvanceSchedule(currentUser?.role, workflowStatus) && nextStatus && <button type="button" className="btn btn-secondary btn-sm" disabled={workflowActionId === Number(appointment.id)} onClick={() => void advanceWorkflow(appointment)}><CheckCircle2 size={14} /> {workflowActionId === Number(appointment.id) ? 'Salvando…' : 'Avançar'}</button>}</div>
                           {isNonTech ? (
                             <span className="agenda-no-checklist badge">
                               Não requer padrão
@@ -527,7 +533,8 @@ export function AppointmentsView({ appointments, onOpenChecklistModal, currentUs
           appointment={editingAppointment}
           initialDate={createDate}
           technicians={technicians}
-          canManage={canManage}
+          canManage={isCreating ? canCreate : canManage}
+          canAssignTeam={canManage}
           onDismiss={() => { setEditingAppointment(null); setIsCreating(false); }}
           onSaved={async message => {
             setNotice(message);

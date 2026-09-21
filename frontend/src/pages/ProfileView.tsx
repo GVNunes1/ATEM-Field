@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import { ServiceOrdersPanel } from '../features/service-orders/ServiceOrdersPanel';
 import { AuthUser } from '../types/auth';
+import { roleLabel as displayRole } from '../lib/permissions';
 import './ProfileView.css';
 
 interface ProfileViewProps {
@@ -31,7 +32,7 @@ function initials(name: string): string {
 export function ProfileView({ currentUser }: ProfileViewProps) {
   const [section, setSection] = useState<ProfileSection>(sectionFromPath);
   const userInitials = useMemo(() => initials(currentUser.name), [currentUser.name]);
-  const roleLabel = currentUser.role === 'admin' ? 'Administrador Master' : 'Técnico de Campo';
+  const roleLabel = displayRole(currentUser.role);
 
   useEffect(() => {
     const popState = () => setSection(sectionFromPath());

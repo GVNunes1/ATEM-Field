@@ -24,7 +24,7 @@ import {
   X
 } from 'lucide-react';
 import { TechnicianLinkModal } from '../components/TechnicianLinkModal';
-import { apiUrl } from '../lib/api';
+import { apiUrl, authenticatedFetch } from '../lib/api';
 
 interface TechniciansViewProps {
   technicians: Technician[];
@@ -193,7 +193,7 @@ export function TechniciansView({ technicians, onRefresh }: TechniciansViewProps
   const fetchCredentials = async () => {
     setLoadingCreds(true);
     try {
-      const response = await fetch(apiUrl('/api/credentials'));
+      const response = await authenticatedFetch(apiUrl('/api/credentials'));
       const data = await readApiResponse(response);
       if (data.success) {
         setCredentials(data.credentials || []);
@@ -208,7 +208,7 @@ export function TechniciansView({ technicians, onRefresh }: TechniciansViewProps
   const handleUpdateCredPin = async (credId: number, pin: string) => {
     setSaving(true);
     try {
-      const response = await fetch(apiUrl(`/api/credentials/${credId}`), {
+      const response = await authenticatedFetch(apiUrl(`/api/credentials/${credId}`), {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ pin: pin.trim() })
@@ -231,7 +231,7 @@ export function TechniciansView({ technicians, onRefresh }: TechniciansViewProps
     setSaving(true);
     setModalError('');
     try {
-      const response = await fetch(apiUrl('/api/credentials'), {
+      const response = await authenticatedFetch(apiUrl('/api/credentials'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(newCredForm)
@@ -260,7 +260,7 @@ export function TechniciansView({ technicians, onRefresh }: TechniciansViewProps
     if (!confirm('Deseja realmente excluir este usuário e seu PIN de acesso?')) return;
     setSaving(true);
     try {
-      const response = await fetch(apiUrl(`/api/credentials/${credId}`), { method: 'DELETE' });
+      const response = await authenticatedFetch(apiUrl(`/api/credentials/${credId}`), { method: 'DELETE' });
       const data = await readApiResponse(response);
       if (!response.ok || !data.success) throw new Error(data.error || 'Erro ao excluir.');
       setNotice('Credencial excluída com sucesso.');
@@ -363,7 +363,7 @@ export function TechniciansView({ technicians, onRefresh }: TechniciansViewProps
     try {
       const isEditing = modalMode === 'edit' && editingTechnician;
       const targetUrl = isEditing ? apiUrl(`/api/technicians/${editingTechnician.id}`) : apiUrl('/api/technicians');
-      const response = await fetch(targetUrl, {
+      const response = await authenticatedFetch(targetUrl, {
         method: isEditing ? 'PATCH' : 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData)
@@ -388,7 +388,7 @@ export function TechniciansView({ technicians, onRefresh }: TechniciansViewProps
     setSaving(true);
     setModalError('');
     try {
-      const response = await fetch(apiUrl(`/api/technicians/${mergeSource.id}/merge`), {
+      const response = await authenticatedFetch(apiUrl(`/api/technicians/${mergeSource.id}/merge`), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ target_id: mergeTarget.id, profile: mergeProfile })
@@ -412,7 +412,7 @@ export function TechniciansView({ technicians, onRefresh }: TechniciansViewProps
     setSaving(true);
     setModalError('');
     try {
-      const response = await fetch(apiUrl(`/api/technicians/${deleteTarget.id}`), { method: 'DELETE' });
+      const response = await authenticatedFetch(apiUrl(`/api/technicians/${deleteTarget.id}`), { method: 'DELETE' });
       const data = await readApiResponse(response);
       if (!response.ok || !data.success) throw new Error(data.error || 'Não foi possível apagar o usuário.');
       setNotice(`${deleteTarget.name} foi apagado com sucesso.`);
@@ -724,8 +724,8 @@ export function TechniciansView({ technicians, onRefresh }: TechniciansViewProps
               </label>
 
               <label className="form-field">
-                <span>Cargo ou especialidade</span>
-                <input className="input-field" value={formData.role} onChange={event => setFormData({ ...formData, role: event.target.value })} />
+                <span>Cargo ou especialidade</span><datalist id="operational-specialties"><option value="Supervisor" /><option value="Gerente" /><option value="Comercial" /><option value="Técnico de Campo" /></datalist>
+                <input list="operational-specialties" className="input-field" value={formData.role} onChange={event => setFormData({ ...formData, role: event.target.value })} />
               </label>
 
               <label className="form-field">

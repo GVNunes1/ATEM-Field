@@ -61,6 +61,25 @@ export function App() {
   });
 
   const [activeTab, setActiveTab] = useState(getInitialTab);
+  const sessionUserId = currentUser?.id;
+  useEffect(() => {
+    if (sessionUserId === undefined) return;
+    let alive = true;
+    const refreshAccess = async () => {
+      try {
+        const result = await safeFetchJson('/api/auth/session', { cache: 'no-store' });
+        if (alive && result.success && result.user?.role) setCurrentUser(previous => {
+          if (!previous || String(previous.id) !== String(result.user.id)) return previous;
+          const updated = { ...previous, ...result.user };
+          localStorage.setItem('atem.auth.user', JSON.stringify(updated));
+          return updated;
+        });
+      } catch { /* Keep the session display; server authorization fails closed. */ }
+    };
+    void refreshAccess();
+    window.addEventListener('focus', refreshAccess);
+    return () => { alive = false; window.removeEventListener('focus', refreshAccess); };
+  }, [sessionUserId]);
   const [stats, setStats] = useState<any>(null);
   const [recentReservations, setRecentReservations] = useState<any[]>([]);
   const [analyzers, setAnalyzers] = useState<any[]>([]);

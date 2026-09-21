@@ -13,6 +13,7 @@ import {
   Users
 } from 'lucide-react';
 import { AuthUser } from '../types/auth';
+import { roleLabel } from '../lib/permissions';
 import './Navigation.css';
 
 interface NavigationProps {
@@ -128,7 +129,7 @@ export const Navigation: React.FC<NavigationProps> = ({
             </span>
             <span className="sidebar-user-info">
               <strong>{currentUser?.name || 'Administrador'}</strong>
-              <span>{isAdmin ? 'Admin Master' : 'Técnico de Campo'}</span>
+              <span>{roleLabel(currentUser?.role)}</span>
             </span>
           </button>
           {onLogout && (

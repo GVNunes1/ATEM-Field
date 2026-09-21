@@ -1,8 +1,9 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useSyncExternalStore } from 'react';
 import { CalendarDays, ClipboardCheck, Clock3, MapPin, Pencil, Plus, Printer, Trash2, UsersRound, X } from 'lucide-react';
 import { isNonTechnicalAppointment } from '../lib/appointmentUtils';
 import { appointmentStage, appointmentTeam, appointmentTime, appointmentTitle, dateKey, groupMonthAppointments, lastAppointmentDay, localDate, monthDays } from '../lib/calendarMonth';
 import { ModalOverlay } from './ModalOverlay';
+import { MonthlyFrameworkGrid } from './MonthlyFrameworkGrid';
 import type { CalendarAppointment, CalendarTechnician } from './CalendarEventEditor';
 import './MonthlySpreadsheetView.css';
 
@@ -11,6 +12,10 @@ export interface MonthlySpreadsheetViewProps {
   appointments: CalendarAppointment[];
   technicians: CalendarTechnician[];
   canManage: boolean;
+  canCreate?: boolean;
+  canAdvanceAppointment?: (appointment: CalendarAppointment) => boolean;
+  onAdvanceAppointment?: (appointment: CalendarAppointment) => void;
+  workflowActionId?: number | null;
   isAdmin: boolean;
   onEditAppointment: (appointment: CalendarAppointment) => void;
   onCreateAppointment: (dateStr: string) => void;
@@ -22,6 +27,12 @@ export interface MonthlySpreadsheetViewProps {
 }
 
 const weekdays = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+const mobileQuery = '(max-width: 959px)';
+const subscribeViewport = (callback: () => void) => {
+  const query = window.matchMedia(mobileQuery);
+  query.addEventListener('change', callback);
+  return () => query.removeEventListener('change', callback);
+};
 const fullDate = (value: string) => localDate(value).toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' });
 const shortDate = (value: string) => localDate(value).toLocaleDateString('pt-BR');
 const syncLabels: Record<string, string> = { synced: 'Sincronizado', pending: 'Envio pendente', conflict: 'Revisar alterações', error: 'Erro de sincronização', local_only: 'Somente no ATEM Field' };
@@ -32,7 +43,8 @@ function reservationDescription(value: unknown) {
   return [record.asset_tag, record.analyzer_name || record.analyzer_type, record.status].filter(item => typeof item === 'string' && item).join(' · ') || 'Reserva vinculada';
 }
 
-export function MonthlySpreadsheetView({ selectedMonth, appointments, technicians, canManage, onEditAppointment, onCreateAppointment, onDeleteAppointment, onOpenChecklistModal, deletingId, searchTerm = '', selectedTech = 'ALL' }: MonthlySpreadsheetViewProps) {
+export function MonthlySpreadsheetView({ selectedMonth, appointments, technicians, canManage, canCreate = canManage, canAdvanceAppointment, onAdvanceAppointment, workflowActionId, onEditAppointment, onCreateAppointment, onDeleteAppointment, onOpenChecklistModal, deletingId, searchTerm = '', selectedTech = 'ALL' }: MonthlySpreadsheetViewProps) {
+  const mobile = useSyncExternalStore(subscribeViewport, () => window.matchMedia(mobileQuery).matches, () => false);
   const today = dateKey(new Date());
   const days = useMemo(() => monthDays(selectedMonth), [selectedMonth]);
   const grouped = useMemo(() => groupMonthAppointments(days, appointments, technicians, searchTerm, selectedTech), [days, appointments, technicians, searchTerm, selectedTech]);
@@ -60,7 +72,7 @@ export function MonthlySpreadsheetView({ selectedMonth, appointments, technician
     return <section className="month-day-agenda" aria-label={`Atendimentos de ${fullDate(day)}`}>
       <div className="month-day-agenda__heading">
         <div><h3>{fullDate(day)}</h3><span>{items.length} {items.length === 1 ? 'atendimento' : 'atendimentos'}</span></div>
-        {canManage && <button type="button" className="btn btn-secondary" onClick={() => create(day)}><Plus size={16} /> Novo</button>}
+        {canCreate && <button type="button" className="btn btn-secondary" onClick={() => create(day)}><Plus size={16} /> Novo</button>}
       </div>
       {items.length ? <div className="month-day-agenda__list">{items.map(appointment => {
         const stage = appointmentStage(appointment);
@@ -84,7 +96,7 @@ export function MonthlySpreadsheetView({ selectedMonth, appointments, technician
       <div className="month-calendar__tools"><label className="month-density"><input type="checkbox" checked={compact} onChange={event => setCompact(event.target.checked)} /> Compacta</label><button type="button" className="month-print" onClick={() => window.print()} aria-label="Imprimir agenda" title="Imprimir agenda"><Printer size={17} /></button></div>
     </div>
     {!hasMatches && <p className="month-filter-notice" role="status">{searchTerm || selectedTech !== 'ALL' ? 'Nenhum atendimento neste mês corresponde aos filtros.' : 'Este mês ainda não tem atendimentos.'}</p>}
-    <div className="month-calendar__grid" aria-label={localDate(`${selectedMonth}-01`).toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })}>
+    {!mobile ? <MonthlyFrameworkGrid month={selectedMonth} grouped={grouped} technicians={technicians} compact={compact} canCreate={canCreate} onDay={day => { setSelectedDay(day); setOpenDay(day); }} onEvent={showAppointment} onCreate={create} /> : <div className="month-calendar__grid" aria-label={localDate(`${selectedMonth}-01`).toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })}>
       {weekdays.map(day => <div key={day} className="month-calendar__weekday">{day}</div>)}
       {days.map(day => {
         const items = grouped.get(day) || [];
@@ -93,7 +105,7 @@ export function MonthlySpreadsheetView({ selectedMonth, appointments, technician
         return <article key={day} data-date={day} className={`month-cell${outside ? ' month-cell--outside' : ''}${day === today ? ' month-cell--today' : ''}${day === selectedDay ? ' month-cell--selected' : ''}`} aria-label={fullDate(day)}>
           <div className="month-cell__heading">
             <button type="button" className="month-date" aria-label={`${fullDate(day)}, ${items.length} atendimentos`} aria-current={day === today ? 'date' : undefined} aria-pressed={day === selectedDay} onClick={() => selectDay(day)}><span>{date.getDate()}</span>{(date.getDate() === 1 || day === days[0]) && <small>{date.toLocaleDateString('pt-BR', { month: 'short' })}</small>}</button>
-            {canManage && <button type="button" className="month-add day-add-btn" aria-label={`Novo atendimento em ${shortDate(day)}`} onClick={() => create(day)}><Plus size={14} /></button>}
+            {canCreate && <button type="button" className="month-add day-add-btn" aria-label={`Novo atendimento em ${shortDate(day)}`} onClick={() => create(day)}><Plus size={14} /></button>}
           </div>
           <div className="month-cell__events">{items.slice(0, visibleLimit).map(appointment => {
             const stage = appointmentStage(appointment);
@@ -110,7 +122,7 @@ export function MonthlySpreadsheetView({ selectedMonth, appointments, technician
           <span className="month-mobile-count" aria-hidden="true">{items.length ? `${items.length} ag.` : 'Livre'}</span>
         </article>;
       })}
-    </div>
+    </div>}
     <div className="month-calendar__mobile-agenda">{dayAgenda(selectedDay)}</div>
     {openDay && <ModalOverlay className="month-overlay" onDismiss={dismiss} onClick={event => { if (event.target === event.currentTarget) dismiss(); }}><div role="dialog" aria-modal="true" aria-label={`Agenda de ${fullDate(openDay)}`} className="month-dialog"><button type="button" className="month-dialog__close" onClick={dismiss} aria-label="Fechar agenda do dia"><X size={20} /></button>{dayAgenda(openDay)}</div></ModalOverlay>}
     {selectedAppointment && <ModalOverlay className="month-overlay" onDismiss={() => setOpenId(null)} onClick={event => { if (event.target === event.currentTarget) setOpenId(null); }}>
@@ -126,6 +138,7 @@ export function MonthlySpreadsheetView({ selectedMonth, appointments, technician
         </dl>
         <section className="month-event-detail__reservations"><h3><ClipboardCheck size={17} /> Padrões e analisadores</h3>{selectedAppointment.reservations?.length ? <><p>{selectedAppointment.reservations.length} reservas vinculadas, incluindo histórico.</p><ul>{selectedAppointment.reservations.map((reservation, index) => <li key={index}>{reservationDescription(reservation)}</li>)}</ul></> : <p>Nenhuma reserva vinculada.</p>}</section>
         <footer className="month-dialog__actions">
+          {canAdvanceAppointment?.(selectedAppointment) && <button type="button" className="btn btn-primary" disabled={workflowActionId === selectedAppointment.id} onClick={() => { dismiss(); onAdvanceAppointment?.(selectedAppointment); }}>{selectedAppointment.workflow_status === 'Validado pelo supervisor' ? 'Confirmar com cliente' : selectedAppointment.workflow_status === 'Aguardando validação do supervisor' ? 'Validar programação' : 'Enviar à supervisão'}</button>}
           {!isNonTechnicalAppointment(selectedAppointment) && <button type="button" className="btn btn-primary" onClick={() => { dismiss(); onOpenChecklistModal(selectedAppointment.id); }}><ClipboardCheck size={16} /> Checklist e reservas</button>}
           {canManage && <button type="button" className="btn btn-secondary" onClick={() => edit(selectedAppointment)}><Pencil size={16} />{selectedAppointment.google_sync_status === 'conflict' ? 'Revisar alterações' : 'Editar'}</button>}
           {canManage && <button type="button" className="btn btn-secondary month-delete" disabled={deletingId === Number(selectedAppointment.id)} onClick={() => { dismiss(); onDeleteAppointment(selectedAppointment); }}><Trash2 size={16} />{deletingId === Number(selectedAppointment.id) ? 'Excluindo…' : 'Excluir'}</button>}

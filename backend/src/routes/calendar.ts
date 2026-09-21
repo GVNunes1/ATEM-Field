@@ -2,6 +2,7 @@ import { Router, Request, Response } from 'express';
 import { AuthenticatedRequest, requireAuthentication, requireRole } from '../security/authService';
 import { createCalendarAppointment, deleteCalendarAppointment, listWritableCalendars, queueCalendarEdit, resolveCalendarConflict } from '../services/calendarSyncEngine';
 import { getGoogleCalendarSyncStatus, runGoogleCalendarSync } from '../services/googleCalendarSync';
+import { schedulingRoles } from '../security/roles';
 
 export const calendarRouter = Router();
 
@@ -15,7 +16,7 @@ calendarRouter.get('/calendar/calendars', requireAuthentication, async (_req: Au
 });
 
 calendarRouter.post('/appointments/calendar',
-  requireAuthentication, requireRole(['admin', 'manager', 'supervisor']), async (req: AuthenticatedRequest, res: Response) => {
+  requireAuthentication, requireRole(schedulingRoles), async (req: AuthenticatedRequest, res: Response) => {
     try {
       const status = await getGoogleCalendarSyncStatus();
       if (!status.write_authorized) {
@@ -24,6 +25,9 @@ calendarRouter.post('/appointments/calendar',
           requires_write_auth: true,
           error: 'Autorize a edição do Google Agenda antes de criar novos atendimentos.'
         });
+      }
+      if (req.user!.role === 'commercial' && ((req.body.technician_ids?.length || 0) > 0 || req.body.technician_id || req.body.vehicle_id)) {
+        return res.status(403).json({ success: false, error: 'A atribuição de equipe e veículo é feita pela supervisão.' });
       }
       const appointment = await createCalendarAppointment(req.body, req.user!.sub);
       return res.status(201).json({
@@ -46,7 +50,7 @@ function fail(res: Response, error: any) {
 
 for (const resolve of [false, true]) {
   calendarRouter[resolve ? 'post' : 'patch'](`/appointments/:id/calendar${resolve ? '/resolve' : ''}`,
-    requireAuthentication, requireRole(['admin']), async (req: AuthenticatedRequest, res: Response) => {
+    requireAuthentication, requireRole(['admin', 'manager', 'supervisor']), async (req: AuthenticatedRequest, res: Response) => {
       try {
         const id = Number(req.params.id);
         if (!Number.isSafeInteger(id) || id <= 0) return res.status(400).json({ success: false, error: 'Agendamento inválido.' });
@@ -64,7 +68,7 @@ for (const resolve of [false, true]) {
     });
 }
 
-calendarRouter.delete('/appointments/:id', async (req: Request, res: Response) => {
+calendarRouter.delete('/appointments/:id', requireAuthentication, requireRole(['admin', 'manager', 'supervisor']), async (req: Request, res: Response) => {
   try {
     const id = Number(req.params.id);
     if (!Number.isSafeInteger(id) || id <= 0) {

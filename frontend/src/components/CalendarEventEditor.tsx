@@ -60,6 +60,7 @@ interface CalendarEventEditorProps {
   technicians: CalendarTechnician[];
   initialDate?: string;
   canManage?: boolean;
+  canAssignTeam?: boolean;
   onDismiss: () => void;
   onSaved: (message: string) => Promise<void>;
   onDeleted?: (message: string) => Promise<void>;
@@ -94,7 +95,7 @@ function describeRemoteTime(event: GoogleEventSnapshot | null) {
   return event?.start?.dateTime ? `${format(event.start.dateTime)} a ${format(event.end?.dateTime)}` : 'Não informado';
 }
 
-export function CalendarEventEditor({ appointment, technicians, initialDate, canManage, onDismiss, onSaved, onDeleted }: CalendarEventEditorProps) {
+export function CalendarEventEditor({ appointment, technicians, initialDate, canManage, canAssignTeam = true, onDismiss, onSaved, onDeleted }: CalendarEventEditorProps) {
   const isCreateMode = !appointment;
   const [record, setRecord] = useState<CalendarAppointment | null>(appointment || null);
   const isAllDay = Boolean(appointment?.all_day);
@@ -366,8 +367,9 @@ export function CalendarEventEditor({ appointment, technicians, initialDate, can
                   <input className="input-field" type="time" value={form.appointment_end_time} onChange={event => setForm({ ...form, appointment_end_time: event.target.value })} required />
                 </label>
               )}
-              <fieldset className="calendar-editor__team calendar-editor__field--wide">
+              <fieldset className="calendar-editor__team calendar-editor__field--wide" disabled={!canAssignTeam}>
                 <legend>Equipe escalada</legend>
+                {!canAssignTeam && <p className="calendar-editor__hint">O supervisor define a equipe após receber a data provisória.</p>}
                 <div>
                   {technicians.map(technician => (
                     <label className="calendar-editor__check" key={technician.id}>

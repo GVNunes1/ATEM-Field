@@ -2,6 +2,7 @@ import jwt from 'jsonwebtoken';
 import { Request, Response, NextFunction } from 'express';
 import { randomBytes } from 'crypto';
 import { CryptoService } from './cryptoService';
+import { roleFromSpecialty } from './roles';
 
 /**
  * ============================================================================
@@ -108,11 +109,11 @@ export interface AuthenticatedRequest extends Request {
 /**
  * Middleware Express: Exige token JWT válido no cabeçalho Authorization (Bearer <token>).
  */
-export function requireAuthentication(
+export async function requireAuthentication(
   req: AuthenticatedRequest,
   res: Response,
   next: NextFunction
-): void {
+): Promise<void> {
   const authHeader = req.headers.authorization;
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
     res.status(401).json({
@@ -126,6 +127,23 @@ export function requireAuthentication(
 
   try {
     const payload = AuthService.verifySessionToken(token);
+    // Refresh operational access from the server-owned profile, so a title
+    // change (or deactivation) also affects already issued sessions.
+    if (!(payload.role === 'admin' && payload.sub === '0')) {
+      const { supabaseAdmin } = await import('../services/supabase');
+      const { data: profile, error } = await supabaseAdmin.from('technicians')
+        .select('id, name, role, status').eq('id', payload.sub).maybeSingle();
+      if (error) {
+        res.status(503).json({ success: false, error: 'Não foi possível verificar as permissões. Tente novamente.' });
+        return;
+      }
+      if (!profile || String(profile.status || '').toLowerCase() !== 'ativo') {
+        res.status(401).json({ success: false, error: 'Usuário inativo ou indisponível. Contate o administrador.' });
+        return;
+      }
+      payload.role = roleFromSpecialty(profile.role);
+      payload.name = profile.name;
+    }
     req.user = payload;
     next();
   } catch (err: any) {

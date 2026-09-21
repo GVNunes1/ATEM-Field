@@ -33,9 +33,10 @@ export function appointmentTeam(appointment: CalendarAppointment, technicians: C
 }
 
 export function appointmentStage(appointment: CalendarAppointment) {
-  const status = appointment.status?.toLocaleLowerCase('pt-BR');
-  const workflow = appointment.workflow_status;
-  if (status === 'cancelado' || status === 'cancelled' || workflow === 'Cancelado') return { label: 'Cancelada', full: 'Cancelado', tone: 'cancelled' };
+  // Cancellation is a deletion operation, not a visible scheduling stage.
+  // Old local labels must never hide an appointment that still exists.
+  const cancelledLabel = /^(cancelad[oa]|cancelled|canceled)$/i;
+  const workflow = cancelledLabel.test(appointment.workflow_status || '') ? undefined : appointment.workflow_status;
   const stages: Record<string, { label: string; tone: string }> = {
     'Data provisória': { label: 'Provisória', tone: 'provisional' },
     'Aguardando validação do supervisor': { label: 'Em validação', tone: 'provisional' },
@@ -44,7 +45,7 @@ export function appointmentStage(appointment: CalendarAppointment) {
     'Em execução': { label: 'Em execução', tone: 'running' },
     'Concluído': { label: 'Concluída', tone: 'done' },
   };
-  const full = workflow || appointment.status || 'Data provisória';
+  const full = workflow || (cancelledLabel.test(appointment.status || '') ? undefined : appointment.status) || 'Data provisória';
   return { ...(stages[full] || { label: full, tone: 'scheduled' }), full };
 }
 

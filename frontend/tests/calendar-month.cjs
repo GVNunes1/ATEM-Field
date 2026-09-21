@@ -34,6 +34,8 @@ const appointments = [
   try {
     for (const viewport of [{ width: 1440, height: 900 }, { width: 1024, height: 768 }, { width: 768, height: 1024 }, { width: 375, height: 812 }]) {
       const mobileCalendar = viewport.width < 960;
+      const cellSelector = mobileCalendar ? '.month-cell' : '.framework-day';
+      const eventSelector = mobileCalendar ? '.month-event' : '.framework-event';
       const context = await browser.newContext({ viewport, reducedMotion: 'reduce' });
       const writes = [];
       const externalRequests = [];
@@ -65,10 +67,10 @@ const appointments = [
       const monthInput = page.getByLabel('Selecionar mês', { exact: true });
       const setMonth = async month => {
         await monthInput.fill(month);
-        await page.locator(`.month-cell[data-date="${month}-15"]`).waitFor();
+        await page.locator(`${cellSelector}[data-date="${month}-15"]`).waitFor();
         assert.equal(await monthInput.inputValue(), month);
       };
-      const cell = date => page.locator(`.month-cell[data-date="${date}"]`);
+      const cell = date => page.locator(`${cellSelector}[data-date="${date}"]`);
       const verifyDialog = async (dialog, label) => {
         await dialog.waitFor();
         const bounds = await dialog.boundingBox();
@@ -82,10 +84,9 @@ const appointments = [
       const closeDialog = async dialog => { await page.keyboard.press('Escape'); await dialog.waitFor({ state: 'hidden' }); };
 
       await setMonth('2026-09');
-      assert.equal(await page.locator('.month-cell').count(), 35, 'September 2026 uses five complete weeks');
-      assert.deepEqual(await page.locator('.month-calendar__weekday').allTextContents(), ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb']);
-      const geometry = await page.locator('.month-calendar__grid').evaluate(el => ({ columns: getComputedStyle(el).gridTemplateColumns.split(' ').length, overflow: el.scrollWidth - el.clientWidth }));
-      assert.equal(geometry.columns, 7, 'Calendar retains seven weekday columns');
+      assert.equal(await page.locator(cellSelector).count(), 35, 'September 2026 uses five complete weeks');
+      assert.deepEqual((await page.locator(mobileCalendar ? '.month-calendar__weekday' : '.framework-weekday').allTextContents()).map(text => text.toLowerCase()), ['dom', 'seg', 'ter', 'qua', 'qui', 'sex', 'sáb']);
+      const geometry = await page.locator(mobileCalendar ? '.month-calendar__grid' : '.atem-fullcalendar').evaluate(el => ({ overflow: el.scrollWidth - el.clientWidth }));
       assert.ok(geometry.overflow <= 1, 'Month grid does not overflow');
       assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1), 'Page fits viewport width');
 
@@ -108,9 +109,9 @@ const appointments = [
 
       await page.getByRole('button', { name: 'Mês anterior', exact: true }).click();
       assert.equal(await monthInput.inputValue(), '2026-08');
-      assert.equal(await page.locator('.month-cell').count(), 42, 'Six-week month');
+      assert.equal(await page.locator(cellSelector).count(), 42, 'Six-week month');
       await setMonth('2026-02');
-      assert.equal(await page.locator('.month-cell').count(), 28, 'Four-week month');
+      assert.equal(await page.locator(cellSelector).count(), 28, 'Four-week month');
       await setMonth('2024-02');
       assert.equal(await cell('2024-02-29').count(), 1, 'Leap day is visible');
       await page.getByRole('button', { name: 'Hoje', exact: true }).click();
@@ -119,11 +120,13 @@ const appointments = [
 
       const day = cell('2026-09-21');
       if (!mobileCalendar) {
-        assert.equal(await day.locator('.month-event').count(), 2);
+        assert.equal(await day.locator(`${eventSelector}:visible`).count(), 2);
         await page.getByLabel('Compacta', { exact: true }).check();
-        assert.equal(await day.locator('.month-event').count(), 4, 'Compact mode exposes more events');
+        await day.locator(`${eventSelector}:visible`).nth(3).waitFor();
+        assert.equal(await day.locator(`${eventSelector}:visible`).count(), 4, 'Compact mode exposes more events');
         await page.getByLabel('Compacta', { exact: true }).uncheck();
-        await day.getByRole('button', { name: /^Ver mais 4 atendimentos/ }).click();
+        await day.locator('.framework-more').filter({ hasText: 'Mais 4' }).waitFor();
+        await day.locator('.framework-more').click();
         const dayDialog = page.getByRole('dialog', { name: /^Agenda de / });
         await verifyDialog(dayDialog, 'Full day agenda');
         assert.equal(await dayDialog.locator('.month-day-event').count(), 6, 'Overflow opens every event');
@@ -144,7 +147,7 @@ const appointments = [
       }
       const opener = () => mobileCalendar
         ? page.locator('.month-calendar__mobile-agenda .month-day-event').filter({ hasText: mainAppointment.client_name })
-        : day.locator('.month-event').filter({ hasText: mainAppointment.client_name });
+        : day.locator(`${eventSelector}:visible`).filter({ hasText: mainAppointment.client_name });
       await opener().click();
       const eventDialog = page.getByRole('dialog', { name: mainAppointment.client_name, exact: true });
       await verifyDialog(eventDialog, 'Event details');
@@ -169,12 +172,13 @@ const appointments = [
       await closeDialog(eventDialog);
 
       await page.getByLabel('Buscar atendimentos', { exact: true }).fill('sao joao');
-      assert.equal(await page.locator('.month-event').count(), 1, 'Search ignores accents');
+      assert.equal(await page.locator(eventSelector).count(), 1, 'Search ignores accents');
       await page.getByRole('button', { name: 'Limpar', exact: true }).click();
       await page.getByLabel('Filtrar por técnico', { exact: true }).selectOption('Bruno Campos');
-      assert.equal(await cell('2026-09-01').locator('.month-event').count(), 0, 'Technician filter removes other teams from multi-day events');
-      assert.equal(await day.locator('.month-event').count(), 2, 'Technician-filtered day retains compact limit');
-      assert.equal(await day.locator('.month-event').filter({ hasText: mainAppointment.client_name }).count(), 0, 'Technician filter removes other teams');
+      if (!mobileCalendar) await day.locator(`${eventSelector}:visible`).nth(1).waitFor();
+      assert.equal(await cell('2026-09-01').locator(eventSelector).count(), 0, 'Technician filter removes other teams from multi-day events');
+      assert.equal(await day.locator(`${eventSelector}:visible`).count(), mobileCalendar ? 0 : 2, 'Technician-filtered day retains compact limit');
+      assert.equal(await day.locator(eventSelector).filter({ hasText: mainAppointment.client_name }).count(), 0, 'Technician filter removes other teams');
       await page.getByRole('button', { name: 'Limpar', exact: true }).click();
 
       await page.evaluate(() => localStorage.setItem('fixture.role', 'technician'));

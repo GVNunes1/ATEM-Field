@@ -28,6 +28,7 @@ import {
 import { syncOfficialTechniciansDatabase } from '../scripts/syncOfficialTechnicians';
 import { AuthService, CryptoService, requireAuthentication, requireRole, isManagementRole, requireManagement } from '../security/authService';
 import { calendarRouter, publicCalendarAppointment } from './calendar';
+import { canTransitionWorkflow, roleFromSpecialty, schedulingRoles } from '../security/roles';
 
 const router = Router();
 router.use(calendarRouter);
@@ -293,7 +294,7 @@ router.post('/sync/agenda-online', requireAuthentication, requireRole(['admin'])
   }
 });
 
-router.get('/sync/google/status', requireAuthentication, requireRole(['admin']), async (_req: Request, res: Response) => {
+router.get('/sync/google/status', requireAuthentication, requireRole(schedulingRoles), async (_req: Request, res: Response) => {
   try {
     res.json({ success: true, ...(await getGoogleCalendarSyncStatus()) });
   } catch (error: any) {
@@ -503,13 +504,25 @@ router.post('/sync/get-google-auth-url-legacy-disabled', (req: Request, res: Res
 router.get('/technicians', async (req: Request, res: Response) => {
   try {
     const technicians = await fetchAllFromTable('technicians', 'id');
-    res.json({ success: true, technicians });
+    let isAdmin = false;
+    let signedIn = false;
+    try {
+      const payload = AuthService.verifySessionToken(String(req.headers.authorization || '').replace(/^Bearer /, ''));
+      signedIn = true;
+      isAdmin = payload.role === 'admin' && payload.sub === '0';
+    } catch { /* The login chooser only needs public directory fields. */ }
+    res.json({ success: true, technicians: technicians.map((technician: any) => {
+      if (isAdmin) return technician;
+      if (!signedIn) return { id: technician.id, name: technician.name, role: technician.role, status: technician.status, avatar_url: technician.avatar_url };
+      const { pin, ...profile } = technician;
+      return profile;
+    }) });
   } catch (err: any) {
     res.status(500).json({ success: false, error: err.message });
   }
 });
 
-router.post('/technicians/sync-official', async (_req: Request, res: Response) => {
+router.post('/technicians/sync-official', requireAuthentication, requireRole(['admin']), async (_req: Request, res: Response) => {
   try {
     const result = await syncOfficialTechniciansDatabase();
     res.json(result);
@@ -518,7 +531,7 @@ router.post('/technicians/sync-official', async (_req: Request, res: Response) =
   }
 });
 
-router.post('/technicians', async (req: Request, res: Response) => {
+router.post('/technicians', requireAuthentication, requireRole(['admin']), async (req: Request, res: Response) => {
   try {
     const { name, phone, telegram_id, email, role, avatar_url } = req.body;
 
@@ -548,7 +561,7 @@ router.post('/technicians', async (req: Request, res: Response) => {
   }
 });
 
-router.patch('/technicians/:id', async (req: Request, res: Response) => {
+router.patch('/technicians/:id', requireAuthentication, requireRole(['admin']), async (req: Request, res: Response) => {
   const technicianId = parsePositiveId(req.params.id);
   if (!technicianId) {
     return res.status(400).json({ success: false, error: 'ID do técnico inválido.' });
@@ -634,7 +647,7 @@ router.patch('/technicians/:id', async (req: Request, res: Response) => {
   }
 });
 
-router.delete('/technicians/:id', async (req: Request, res: Response) => {
+router.delete('/technicians/:id', requireAuthentication, requireRole(['admin']), async (req: Request, res: Response) => {
   const technicianId = parsePositiveId(req.params.id);
   if (!technicianId) {
     return res.status(400).json({ success: false, error: 'ID do técnico inválido.' });
@@ -691,7 +704,7 @@ router.delete('/technicians/:id', async (req: Request, res: Response) => {
   }
 });
 
-router.post('/technicians/:sourceId/merge', async (req: Request, res: Response) => {
+router.post('/technicians/:sourceId/merge', requireAuthentication, requireRole(['admin']), async (req: Request, res: Response) => {
   const sourceId = parsePositiveId(req.params.sourceId);
   const targetId = parsePositiveId(req.body.target_id);
   if (!sourceId || !targetId) {
@@ -1480,7 +1493,7 @@ router.get('/appointments/:id/checklist', async (req: Request, res: Response) =>
 
 // Atualiza apenas o estado operacional do agendamento. O carro é opcional:
 // a agenda pode ser validada e confirmada antes de uma viatura ser vinculada.
-router.patch('/appointments/:id/workflow', requireAuthentication, requireRole(['admin']), async (req: Request, res: Response) => {
+router.patch('/appointments/:id/workflow', requireAuthentication, requireRole(schedulingRoles), async (req: Request, res: Response) => {
   try {
     const appointmentId = parsePositiveId(req.params.id);
     if (!appointmentId) return res.status(400).json({ success: false, error: 'Agendamento inválido.' });
@@ -1492,8 +1505,7 @@ router.patch('/appointments/:id/workflow', requireAuthentication, requireRole(['
       'Validado pelo supervisor',
       'Confirmado com cliente',
       'Em execução',
-      'Concluído',
-      'Cancelado'
+      'Concluído'
     ]);
     if (workflow_status !== undefined && !allowedStatuses.has(String(workflow_status))) {
       return res.status(400).json({ success: false, error: 'Status de workflow inválido.' });
@@ -1506,6 +1518,13 @@ router.patch('/appointments/:id/workflow', requireAuthentication, requireRole(['
       .maybeSingle();
     if (appointmentError) throw appointmentError;
     if (!appointment) return res.status(404).json({ success: false, error: 'Agendamento não encontrado.' });
+
+    const actorRole = (req as any).user.role;
+    const currentStatus = appointment.workflow_status || 'Data provisória';
+    if ((workflow_status !== undefined && !canTransitionWorkflow(actorRole, currentStatus, workflow_status))
+      || (vehicle_id !== undefined && actorRole === 'commercial')) {
+      return res.status(403).json({ success: false, error: 'Esta etapa ou atribuição de veículo pertence a outro perfil.' });
+    }
 
     const nextVehicleId = vehicle_id === null || vehicle_id === '' || vehicle_id === undefined
       ? (vehicle_id === null || vehicle_id === '' ? null : appointment.vehicle_id || null)
@@ -2562,7 +2581,7 @@ router.post('/auth/login', async (req: Request, res: Response) => {
         .eq('id', techId)
         .maybeSingle();
 
-      if (techErr || !technician) {
+      if (techErr || !technician || String(technician.status || '').toLowerCase() !== 'ativo') {
         // Neutralização de enumeração de usuário por timing
         await AuthService.verifyUserCredentials(inputPin, null);
         return res.status(401).json({ success: false, error: 'Credenciais inválidas. Verifique os dados informados.' });
@@ -2584,7 +2603,7 @@ router.post('/auth/login', async (req: Request, res: Response) => {
         const user = {
           id: technician.id,
           name: technician.name,
-          role: 'technician' as const,
+          role: roleFromSpecialty(technician.role),
           phone: technician.phone,
           email: technician.email,
           avatar_url: technician.avatar_url
@@ -2611,6 +2630,11 @@ router.post('/auth/login', async (req: Request, res: Response) => {
 // ==========================================================================
 // GERENCIADOR DE CREDENCIAIS E PINS (DATABASE CRUD)
 // ==========================================================================
+router.get('/auth/session', requireAuthentication, (req: Request, res: Response) => {
+  const payload = (req as any).user;
+  res.json({ success: true, user: { id: payload.sub, name: payload.name, role: payload.role } });
+});
+
 router.get('/credentials', requireAuthentication, requireRole(['admin']), async (req: Request, res: Response) => {
   try {
     const { data, error } = await supabaseAdmin

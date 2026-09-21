@@ -23,8 +23,7 @@ export function apiUrl(endpoint: string): string {
   return `${base}${cleanPath}`;
 }
 
-export async function safeFetchJson(url: string, options?: RequestInit): Promise<any> {
-  const targetUrl = apiUrl(url);
+export async function authenticatedFetch(targetUrl: string, options?: RequestInit): Promise<Response> {
   const headers = new Headers(options?.headers || {});
   try {
     const token = localStorage.getItem('atem.auth.token');
@@ -35,7 +34,11 @@ export async function safeFetchJson(url: string, options?: RequestInit): Promise
     // Storage can be unavailable in restricted browser contexts.
   }
 
-  const response = await fetch(targetUrl, { ...options, headers });
+  return fetch(targetUrl, { ...options, headers });
+}
+
+export async function safeFetchJson(url: string, options?: RequestInit): Promise<any> {
+  const response = await authenticatedFetch(apiUrl(url), options);
   const contentType = response.headers.get('content-type') || '';
   
   const text = await response.text();
