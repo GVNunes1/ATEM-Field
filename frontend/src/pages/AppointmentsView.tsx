@@ -31,6 +31,7 @@ interface GoogleSyncStatus {
   unavailable?: boolean;
   authenticated?: boolean;
   write_authorized?: boolean;
+  can_authorize_browser?: boolean;
   running?: boolean;
   pending?: number;
   conflicts?: number;
@@ -44,7 +45,8 @@ const safeDate = (value: string) => new Date(`${value}T12:00:00`);
 
 function moveMonth(value: string, offset: number) {
   const [year, month] = value.split('-').map(Number);
-  return monthKey(new Date(year, month - 1 + offset, 1));
+  const target = new Date(year, month - 1 + offset, 1);
+  return monthKey(target);
 }
 
 function monthLabel(value: string) {
@@ -108,18 +110,14 @@ export function AppointmentsView({ appointments, onOpenChecklistModal, currentUs
 
   const connectGoogle = async () => {
     setConnecting(true); setActionError('');
-    const popup = window.open('about:blank', '_blank');
-    if (popup) popup.opener = null;
     try {
       const result = await safeFetchJson('/api/sync/get-google-auth-url', { method: 'POST' });
       if (!result.success || !result.auth_url) throw new Error(result.error || 'Não foi possível abrir a autorização Google.');
       const url = new URL(result.auth_url);
       if (url.protocol !== 'https:' || url.hostname !== 'accounts.google.com') throw new Error('O endereço de autorização Google é inválido.');
-      if (popup) popup.location.href = url.href;
-      else throw new Error('Permita pop-ups neste site e tente conectar novamente.');
+      window.open(url.href, '_blank', 'noopener,noreferrer');
       setNotice('Conclua a autorização na janela do Google e depois clique em Sincronizar agora.');
     } catch (error) {
-      popup?.close();
       setActionError(error instanceof Error ? error.message : 'Falha ao conectar ao Google.');
     } finally { setConnecting(false); }
   };
@@ -266,12 +264,12 @@ export function AppointmentsView({ appointments, onOpenChecklistModal, currentUs
         <div className="agenda-sync__summary">
           <ArrowLeftRight size={20} aria-hidden="true" />
           <div><strong>{!syncStatus ? 'Verificando conexão com o Google…' : syncStatus.unavailable ? 'Status da conexão indisponível' : syncStatus.write_authorized ? 'Google Agenda em duas vias' : 'Google Agenda precisa de autorização'}</strong>
-            <p>{syncStatus?.unavailable ? 'Tente atualizar para consultar o estado da sincronização.' : syncStatus?.write_authorized ? 'Edições no ATEM e no Google são sincronizadas. Alterações simultâneas pedem revisão.' : syncStatus ? 'Autorize o acesso de edição para enviar alterações do ATEM Field ao Google.' : 'Consultando as permissões e as alterações pendentes.'}</p>
+            <p>{syncStatus?.unavailable ? 'Tente atualizar para consultar o estado da sincronização.' : syncStatus?.write_authorized ? 'Edições no ATEM e no Google são sincronizadas. Alterações simultâneas pedem revisão.' : syncStatus?.can_authorize_browser === false ? 'A credencial configurada é do tipo Desktop. Execute renovar-google-agenda.bat no computador do administrador, atualize GOOGLE_CALENDAR_TOKEN_JSON na Northflank e reinicie o serviço.' : syncStatus ? 'Autorize o acesso de edição para enviar alterações do ATEM Field ao Google.' : 'Consultando as permissões e as alterações pendentes.'}</p>
             {syncStatus && !syncStatus.unavailable && <div className="agenda-sync__counts"><span>{Number(syncStatus.pending || 0)} pendentes</span><span>{Number(syncStatus.conflicts || 0)} para revisar</span><span>{Number(syncStatus.errors || 0)} com falha</span></div>}
           </div>
         </div>
         {isAdmin && <div className="agenda-sync__actions">
-          {syncStatus && !syncStatus.unavailable && !syncStatus.write_authorized && <button type="button" className="btn btn-secondary" disabled={connecting} onClick={() => void connectGoogle()}>{connecting ? 'Abrindo Google…' : syncStatus.authenticated ? 'Autorizar edição' : 'Conectar Google'}</button>}
+          {syncStatus && !syncStatus.unavailable && !syncStatus.write_authorized && syncStatus.can_authorize_browser !== false && <button type="button" className="btn btn-secondary" disabled={connecting} onClick={() => void connectGoogle()}>{connecting ? 'Abrindo Google…' : syncStatus.authenticated ? 'Autorizar edição' : 'Conectar Google'}</button>}
           <button type="button" className="btn btn-secondary" disabled={syncing || syncStatus?.running} onClick={() => void synchronize()}><RefreshCw size={16} />{syncing || syncStatus?.running ? 'Sincronizando…' : 'Sincronizar agora'}</button>
         </div>}
       </section>

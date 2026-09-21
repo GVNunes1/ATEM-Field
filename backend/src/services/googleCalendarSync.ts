@@ -359,7 +359,13 @@ export async function getGoogleCalendarSyncStatus() {
       error: error?.message || String(error)
     };
   }
-  return { ...runtimeStatus, ...authentication, bidirectional: true, ...(await calendarSyncCounts()) };
+  return {
+    ...runtimeStatus,
+    ...authentication,
+    bidirectional: true,
+    can_authorize_browser: process.env.NODE_ENV !== 'production',
+    ...(await calendarSyncCounts())
+  };
 }
 
 export function startGoogleCalendarAuthorization(): Promise<{ auth_url: string }> {
