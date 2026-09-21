@@ -30,7 +30,7 @@ class CalendarAuthenticationRequired(RuntimeError):
 
 
 def _clean_env_json(raw, var_name=""):
-    """Sanitizes raw environment values that may contain KEY=, quotes or Base64."""
+    """Sanitizes raw environment values that may contain KEY=, quotes, escaping or Base64."""
     if not raw or not isinstance(raw, str):
         return None, None
     s = raw.strip()
@@ -39,24 +39,63 @@ def _clean_env_json(raw, var_name=""):
             s = s[len(var_name) + 1:].strip()
         elif s.startswith(f"export {var_name}="):
             s = s[len(f"export {var_name}=") :].strip()
-    # Strip wrapping quotes
-    if (s.startswith("'") and s.endswith("'")) or (s.startswith('"') and s.endswith('"')):
-        s = s[1:-1].strip()
-    # Direct JSON attempt
-    try:
-        data = json.loads(s)
-        if isinstance(data, dict):
-            return data, json.dumps(data, ensure_ascii=False)
-    except Exception:
-        pass
-    # Base64 attempt
+
+    def _normalize_dict(d):
+        if not isinstance(d, dict):
+            return None
+        if "scope" in d and "scopes" not in d:
+            scope_val = d["scope"]
+            d["scopes"] = scope_val.split() if isinstance(scope_val, str) else list(scope_val)
+        elif isinstance(d.get("scopes"), str):
+            d["scopes"] = d["scopes"].split()
+        return d
+
+    def _try_parse(candidate):
+        try:
+            data = json.loads(candidate)
+            if isinstance(data, str):
+                try:
+                    data = json.loads(data)
+                except Exception:
+                    pass
+            if isinstance(data, dict):
+                norm = _normalize_dict(data)
+                return norm, json.dumps(norm, ensure_ascii=False)
+        except Exception:
+            pass
+        return None, None
+
+    # 1. Direct JSON attempt
+    norm, cleaned = _try_parse(s)
+    if norm:
+        return norm, cleaned
+
+    # 2. Strip outer quotes if any
+    trimmed = s
+    if (trimmed.startswith('"') and trimmed.endswith('"')) or (trimmed.startswith("'") and trimmed.endswith("'")):
+        trimmed = trimmed[1:-1].strip()
+        norm, cleaned = _try_parse(trimmed)
+        if norm:
+            return norm, cleaned
+
+    # 3. Unescape escaped quotes (e.g. {\"token\": ...})
+    if '\\"' in s:
+        unescaped = s.replace('\\"', '"').replace('\\\\', '\\')
+        if (unescaped.startswith('"') and unescaped.endswith('"')) or (unescaped.startswith("'") and unescaped.endswith("'")):
+            unescaped = unescaped[1:-1].strip()
+        norm, cleaned = _try_parse(unescaped)
+        if norm:
+            return norm, cleaned
+
+    # 4. Base64 attempt
     try:
         decoded = base64.b64decode(s).decode("utf-8")
-        data = json.loads(decoded)
-        if isinstance(data, dict):
-            return data, json.dumps(data, ensure_ascii=False)
+        norm, cleaned = _try_parse(decoded)
+        if norm:
+            return norm, cleaned
     except Exception:
         pass
+
     return None, None
 
 
@@ -93,16 +132,31 @@ def token_path():
         else:
             try:
                 disk_data = json.loads(configured_path.read_text(encoding="utf-8"))
-                # Se o token do ambiente tiver um refresh_token ou access_token diferente/novo, atualize o disco
                 if not isinstance(disk_data, dict):
                     should_write = True
-                elif parsed_env.get("refresh_token") and parsed_env.get("refresh_token") != disk_data.get("refresh_token"):
-                    should_write = True
+                else:
+                    env_scopes = set(parsed_env.get("scopes") or [])
+                    disk_scopes = set(disk_data.get("scopes") or [])
+                    env_has_write = bool(WRITE_SCOPES.intersection(env_scopes))
+                    disk_has_write = bool(WRITE_SCOPES.intersection(disk_scopes))
+
+                    # Se a variável de ambiente tiver permissões de escrita e o disco não tiver, atualiza o disco
+                    if env_has_write and not disk_has_write:
+                        should_write = True
+                    elif env_scopes != disk_scopes and env_has_write:
+                        should_write = True
+                    elif parsed_env.get("token") and parsed_env.get("token") != disk_data.get("token"):
+                        should_write = True
+                    elif parsed_env.get("refresh_token") and parsed_env.get("refresh_token") != disk_data.get("refresh_token"):
+                        should_write = True
             except Exception:
                 should_write = True
 
         if should_write:
-            _atomic_write(configured_path, clean_json)
+            try:
+                _atomic_write(configured_path, clean_json)
+            except Exception:
+                pass
 
     return configured_path
 
@@ -125,7 +179,10 @@ def credentials_path():
                 should_write = True
 
         if should_write:
-            DEFAULT_CREDENTIALS_PATH.write_text(clean_json, encoding="utf-8")
+            try:
+                DEFAULT_CREDENTIALS_PATH.write_text(clean_json, encoding="utf-8")
+            except Exception:
+                pass
         return DEFAULT_CREDENTIALS_PATH
 
     configured = os.environ.get("GOOGLE_CALENDAR_CREDENTIALS_PATH", "").strip()
@@ -142,7 +199,10 @@ def credentials_path():
     if source != DEFAULT_CREDENTIALS_PATH and not configured:
         DATA_DIR.mkdir(parents=True, exist_ok=True)
         if not DEFAULT_CREDENTIALS_PATH.exists():
-            shutil.copy2(str(source), str(DEFAULT_CREDENTIALS_PATH))
+            try:
+                shutil.copy2(str(source), str(DEFAULT_CREDENTIALS_PATH))
+            except Exception:
+                pass
         return DEFAULT_CREDENTIALS_PATH
     return source
 
@@ -158,14 +218,18 @@ def save_credentials(credentials):
     serialized = json.loads(credentials.to_json())
     # OAuth may grant fewer scopes than requested. Persist the granted set so a
     # reload never mistakes the requested permissions for actual write access.
-    serialized["scopes"] = credential_scopes(credentials)
-    _atomic_write(token_path(), json.dumps(serialized))
+    scopes = credential_scopes(credentials)
+    if scopes:
+        serialized["scopes"] = scopes
+    _atomic_write(token_path(), json.dumps(serialized, ensure_ascii=False))
 
 
 def credential_scopes(credentials):
     if not credentials:
         return []
-    granted = getattr(credentials, "granted_scopes", None)
+    granted = getattr(credentials, "_granted_scopes", None)
+    if granted is None:
+        granted = getattr(credentials, "granted_scopes", None)
     scopes = granted if granted is not None else getattr(credentials, "scopes", None)
     if isinstance(scopes, str):
         scopes = scopes.split()
@@ -212,6 +276,20 @@ def load_credentials(refresh=True):
             credentials = Credentials.from_authorized_user_file(str(stored_token))
         except Exception:
             credentials = None
+
+    # Fallback/prioridade se o ambiente possuir permissões de escrita mais recentes
+    raw_env_token = os.environ.get("GOOGLE_CALENDAR_TOKEN_JSON", "")
+    parsed_env, _ = _clean_env_json(raw_env_token, "GOOGLE_CALENDAR_TOKEN_JSON")
+    if parsed_env:
+        env_scopes = set(parsed_env.get("scopes") or [])
+        env_has_write = bool(WRITE_SCOPES.intersection(env_scopes))
+        disk_has_write = bool(credentials and credentials_can_write(credentials))
+
+        if credentials is None or (env_has_write and not disk_has_write):
+            try:
+                credentials = Credentials.from_authorized_user_info(parsed_env)
+            except Exception:
+                pass
 
     if credentials is None:
         credentials = _migrate_legacy_pickle()

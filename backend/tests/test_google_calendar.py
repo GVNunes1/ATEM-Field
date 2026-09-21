@@ -370,6 +370,66 @@ class CredentialTests(unittest.TestCase):
                 updated_disk = json.loads(disk_path.read_text())
                 self.assertEqual(updated_disk["refresh_token"], "new-ref")
 
+    def test_token_path_updates_when_env_token_has_write_scopes_even_with_same_refresh_token(self):
+        old_token = {
+            "token": "old",
+            "refresh_token": "same-ref",
+            "scopes": ["https://www.googleapis.com/auth/calendar.readonly"],
+        }
+        new_token = {
+            "token": "new",
+            "refresh_token": "same-ref",
+            "scopes": ["https://www.googleapis.com/auth/calendar.events"],
+        }
+        with tempfile.TemporaryDirectory() as directory:
+            disk_path = Path(directory) / "google-calendar-token.json"
+            disk_path.write_text(json.dumps(old_token))
+            with patch.object(credentials_module, "_configured_path", return_value=disk_path), \
+                    patch.dict(os.environ, {"GOOGLE_CALENDAR_TOKEN_JSON": json.dumps(new_token)}):
+                res_path = credentials_module.token_path()
+                self.assertEqual(res_path, disk_path)
+                updated_disk = json.loads(disk_path.read_text())
+                self.assertEqual(updated_disk["scopes"], ["https://www.googleapis.com/auth/calendar.events"])
+                self.assertEqual(updated_disk["token"], "new")
+
+    def test_load_credentials_uses_env_when_disk_is_readonly_and_env_has_write(self):
+        disk_token = {
+            "token": "old",
+            "refresh_token": "same-ref",
+            "client_id": "client",
+            "client_secret": "secret",
+            "scopes": ["https://www.googleapis.com/auth/calendar.readonly"],
+        }
+        env_token = {
+            "token": "new",
+            "refresh_token": "same-ref",
+            "client_id": "client",
+            "client_secret": "secret",
+            "scopes": ["https://www.googleapis.com/auth/calendar.events"],
+        }
+        with tempfile.TemporaryDirectory() as directory:
+            disk_path = Path(directory) / "google-calendar-token.json"
+            disk_path.write_text(json.dumps(disk_token))
+            with patch.object(credentials_module, "_configured_path", return_value=disk_path), \
+                    patch.dict(os.environ, {"GOOGLE_CALENDAR_TOKEN_JSON": json.dumps(env_token)}):
+                creds = credentials_module.load_credentials(refresh=False)
+                self.assertTrue(credentials_module.credentials_can_write(creds))
+                self.assertIn("https://www.googleapis.com/auth/calendar.events", credentials_module.credential_scopes(creds))
+
+    def test_clean_env_json_escaped_quotes_and_scope_normalization(self):
+        escaped = r'{\"token\": \"abc\", \"refresh_token\": \"ref\", \"scope\": \"https://www.googleapis.com/auth/calendar.events\"}'
+        parsed, cleaned = credentials_module._clean_env_json(escaped, "GOOGLE_CALENDAR_TOKEN_JSON")
+        self.assertIsNotNone(parsed)
+        self.assertEqual(parsed["token"], "abc")
+        self.assertEqual(parsed["scopes"], ["https://www.googleapis.com/auth/calendar.events"])
+
+    def test_credential_scopes_reads_granted_scopes_underscore(self):
+        class FakeCreds:
+            _granted_scopes = ["https://www.googleapis.com/auth/calendar.events"]
+            scopes = None
+        scopes = credentials_module.credential_scopes(FakeCreds())
+        self.assertEqual(scopes, ["https://www.googleapis.com/auth/calendar.events"])
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -9,6 +9,7 @@ from googleapiclient.discovery import build
 from google_calendar_credentials import (
     SCOPES,
     clear_incremental_sync_state,
+    credential_scopes,
     credentials_path,
     save_credentials,
 )
@@ -44,8 +45,12 @@ def main():
     clear_incremental_sync_state()
 
     output_path = Path(args.output).resolve()
+    token_dict = json.loads(credentials.to_json())
+    scopes = credential_scopes(credentials)
+    if scopes:
+        token_dict["scopes"] = scopes
     output_path.write_text(
-        credentials.to_json() + "\n",
+        json.dumps(token_dict, ensure_ascii=False) + "\n",
         encoding="utf-8",
     )
     print(json.dumps({"success": True, "output": str(output_path)}, ensure_ascii=False))
