@@ -8,6 +8,7 @@ import {
   ArrowLeftRight,
   CalendarDays,
   CheckCircle2,
+  ChevronDown,
   ChevronLeft,
   ChevronRight,
   ClipboardCheck,
@@ -18,7 +19,6 @@ import {
   Plus,
   RefreshCw,
   Search,
-  Table,
   Trash2,
   UserRound,
   UsersRound
@@ -62,6 +62,7 @@ export function AppointmentsView({ appointments, onOpenChecklistModal, currentUs
   const today = new Date();
   const todayKey = dateKey(today);
   const [selectedMonth, setSelectedMonth] = useState(() => monthKey(today));
+  const [todayRequest, setTodayRequest] = useState(0);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedTech, setSelectedTech] = useState('ALL');
   const [technicians, setTechnicians] = useState<CalendarTechnician[]>([]);
@@ -243,16 +244,28 @@ export function AppointmentsView({ appointments, onOpenChecklistModal, currentUs
     } finally { setWorkflowActionId(null); }
   };
 
-  return (
-    <div className="agenda-page field-dashboard">
-      <header className="field-page-heading">
-        <div>
-          <span className="field-overline">Planejamento de Campo</span>
-          <h1>Agenda de atendimentos.</h1>
-          <p>Atendimentos por dia, com equipe, equipamentos e reservas vinculadas.</p>
-        </div>
+  const syncNeedsAttention = Boolean(syncStatus && (
+    syncStatus.unavailable || !syncStatus.write_authorized || syncStatus.conflicts || syncStatus.errors
+  ));
+  const syncLabel = !syncStatus ? 'Verificando Google Agenda…'
+    : syncStatus.unavailable ? 'Google: conexão indisponível'
+    : !syncStatus.write_authorized ? 'Google: autorize a edição'
+    : syncStatus.running || syncing ? 'Google: sincronizando…'
+    : syncStatus.conflicts || syncStatus.errors ? 'Google: requer atenção'
+    : 'Google Agenda · duas vias';
 
-        <div className="agenda-month-navigation" aria-label="Navegação por mês">
+  return (
+    <div className="agenda-page agenda-calendar-page field-dashboard">
+      <header className="agenda-calendar-toolbar">
+        <h1 aria-label="Agenda de atendimentos."><CalendarDays size={22} aria-hidden="true" />Agenda</h1>
+        <nav className="agenda-calendar-nav" aria-label="Navegação por mês">
+          <button
+            type="button"
+            className="btn btn-secondary btn-sm agenda-today-button"
+            onClick={() => { setSelectedMonth(monthKey(new Date())); setTodayRequest(value => value + 1); }}
+          >
+            Hoje
+          </button>
           <button
             type="button"
             className="btn btn-secondary btn-sm"
@@ -261,15 +274,6 @@ export function AppointmentsView({ appointments, onOpenChecklistModal, currentUs
           >
             <ChevronLeft size={18} />
           </button>
-          <label className="agenda-month-picker">
-            <span>{monthLabel(selectedMonth)}</span>
-            <input
-              type="month"
-              value={selectedMonth}
-              onChange={event => event.target.value && setSelectedMonth(event.target.value)}
-              aria-label="Selecionar mês"
-            />
-          </label>
           <button
             type="button"
             className="btn btn-secondary btn-sm"
@@ -278,31 +282,36 @@ export function AppointmentsView({ appointments, onOpenChecklistModal, currentUs
           >
             <ChevronRight size={18} />
           </button>
-          <button
-            type="button"
-            className="btn btn-secondary btn-sm"
-            onClick={() => setSelectedMonth(monthKey(new Date()))}
-          >
-            Hoje
-          </button>
-          <div
-            className="agenda-view-selector"
-          >
+          <label className="agenda-month-picker">
+            <span aria-live="polite">{monthLabel(selectedMonth).replace(/^./, letter => letter.toLocaleUpperCase('pt-BR'))}</span>
+            <ChevronDown size={15} aria-hidden="true" />
+            <input
+              type="month"
+              value={selectedMonth}
+              onChange={event => event.target.value && setSelectedMonth(event.target.value)}
+              aria-label="Selecionar mês"
+            />
+          </label>
+        </nav>
+        <div className="agenda-calendar-toolbar__actions">
+          <div className="agenda-view-selector" role="group" aria-label="Visualização da agenda">
             <button
               type="button"
               className={`btn btn-sm ${viewMode === 'spreadsheet' ? 'btn-primary' : 'btn-secondary'}`}
               onClick={() => changeViewMode('spreadsheet')}
-              title="Visualização em planilha mensal (layout idêntico ao quadro físico)"
+              aria-pressed={viewMode === 'spreadsheet'}
+              title="Visualização em calendário mensal"
             >
-              <Table size={14} /> Planilha Mensal
+              <CalendarDays size={15} /> Mês
             </button>
             <button
               type="button"
               className={`btn btn-sm ${viewMode === 'cards' ? 'btn-primary' : 'btn-secondary'}`}
               onClick={() => changeViewMode('cards')}
+              aria-pressed={viewMode === 'cards'}
               title="Visualização detalhada em cartões"
             >
-              <LayoutGrid size={14} /> Cartões
+              <LayoutGrid size={15} /> Cartões
             </button>
           </div>
           {canManage && (
@@ -317,61 +326,35 @@ export function AppointmentsView({ appointments, onOpenChecklistModal, currentUs
         </div>
       </header>
 
-      <section className="agenda-sync" aria-label="Sincronização com o Google Agenda">
-        <div className="agenda-sync__summary">
-          <ArrowLeftRight size={20} aria-hidden="true" />
-          <div><strong>{!syncStatus ? 'Verificando conexão com o Google…' : syncStatus.unavailable ? 'Status da conexão indisponível' : syncStatus.write_authorized ? 'Google Agenda em duas vias' : 'Google Agenda precisa de autorização'}</strong>
+      <div className="agenda-calendar-overview">
+        <section className="agenda-calendar-metrics" aria-label="Indicadores da agenda">
+          <span><strong>{monthAppointments.length}</strong> no mês</span>
+          <span><Clock3 size={14} aria-hidden="true" /><strong>{monthAppointments.filter(a => a.appointment_date === todayKey).length}</strong> hoje</span>
+          <span><ClipboardCheck size={14} aria-hidden="true" /><strong>{monthAppointments.filter(a => (a.reservations?.length || 0) > 0).length}</strong> com padrões</span>
+          <span><UsersRound size={14} aria-hidden="true" /><strong>{scheduledTechsCount}</strong> técnicos</span>
+        </section>
+        <details className={`agenda-calendar-sync${syncNeedsAttention ? ' agenda-calendar-sync--attention' : ''}`}>
+          <summary>
+            <ArrowLeftRight size={15} aria-hidden="true" />
+            <span>{syncLabel}</span>
+            {Boolean(syncStatus?.pending) && <span className="agenda-calendar-sync__count">{syncStatus?.pending} pendentes</span>}
+            {Boolean(syncStatus?.conflicts) && <span className="agenda-calendar-sync__count">{syncStatus?.conflicts} para revisar</span>}
+            {Boolean(syncStatus?.errors) && <span className="agenda-calendar-sync__count">{syncStatus?.errors} com falha</span>}
+            <ChevronDown size={14} className="agenda-calendar-sync__chevron" aria-hidden="true" />
+          </summary>
+          <div className="agenda-calendar-sync__body">
             <p>{syncStatus?.unavailable ? 'Tente atualizar para consultar o estado da sincronização.' : syncStatus?.write_authorized ? 'Edições no ATEM e no Google são sincronizadas. Alterações simultâneas pedem revisão.' : syncStatus?.can_authorize_browser === false ? 'A credencial configurada é do tipo Desktop. Execute renovar-google-agenda.bat no computador do administrador, atualize GOOGLE_CALENDAR_TOKEN_JSON na Northflank e reinicie o serviço.' : syncStatus ? 'Autorize o acesso de edição para enviar alterações do ATEM Field ao Google.' : 'Consultando as permissões e as alterações pendentes.'}</p>
-            {syncStatus && !syncStatus.unavailable && <div className="agenda-sync__counts"><span>{Number(syncStatus.pending || 0)} pendentes</span><span>{Number(syncStatus.conflicts || 0)} para revisar</span><span>{Number(syncStatus.errors || 0)} com falha</span></div>}
+            {isAdmin && <div className="agenda-sync__actions">
+              {syncStatus && !syncStatus.unavailable && !syncStatus.write_authorized && syncStatus.can_authorize_browser !== false && <button type="button" className="btn btn-secondary btn-sm" disabled={connecting} onClick={() => void connectGoogle()}>{connecting ? 'Abrindo Google…' : syncStatus.authenticated ? 'Autorizar edição' : 'Conectar Google'}</button>}
+              <button type="button" className="btn btn-secondary btn-sm" disabled={syncing || syncStatus?.running} onClick={() => void synchronize()}><RefreshCw size={15} />{syncing || syncStatus?.running ? 'Sincronizando…' : 'Sincronizar agora'}</button>
+            </div>}
           </div>
-        </div>
-        {isAdmin && <div className="agenda-sync__actions">
-          {syncStatus && !syncStatus.unavailable && !syncStatus.write_authorized && syncStatus.can_authorize_browser !== false && <button type="button" className="btn btn-secondary" disabled={connecting} onClick={() => void connectGoogle()}>{connecting ? 'Abrindo Google…' : syncStatus.authenticated ? 'Autorizar edição' : 'Conectar Google'}</button>}
-          <button type="button" className="btn btn-secondary" disabled={syncing || syncStatus?.running} onClick={() => void synchronize()}><RefreshCw size={16} />{syncing || syncStatus?.running ? 'Sincronizando…' : 'Sincronizar agora'}</button>
-        </div>}
-      </section>
+        </details>
+      </div>
       {notice && <p className="calendar-notice" role="status"><CheckCircle2 size={18} />{notice}</p>}
       {actionError && <p className="calendar-notice calendar-notice--error" role="alert"><AlertCircle size={18} />{actionError}</p>}
 
-      <section className="field-metrics" aria-label="Indicadores da agenda">
-        <div className="field-metric available">
-          <span className="field-metric-label">
-            Total no mês
-            <CalendarDays size={17} aria-hidden="true" />
-          </span>
-          <strong>{monthAppointments.length}</strong>
-          <span className="field-metric-detail">Em {dateGroups.length} dias programados</span>
-        </div>
-
-        <div className="field-metric">
-          <span className="field-metric-label">
-            Hoje
-            <Clock3 size={17} aria-hidden="true" />
-          </span>
-          <strong>{monthAppointments.filter(a => a.appointment_date === todayKey).length}</strong>
-          <span className="field-metric-detail">Atendimentos na data</span>
-        </div>
-
-        <div className="field-metric">
-          <span className="field-metric-label">
-            Com padrões
-            <ClipboardCheck size={17} aria-hidden="true" />
-          </span>
-          <strong>{monthAppointments.filter(a => (a.reservations?.length || 0) > 0).length}</strong>
-          <span className="field-metric-detail">Reservas vinculadas</span>
-        </div>
-
-        <div className="field-metric">
-          <span className="field-metric-label">
-            Técnicos escalados
-            <UsersRound size={17} aria-hidden="true" />
-          </span>
-          <strong>{scheduledTechsCount}</strong>
-          <span className="field-metric-detail">Profissionais em campo</span>
-        </div>
-      </section>
-
-      <section className="field-surface agenda-filters">
+      <section className="agenda-filters" aria-label="Filtros da agenda">
         <div className="agenda-filters__controls">
           <div className="agenda-search-field">
             <Search size={16} aria-hidden="true" />
@@ -380,7 +363,7 @@ export function AppointmentsView({ appointments, onOpenChecklistModal, currentUs
               className="input-field"
               value={searchTerm}
               onChange={event => setSearchTerm(event.target.value)}
-              placeholder="Buscar por hospital, cidade, título ou técnico..."
+              placeholder="Buscar cliente, local ou técnico"
               aria-label="Buscar atendimentos"
             />
           </div>
@@ -411,6 +394,7 @@ export function AppointmentsView({ appointments, onOpenChecklistModal, currentUs
 
       {viewMode === 'spreadsheet' ? (
         <MonthlySpreadsheetView
+          key={`${selectedMonth}-${todayRequest}`}
           selectedMonth={selectedMonth}
           appointments={appointments}
           technicians={technicians}

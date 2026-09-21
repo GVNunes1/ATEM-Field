@@ -106,6 +106,7 @@ const baseAppointment = {
       writeAuthorized = false;
       appointment = { ...appointment, calendar_writable: false };
       await page.reload();
+      await page.locator('.agenda-calendar-sync > summary').click();
       await page.getByRole('button', { name: 'Autorizar edição', exact: true }).waitFor();
       await edit.click();
       await dialog.waitFor();
