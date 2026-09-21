@@ -244,3 +244,22 @@ test('sync/fleet data and RPCs deny anon/authenticated, with RLS and invoker fun
     } finally { await db.exec('reset role; set role service_role'); }
   }
 });
+
+test('deleting appointment cleans outbox, child records, and removes appointment', async () => {
+  const { id } = await seed('delete-target');
+  await queue(id, values('Queued for deletion'));
+  assert.ok(await activeJob(id));
+  // Deleting directly without outbox cleanup causes FK violation because of ON DELETE RESTRICT (23001)
+  await assert.rejects(() => db.query('delete from public.appointments where id=$1', [id]), { code: '23001' });
+  // Simulating our deletion service cleanup logic:
+  await db.exec('reset role');
+  try {
+    await db.query('delete from public.calendar_outbox where appointment_id=$1', [id]);
+    await db.query('delete from public.appointment_technicians where appointment_id=$1', [id]);
+    await db.query('delete from public.appointments where id=$1', [id]);
+  } finally {
+    await db.exec('set role service_role');
+  }
+  assert.equal(await appointment(id), undefined);
+});
+

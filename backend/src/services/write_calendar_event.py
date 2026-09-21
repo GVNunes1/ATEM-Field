@@ -44,8 +44,12 @@ def validate_request(payload):
     if configured_ids and payload["calendar_id"] not in configured_ids:
         raise ValueError("Esta agenda não está habilitada para sincronização.")
     operation = payload.get("operation", "patch")
-    if operation not in {"patch", "insert"}:
+    if operation not in {"patch", "insert", "delete"}:
         raise ValueError("Operação de agenda inválida.")
+    if operation == "delete":
+        if not isinstance(payload.get("event_id"), str) or not payload["event_id"].strip():
+            raise ValueError("event_id é obrigatório para excluir um evento.")
+        return operation
     if operation == "patch":
         for key in ("event_id", "expected_etag"):
             if not isinstance(payload.get(key), str) or not payload[key].strip():
@@ -123,6 +127,16 @@ def write_event(service, payload):
                 "error": "A conta conectada não pode editar esta agenda do Google."}
     operation_id = payload["operation_id"]
     events = service.events()
+    if operation == "delete":
+        event_id = payload["event_id"]
+        try:
+            events.delete(calendarId=calendar_id, eventId=event_id, sendUpdates="none").execute()
+            return {"success": True, "deleted": True, "calendar_id": calendar_id}
+        except HttpError as error:
+            if getattr(error.resp, "status", None) in (404, 410):
+                return {"success": True, "deleted": True, "calendar_id": calendar_id, "already_deleted": True}
+            raise
+
     if operation == "insert":
         # Calendar accepts lower-case base32hex IDs; a hex digest satisfies that
         # alphabet and makes a retry after a lost response safe.

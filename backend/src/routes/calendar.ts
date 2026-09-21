@@ -1,6 +1,6 @@
-import { Router, Response } from 'express';
+import { Router, Request, Response } from 'express';
 import { AuthenticatedRequest, requireAuthentication, requireRole } from '../security/authService';
-import { createCalendarAppointment, listWritableCalendars, queueCalendarEdit, resolveCalendarConflict } from '../services/calendarSyncEngine';
+import { createCalendarAppointment, deleteCalendarAppointment, listWritableCalendars, queueCalendarEdit, resolveCalendarConflict } from '../services/calendarSyncEngine';
 import { getGoogleCalendarSyncStatus, runGoogleCalendarSync } from '../services/googleCalendarSync';
 
 export const calendarRouter = Router();
@@ -63,6 +63,20 @@ for (const resolve of [false, true]) {
       } catch (error) { fail(res, error); }
     });
 }
+
+calendarRouter.delete('/appointments/:id', async (req: Request, res: Response) => {
+  try {
+    const id = Number(req.params.id);
+    if (!Number.isSafeInteger(id) || id <= 0) {
+      return res.status(400).json({ success: false, error: 'Agendamento inválido.' });
+    }
+    const actorId = (req as any).user?.sub || 'user';
+    const result = await deleteCalendarAppointment(id, actorId);
+    return res.json(result);
+  } catch (error) {
+    fail(res, error);
+  }
+});
 
 // Raw Google payloads can contain guest emails and meeting credentials. Keep
 // those server-side; the conflict dialog needs only the compared display fields.

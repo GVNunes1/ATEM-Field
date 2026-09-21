@@ -1,5 +1,5 @@
 import { useEffect, useState, type FormEvent } from 'react';
-import { AlertCircle, ArrowLeftRight, Check, Plus, X } from 'lucide-react';
+import { AlertCircle, ArrowLeftRight, Check, Plus, Trash2, X } from 'lucide-react';
 import { ModalOverlay } from './ModalOverlay';
 import { safeFetchJson } from '../lib/api';
 
@@ -59,8 +59,10 @@ interface CalendarEventEditorProps {
   appointment?: CalendarAppointment | null;
   technicians: CalendarTechnician[];
   initialDate?: string;
+  canManage?: boolean;
   onDismiss: () => void;
   onSaved: (message: string) => Promise<void>;
+  onDeleted?: (message: string) => Promise<void>;
 }
 
 function offsetDate(value: string, days: number) {
@@ -92,7 +94,7 @@ function describeRemoteTime(event: GoogleEventSnapshot | null) {
   return event?.start?.dateTime ? `${format(event.start.dateTime)} a ${format(event.end?.dateTime)}` : 'Não informado';
 }
 
-export function CalendarEventEditor({ appointment, technicians, initialDate, onDismiss, onSaved }: CalendarEventEditorProps) {
+export function CalendarEventEditor({ appointment, technicians, initialDate, canManage, onDismiss, onSaved, onDeleted }: CalendarEventEditorProps) {
   const isCreateMode = !appointment;
   const [record, setRecord] = useState<CalendarAppointment | null>(appointment || null);
   const isAllDay = Boolean(appointment?.all_day);
@@ -119,7 +121,35 @@ export function CalendarEventEditor({ appointment, technicians, initialDate, onD
   const [selectedCalendarId, setSelectedCalendarId] = useState<string>('');
   const [loadingCalendars, setLoadingCalendars] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState('');
+
+  const handleDelete = async () => {
+    if (!appointment?.id) return;
+    const title = form.client_name || form.title || 'este atendimento';
+    if (!window.confirm(`Deseja realmente excluir o agendamento "${title}"?\n\nEssa ação removerá o agendamento do sistema e do Google Agenda.`)) {
+      return;
+    }
+    setDeleting(true);
+    setError('');
+    try {
+      const result = await safeFetchJson(`/api/appointments/${appointment.id}`, { method: 'DELETE' });
+      if (!result.success) {
+        throw new Error(result.error || 'Não foi possível excluir o agendamento.');
+      }
+      const msg = result.message || 'Agendamento excluído com sucesso.';
+      if (onDeleted) {
+        await onDeleted(msg);
+      } else {
+        await onSaved(msg);
+      }
+      onDismiss();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Falha ao excluir o agendamento.');
+    } finally {
+      setDeleting(false);
+    }
+  };
 
   useEffect(() => {
     if (isCreateMode) {
@@ -229,7 +259,31 @@ export function CalendarEventEditor({ appointment, technicians, initialDate, onD
             <span className="field-overline">Google Agenda · ATEM Field</span>
             <h2 id="calendar-editor-title">{isCreateMode ? 'Novo atendimento' : (conflict ? 'Revisar alterações' : 'Editar atendimento')}</h2>
           </div>
-          <button type="button" className="btn btn-secondary calendar-editor__close" aria-label="Fechar" disabled={busy} onClick={onDismiss}><X size={20} /></button>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            {!isCreateMode && (
+              <button
+                type="button"
+                className="btn btn-secondary btn-sm"
+                style={{
+                  color: '#ef4444',
+                  borderColor: 'rgba(239, 68, 68, 0.4)',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  fontWeight: 600,
+                  height: '34px',
+                  padding: '0 12px'
+                }}
+                disabled={busy || deleting}
+                onClick={() => void handleDelete()}
+                title="Excluir este atendimento"
+              >
+                <Trash2 size={15} />
+                {deleting ? 'Excluindo…' : 'Excluir atendimento'}
+              </button>
+            )}
+            <button type="button" className="btn btn-secondary calendar-editor__close" aria-label="Fechar" disabled={busy} onClick={onDismiss}><X size={20} /></button>
+          </div>
         </header>
         <p id="calendar-editor-description">
           {isCreateMode
@@ -365,8 +419,20 @@ export function CalendarEventEditor({ appointment, technicians, initialDate, onD
                 : 'A atualização não envia convites ou e-mails aos participantes do Google.'}
             </p>
             <footer className="calendar-editor__actions">
-              <button className="btn btn-secondary" type="button" disabled={busy} onClick={onDismiss}>Cancelar</button>
-              <button className="btn btn-primary" type="submit" disabled={busy || !canEdit}>
+              {!isCreateMode && (
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  style={{ color: '#ef4444', borderColor: 'rgba(239, 68, 68, 0.4)', marginRight: 'auto' }}
+                  disabled={busy || deleting}
+                  onClick={() => void handleDelete()}
+                >
+                  <Trash2 size={16} />
+                  {deleting ? 'Excluindo…' : 'Excluir atendimento'}
+                </button>
+              )}
+              <button className="btn btn-secondary" type="button" disabled={busy || deleting} onClick={onDismiss}>Cancelar</button>
+              <button className="btn btn-primary" type="submit" disabled={busy || deleting || !canEdit}>
                 {isCreateMode ? <Plus size={17} /> : <Check size={17} />}
                 {busy ? (isCreateMode ? 'Criando…' : 'Salvando…') : (isCreateMode ? 'Criar e sincronizar' : 'Salvar e sincronizar')}
               </button>

@@ -1,0 +1,411 @@
+/* Monthly Spreadsheet View - Layout estilo planilha idêntico ao quadro físico / Excel */
+
+.monthly-spreadsheet-wrapper {
+  background: #ffffff;
+  border-radius: 12px;
+  border: 1px solid var(--border-color);
+  box-shadow: var(--shadow-sm);
+  padding: 16px;
+  margin-top: 18px;
+  margin-bottom: 24px;
+}
+
+.monthly-spreadsheet-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 14px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.monthly-spreadsheet-toolbar__title {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+}
+
+.monthly-spreadsheet-toolbar__title h2 {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--text-main);
+  margin: 0;
+  text-transform: capitalize;
+}
+
+.monthly-spreadsheet-toolbar__title span {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+}
+
+.monthly-spreadsheet-legend {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+  font-size: 0.74rem;
+  color: var(--text-secondary);
+}
+
+.legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.legend-swatch {
+  width: 14px;
+  height: 14px;
+  border-radius: 3px;
+  border: 1px solid rgba(0, 0, 0, 0.2);
+  display: inline-block;
+}
+
+.legend-swatch--green {
+  background-color: #e2f0d9;
+}
+
+.legend-swatch--yellow {
+  background-color: #fff2cc;
+}
+
+.legend-swatch--red {
+  background-color: #fee2e2;
+  border-color: #f87171;
+}
+
+.legend-swatch--today {
+  background-color: var(--primary-soft);
+  border-color: var(--primary);
+}
+
+.monthly-spreadsheet-scroll {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  width: 100%;
+  border: 1px solid #94a3b8;
+  border-radius: 4px;
+  background: #ffffff;
+}
+
+/* Grade com as 4 colunas clássicas da empresa */
+.monthly-spreadsheet-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  min-width: 1200px;
+  border-left: 3.5px solid #cc0000;
+  border-right: 3.5px solid #cc0000;
+  background: #ffffff;
+}
+
+.monthly-spreadsheet-col {
+  display: flex;
+  flex-direction: column;
+}
+
+/* Divisores vermelhos verticais entre as 4 colunas */
+.monthly-spreadsheet-col:not(:last-child) {
+  border-right: 3.5px solid #cc0000;
+}
+
+.spreadsheet-day-block {
+  width: 100%;
+  border-bottom: 2.5px solid #1e293b;
+  box-sizing: border-box;
+}
+
+.spreadsheet-day-block:last-child {
+  border-bottom: none;
+}
+
+.spreadsheet-day-table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+  font-size: 0.74rem;
+}
+
+.col-w-dia {
+  width: 102px;
+}
+
+.col-w-local {
+  width: auto;
+}
+
+.col-w-hora {
+  width: 58px;
+}
+
+.col-w-tecs {
+  width: 140px;
+}
+
+/* Cabeçalho do dia: DIA X | LOCAL | HORA | TECNICOS */
+.spreadsheet-day-header th {
+  background: #f1f3f5;
+  color: #0f172a;
+  font-weight: 700;
+  font-size: 0.72rem;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  padding: 3px 6px;
+  border: 1px solid #94a3b8;
+  border-bottom: 1.5px solid #000000;
+  vertical-align: middle;
+  text-align: left;
+  user-select: none;
+  height: 24px;
+  box-sizing: border-box;
+}
+
+.spreadsheet-day-header th.col-dia {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 3px;
+  white-space: nowrap;
+}
+
+.spreadsheet-day-header th.col-hora {
+  text-align: center;
+}
+
+.day-header-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.day-header-today-pill {
+  font-size: 0.62rem;
+  font-weight: 700;
+  background: var(--primary);
+  color: #ffffff;
+  padding: 1px 4px;
+  border-radius: 4px;
+  text-transform: uppercase;
+}
+
+.day-add-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 17px;
+  height: 17px;
+  border-radius: 3px;
+  border: 1px solid #cbd5e1;
+  background: #ffffff;
+  color: var(--primary);
+  cursor: pointer;
+  padding: 0;
+  transition: all 120ms;
+}
+
+.day-add-btn:hover {
+  background: var(--primary);
+  color: #ffffff;
+  border-color: var(--primary);
+}
+
+/* Linhas de agendamentos */
+.spreadsheet-row {
+  border: 1px solid #94a3b8;
+  transition: background-color 100ms;
+}
+
+.spreadsheet-row td {
+  padding: 2px 6px;
+  border: 1px solid #94a3b8;
+  vertical-align: middle;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.73rem;
+  height: 24px;
+  box-sizing: border-box;
+}
+
+.cell-label {
+  font-weight: 600;
+  color: #475569;
+  font-size: 0.68rem;
+  white-space: nowrap;
+  user-select: none;
+}
+
+.cell-hora {
+  text-align: center;
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  font-weight: 500;
+  color: #1e293b;
+}
+
+.cell-local {
+  position: relative;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cell-tecs {
+  font-size: 0.71rem;
+  color: #334155;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Cor verde clássica de finais de semana e sobreaviso */
+.is-green-day .spreadsheet-row {
+  background-color: #e2f0d9;
+}
+
+.is-green-day .spreadsheet-row:hover {
+  background-color: #d1e7c5;
+}
+
+/* Dias normais de semana */
+.is-normal-day .spreadsheet-row {
+  background-color: #ffffff;
+}
+
+.is-normal-day .spreadsheet-row:hover {
+  background-color: #f1f5f9;
+}
+
+/* Destaque amarelo para provas / treinamentos / alertas */
+.spreadsheet-row.row-yellow {
+  background-color: #fff2cc !important;
+  color: #78350f !important;
+  font-weight: 700;
+}
+
+.spreadsheet-row.row-yellow:hover {
+  background-color: #fee999 !important;
+}
+
+/* Agendamentos cancelados em vermelho */
+.text-cancelled {
+  color: #dc2626 !important;
+  font-weight: 600;
+}
+
+/* Slot ocupado e ações rápidas */
+.row-occupied {
+  cursor: pointer;
+  position: relative;
+}
+
+.row-occupied .cell-local {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 4px;
+}
+
+.cell-local-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1 1 auto;
+}
+
+.slot-actions {
+  display: none;
+  align-items: center;
+  gap: 2px;
+  background: rgba(255, 255, 255, 0.95);
+  border: 1px solid #94a3b8;
+  border-radius: 4px;
+  padding: 1px 3px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.12);
+  margin-left: 4px;
+  flex-shrink: 0;
+}
+
+.row-occupied:hover .slot-actions {
+  display: inline-flex;
+}
+
+.slot-action-btn {
+  border: none;
+  background: transparent;
+  padding: 2px 3px;
+  border-radius: 3px;
+  cursor: pointer;
+  color: #475569;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 100ms;
+}
+
+.slot-action-btn:hover {
+  background: #e2e8f0;
+  color: var(--primary);
+}
+
+.slot-action-btn--delete:hover {
+  background: #fee2e2;
+  color: #dc2626;
+}
+
+/* Slot vazio: clique para agendar */
+.row-empty {
+  cursor: pointer;
+}
+
+.empty-slot-content {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  opacity: 0;
+  color: var(--primary);
+  font-size: 0.68rem;
+  font-weight: 500;
+  transition: opacity 100ms;
+}
+
+.row-empty:hover .empty-slot-content {
+  opacity: 0.85;
+}
+
+/* Estilo para impressão (Ctrl+P / Salvar PDF) */
+@media print {
+  body {
+    background: #ffffff !important;
+    font-size: 9pt !important;
+  }
+
+  .monthly-spreadsheet-wrapper {
+    box-shadow: none !important;
+    border: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  .monthly-spreadsheet-toolbar,
+  .slot-actions,
+  .day-add-btn {
+    display: none !important;
+  }
+
+  .monthly-spreadsheet-scroll {
+    overflow: visible !important;
+    border: none !important;
+  }
+
+  .monthly-spreadsheet-grid {
+    min-width: 100% !important;
+    width: 100% !important;
+  }
+
+  @page {
+    size: landscape;
+    margin: 6mm;
+  }
+}

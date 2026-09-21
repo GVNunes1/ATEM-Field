@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { isNonTechnicalAppointment } from '../lib/appointmentUtils';
 import { safeFetchJson } from '../lib/api';
 import { CalendarEventEditor, type CalendarAppointment, type CalendarTechnician } from '../components/CalendarEventEditor';
+import { MonthlySpreadsheetView } from '../components/MonthlySpreadsheetView';
 import {
   AlertCircle,
   ArrowLeftRight,
@@ -11,11 +12,14 @@ import {
   ChevronRight,
   ClipboardCheck,
   Clock3,
+  LayoutGrid,
   MapPin,
   Pencil,
   Plus,
   RefreshCw,
   Search,
+  Table,
+  Trash2,
   UserRound,
   UsersRound
 } from 'lucide-react';
@@ -70,8 +74,46 @@ export function AppointmentsView({ appointments, onOpenChecklistModal, currentUs
   const [connecting, setConnecting] = useState(false);
   const [notice, setNotice] = useState('');
   const [actionError, setActionError] = useState('');
+  const [deletingId, setDeletingId] = useState<number | null>(null);
+  const [viewMode, setViewMode] = useState<'spreadsheet' | 'cards'>(() => {
+    try {
+      return (localStorage.getItem('atem_agenda_view_mode') as 'spreadsheet' | 'cards') || 'spreadsheet';
+    } catch {
+      return 'spreadsheet';
+    }
+  });
+
+  const changeViewMode = (mode: 'spreadsheet' | 'cards') => {
+    setViewMode(mode);
+    try {
+      localStorage.setItem('atem_agenda_view_mode', mode);
+    } catch {
+      // ignore
+    }
+  };
+
   const isAdmin = currentUser?.role === 'admin';
   const canManage = isAdmin || ['manager', 'gerente', 'supervisor'].includes(String(currentUser?.role || '').toLowerCase());
+
+  const handleDeleteAppointment = async (appointment: CalendarAppointment) => {
+    const displayTitle = appointment.client_name || appointment.title || 'este atendimento';
+    if (!window.confirm(`Deseja realmente excluir o agendamento "${displayTitle}"?\n\nEssa ação removerá o agendamento do sistema e do Google Agenda.`)) {
+      return;
+    }
+    setDeletingId(Number(appointment.id));
+    setActionError('');
+    setNotice('');
+    try {
+      const result = await safeFetchJson(`/api/appointments/${appointment.id}`, { method: 'DELETE' });
+      if (!result.success) throw new Error(result.error || 'Não foi possível excluir o agendamento.');
+      setNotice(result.message || 'Agendamento excluído com sucesso.');
+      await Promise.all([onRefresh?.(), loadSyncStatus()]);
+    } catch (error) {
+      setActionError(error instanceof Error ? error.message : 'Falha ao excluir agendamento.');
+    } finally {
+      setDeletingId(null);
+    }
+  };
 
   const loadSyncStatus = useCallback(async () => {
     try {
@@ -247,6 +289,50 @@ export function AppointmentsView({ appointments, onOpenChecklistModal, currentUs
           >
             Hoje
           </button>
+          <div
+            className="agenda-view-selector"
+            style={{
+              display: 'inline-flex',
+              background: 'var(--bg-tertiary, #f1f5f9)',
+              padding: '3px',
+              borderRadius: '8px',
+              border: '1px solid var(--border-color)',
+              gap: '2px'
+            }}
+          >
+            <button
+              type="button"
+              className={`btn btn-sm ${viewMode === 'spreadsheet' ? 'btn-primary' : 'btn-secondary'}`}
+              onClick={() => changeViewMode('spreadsheet')}
+              style={{
+                height: '32px',
+                padding: '0 10px',
+                fontSize: '0.78rem',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '5px'
+              }}
+              title="Visualização em planilha mensal (layout idêntico ao quadro físico)"
+            >
+              <Table size={14} /> Planilha Mensal
+            </button>
+            <button
+              type="button"
+              className={`btn btn-sm ${viewMode === 'cards' ? 'btn-primary' : 'btn-secondary'}`}
+              onClick={() => changeViewMode('cards')}
+              style={{
+                height: '32px',
+                padding: '0 10px',
+                fontSize: '0.78rem',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '5px'
+              }}
+              title="Visualização detalhada em cartões"
+            >
+              <LayoutGrid size={14} /> Cartões
+            </button>
+          </div>
           {canManage && (
             <button
               type="button"
@@ -355,7 +441,22 @@ export function AppointmentsView({ appointments, onOpenChecklistModal, currentUs
         </div>
       </section>
 
-      {dateGroups.length ? (
+      {viewMode === 'spreadsheet' ? (
+        <MonthlySpreadsheetView
+          selectedMonth={selectedMonth}
+          appointments={appointments}
+          technicians={technicians}
+          canManage={canManage}
+          isAdmin={isAdmin}
+          searchTerm={searchTerm}
+          selectedTech={selectedTech}
+          deletingId={deletingId}
+          onEditAppointment={appointment => setEditingAppointment(appointment)}
+          onCreateAppointment={dateStr => { setCreateDate(dateStr); setIsCreating(true); }}
+          onDeleteAppointment={handleDeleteAppointment}
+          onOpenChecklistModal={onOpenChecklistModal}
+        />
+      ) : dateGroups.length ? (
         <section className="agenda-month-list" aria-label={`Atendimentos de ${monthLabel(selectedMonth)}`}>
           {dateGroups.map(([day, dayAppointments]) => {
             const date = safeDate(day);
@@ -424,7 +525,29 @@ export function AppointmentsView({ appointments, onOpenChecklistModal, currentUs
                         <div className="agenda-appointment-card__sync">
                           <span className={`calendar-state calendar-state--${['synced', 'pending', 'error', 'conflict'].includes(eventSyncStatus) ? eventSyncStatus : 'unlinked'}`}><span aria-hidden="true" />{eventSyncLabel}</span>
                           {appointment.google_sync_error && <span className="agenda-appointment-card__sync-error">{appointment.google_sync_error}</span>}
-                          {canManage && <button type="button" className="btn btn-secondary btn-sm" aria-label={`${eventSyncStatus === 'conflict' ? 'Revisar alterações de' : 'Editar atendimento de'} ${displayTitle}`} onClick={() => setEditingAppointment(appointment)}><Pencil size={14} />{eventSyncStatus === 'conflict' ? 'Revisar alterações' : 'Editar atendimento'}</button>}
+                          <div style={{ marginLeft: 'auto', display: 'flex', gap: '6px', alignItems: 'center' }}>
+                            <button
+                              type="button"
+                              className="btn btn-secondary btn-sm"
+                              aria-label={`${eventSyncStatus === 'conflict' ? 'Revisar alterações de' : 'Editar atendimento de'} ${displayTitle}`}
+                              onClick={() => setEditingAppointment(appointment)}
+                            >
+                              <Pencil size={14} />
+                              {eventSyncStatus === 'conflict' ? 'Revisar alterações' : 'Editar atendimento'}
+                            </button>
+                            <button
+                              type="button"
+                              className="btn btn-secondary btn-sm"
+                              style={{ color: '#ef4444', borderColor: 'rgba(239, 68, 68, 0.3)' }}
+                              aria-label={`Excluir atendimento de ${displayTitle}`}
+                              title={`Excluir atendimento de ${displayTitle}`}
+                              disabled={deletingId === Number(appointment.id)}
+                              onClick={() => void handleDeleteAppointment(appointment)}
+                            >
+                              <Trash2 size={14} />
+                              {deletingId === Number(appointment.id) ? 'Excluindo…' : 'Excluir'}
+                            </button>
+                          </div>
                         </div>
                         {!isNonTech && (
                           <div className="agenda-appointment-card__equipment">
@@ -453,8 +576,14 @@ export function AppointmentsView({ appointments, onOpenChecklistModal, currentUs
           appointment={editingAppointment}
           initialDate={createDate}
           technicians={technicians}
+          canManage={canManage}
           onDismiss={() => { setEditingAppointment(null); setIsCreating(false); }}
           onSaved={async message => {
+            setNotice(message);
+            setActionError('');
+            await Promise.all([onRefresh?.(), loadSyncStatus()]);
+          }}
+          onDeleted={async message => {
             setNotice(message);
             setActionError('');
             await Promise.all([onRefresh?.(), loadSyncStatus()]);

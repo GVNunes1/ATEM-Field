@@ -188,3 +188,42 @@ export async function createCalendarAppointment(input: any, actorId: string, exe
 
   return getCalendarAppointment(change.id);
 }
+
+export async function deleteCalendarAppointment(id: number, actorId: string, execute: Connector = executeCalendarPython) {
+  const { data: appointment, error } = await supabaseAdmin.from('appointments').select('*').eq('id', id).maybeSingle();
+  if (error) throw error;
+  if (!appointment) throw Object.assign(new Error('Agendamento não encontrado.'), { status: 404 });
+
+  // 1. Tentar deletar do Google Agenda se estiver vinculado
+  if (appointment.google_calendar_id && appointment.google_event_id) {
+    try {
+      const operationId = randomUUID();
+      await execute('write_calendar_event.py', [], 30_000, {
+        operation: 'delete',
+        calendar_id: appointment.google_calendar_id,
+        event_id: appointment.google_event_id,
+        operation_id: operationId
+      });
+    } catch (gErr: any) {
+      console.warn('[Google Agenda] Aviso ao excluir evento remoto:', gErr.message || gErr);
+    }
+  }
+
+  // 2. Limpar calendar_outbox (que tem ON DELETE RESTRICT)
+  await supabaseAdmin.from('calendar_outbox').delete().eq('appointment_id', id);
+
+  // 3. Limpar tabelas associadas
+  await Promise.all([
+    supabaseAdmin.from('appointment_technicians').delete().eq('appointment_id', id),
+    supabaseAdmin.from('appointment_equipments').delete().eq('appointment_id', id),
+    supabaseAdmin.from('reservations').delete().eq('appointment_id', id),
+    supabaseAdmin.from('notification_logs').delete().eq('appointment_id', id)
+  ]);
+
+  // 4. Deletar o agendamento
+  const { error: delError } = await supabaseAdmin.from('appointments').delete().eq('id', id);
+  if (delError) throw delError;
+
+  return { success: true, message: 'Atendimento excluído com sucesso.' };
+}
+
