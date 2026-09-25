@@ -120,12 +120,12 @@ const appointments = [
 
       const day = cell('2026-09-21');
       if (!mobileCalendar) {
-        assert.equal(await day.locator(`${eventSelector}:visible`).count(), 2);
+        assert.equal(await day.locator(`${eventSelector}:visible`).count(), 5);
         await page.getByLabel('Compacta', { exact: true }).check();
-        await day.locator(`${eventSelector}:visible`).nth(3).waitFor();
-        assert.equal(await day.locator(`${eventSelector}:visible`).count(), 4, 'Compact mode exposes more events');
+        await day.locator(`${eventSelector}:visible`).nth(5).waitFor();
+        assert.equal(await day.locator(`${eventSelector}:visible`).count(), 6, 'Compact mode exposes more events');
         await page.getByLabel('Compacta', { exact: true }).uncheck();
-        await day.locator('.framework-more').filter({ hasText: 'Mais 4' }).waitFor();
+        await day.locator('.framework-more').filter({ hasText: 'Mais 1' }).waitFor();
         await day.locator('.framework-more').click();
         const dayDialog = page.getByRole('dialog', { name: /^Agenda de / });
         await verifyDialog(dayDialog, 'Full day agenda');
@@ -175,9 +175,9 @@ const appointments = [
       assert.equal(await page.locator(eventSelector).count(), 1, 'Search ignores accents');
       await page.getByRole('button', { name: 'Limpar', exact: true }).click();
       await page.getByLabel('Filtrar por técnico', { exact: true }).selectOption('Bruno Campos');
-      if (!mobileCalendar) await day.locator(`${eventSelector}:visible`).nth(1).waitFor();
+      if (!mobileCalendar) await day.locator(`${eventSelector}:visible`).nth(4).waitFor();
       assert.equal(await cell('2026-09-01').locator(eventSelector).count(), 0, 'Technician filter removes other teams from multi-day events');
-      assert.equal(await day.locator(`${eventSelector}:visible`).count(), mobileCalendar ? 0 : 2, 'Technician-filtered day retains compact limit');
+      assert.equal(await day.locator(`${eventSelector}:visible`).count(), mobileCalendar ? 0 : 5, 'Technician-filtered day retains visible limit');
       assert.equal(await day.locator(eventSelector).filter({ hasText: mainAppointment.client_name }).count(), 0, 'Technician filter removes other teams');
       await page.getByRole('button', { name: 'Limpar', exact: true }).click();
 

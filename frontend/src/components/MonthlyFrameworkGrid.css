@@ -1,6 +1,5 @@
 @media screen {
   .atem-fullcalendar {
-    height: max(660px, calc(100dvh - 260px));
     min-width: 0;
     --fc-monarch-primary: var(--primary);
     --fc-monarch-foreground: var(--text-main);
@@ -10,6 +9,7 @@
     --fc-monarch-event-contrast: var(--text-main);
   }
   .atem-fullcalendar .fc { font-family: inherit; font-size: .8125rem; }
+  .atem-fullcalendar .fc-daygrid-day-frame { min-height: 312px; }
   .atem-fullcalendar table { margin: 0; border-collapse: collapse; }
   .atem-fullcalendar th, .atem-fullcalendar td { padding: 0; background: transparent; }
   .atem-fullcalendar .framework-weekday { display: block; padding: 8px 4px; font-size: .75rem; color: var(--text-muted); font-weight: 550; text-transform: capitalize; }
@@ -21,16 +21,16 @@
   .framework-date:hover, .framework-add:hover { background: var(--primary-soft); color: var(--primary); }
   .atem-fullcalendar .framework-event { padding: 0; margin-inline: 3px; border: 0; border-left: 3px solid var(--event-color); border-radius: 4px; color: var(--text-main); background: var(--event-soft); text-align: left; box-shadow: none; cursor: pointer; }
   .atem-fullcalendar .framework-event:hover { filter: brightness(.975); }
-  .framework-event-content { min-width: 0; padding: 4px 5px; display: grid; gap: 2px; line-height: 15px; }
+  .framework-event-content { min-width: 0; padding: 2px 5px; display: grid; gap: 0; line-height: 15px; }
   .framework-event-title { display: flex; gap: 5px; min-width: 0; font-size: .75rem; }
   .framework-event-title time { flex-shrink: 0; color: var(--text-main); font-weight: 500; font-variant-numeric: tabular-nums; }
-  .framework-event-title strong { color: var(--text-main); overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font-weight: 600; }
+  .framework-event-title strong { color: var(--text-main); overflow: hidden; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; font-weight: 600; }
   .framework-event-team { display: flex; align-items: center; gap: 4px; color: var(--text-secondary); min-width: 0; font-size: .75rem; }
   .framework-event-team > span:first-of-type { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .framework-event-team svg { flex-shrink: 0; }
   .framework-event-reservations { display: inline-flex; align-items: center; gap: 3px; margin-left: auto; flex-shrink: 0; }
-  .framework-event-stage { color: var(--event-color); font-size: .75rem; }
   .atem-fullcalendar button:focus-visible, .atem-fullcalendar a:focus-visible { outline: 2px solid var(--primary); outline-offset: -2px; }
   .month-calendar__options { border-bottom: 1px solid var(--border-color); }
-  .month-calendar--compact .atem-fullcalendar { height: max(600px, calc(100dvh - 260px)); }
+  .month-calendar--compact .atem-fullcalendar .fc-daygrid-day-frame { min-height: 312px; }
+  .month-calendar--compact .framework-event-content { padding-block: 1px; line-height: 14px; }
 }

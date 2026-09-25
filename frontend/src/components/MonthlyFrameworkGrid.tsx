@@ -41,8 +41,8 @@ export function MonthlyFrameworkGrid({ month, grouped, technicians, compact, can
       plugins={[dayGridPlugin, themePlugin]}
       initialView="dayGridMonth" initialDate={`${month}-01`} locale={ptBr} firstDay={0}
       headerToolbar={false} fixedWeekCount={false} showNonCurrentDates expandRows
-      height="100%" events={events} editable={false} eventInteractive
-      dayMaxEvents={compact ? 4 : 2} eventDisplay="block" displayEventTime={false}
+      height="auto" events={events} editable={false} eventInteractive
+      dayMaxEvents={compact ? 7 : 5} eventDisplay="block" displayEventTime={false}
       eventOrder="start,title" eventOrderStrict
       dayHeaderContent={info => <span className="framework-weekday">{info.weekdayText.replace('.', '')}</span>}
       dayCellClass="framework-day"
@@ -60,11 +60,9 @@ export function MonthlyFrameworkGrid({ month, grouped, technicians, compact, can
       }}
       eventContent={info => {
         const appointment = info.event.extendedProps.appointment as CalendarAppointment;
-        const stage = appointmentStage(appointment);
         return <div className="framework-event-content">
           <span className="framework-event-title"><time>{appointmentTime(appointment, info.event.extendedProps.day)}</time><strong>{appointmentTitle(appointment)}</strong></span>
-          {!compact && <span className="framework-event-team"><UsersRound size={12} /><span>{appointmentTeam(appointment, technicians) || 'Equipe a definir'}</span>{Boolean(appointment.reservations?.length) && <span className="framework-event-reservations"><ClipboardCheck size={12} />{appointment.reservations?.length}</span>}</span>}
-          {!compact && <span className="framework-event-stage">{stage.label}</span>}
+          <span className="framework-event-team"><UsersRound size={12} /><span>{appointmentTeam(appointment, technicians) || 'Equipe a definir'}</span>{!compact && Boolean(appointment.reservations?.length) && <span className="framework-event-reservations"><ClipboardCheck size={12} />{appointment.reservations?.length}</span>}</span>
         </div>;
       }}
       moreLinkText={count => `Mais ${count}`}
