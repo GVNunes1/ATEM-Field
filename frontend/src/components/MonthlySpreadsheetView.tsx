@@ -1,5 +1,6 @@
-import { useMemo, useState, useSyncExternalStore } from 'react';
-import { CalendarDays, ClipboardCheck, Clock3, MapPin, Pencil, Plus, Printer, Trash2, UsersRound, X } from 'lucide-react';
+import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
+import type { CSSProperties } from 'react';
+import { CalendarDays, ClipboardCheck, Clock3, Expand, MapPin, Minus, Pencil, Plus, Printer, Shrink, Trash2, UsersRound, X } from 'lucide-react';
 import { isNonTechnicalAppointment } from '../lib/appointmentUtils';
 import { appointmentStage, appointmentTeam, appointmentTime, appointmentTitle, dateKey, groupMonthAppointments, lastAppointmentDay, localDate, monthDays } from '../lib/calendarMonth';
 import { ModalOverlay } from './ModalOverlay';
@@ -36,6 +37,8 @@ const subscribeViewport = (callback: () => void) => {
 const fullDate = (value: string) => localDate(value).toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' });
 const shortDate = (value: string) => localDate(value).toLocaleDateString('pt-BR');
 const syncLabels: Record<string, string> = { synced: 'Sincronizado', pending: 'Envio pendente', conflict: 'Revisar alterações', error: 'Erro de sincronização', local_only: 'Somente no ATEM Field' };
+const zoomColumns = [7, 5, 3, 1];
+const mobileZoomColumns = [7, 3, 2, 1];
 
 function reservationDescription(value: unknown) {
   if (!value || typeof value !== 'object') return 'Reserva vinculada';
@@ -52,6 +55,27 @@ export function MonthlySpreadsheetView({ selectedMonth, appointments, technician
   const [openDay, setOpenDay] = useState<string | null>(null);
   const [openId, setOpenId] = useState<number | null>(null);
   const [compact, setCompact] = useState(false);
+  const [zoom, setZoom] = useState(0);
+  const [fullscreen, setFullscreen] = useState(false);
+  const columns = (mobile ? mobileZoomColumns : zoomColumns)[zoom];
+  const viewportRef = useRef<HTMLDivElement>(null);
+  const dragRef = useRef<{ x: number; y: number; top: number; left: number } | null>(null);
+  useEffect(() => {
+    const sync = () => { if (!document.fullscreenElement) setFullscreen(false); };
+    const onEscape = (event: KeyboardEvent) => { if (event.key === 'Escape' && !document.fullscreenElement) setFullscreen(false); };
+    document.addEventListener('fullscreenchange', sync);
+    document.addEventListener('keydown', onEscape);
+    return () => { document.removeEventListener('fullscreenchange', sync); document.removeEventListener('keydown', onEscape); };
+  }, []);
+  const toggleFullscreen = async () => {
+    if (fullscreen) {
+      setFullscreen(false);
+      if (document.fullscreenElement) await document.exitFullscreen().catch(() => {});
+    } else {
+      setFullscreen(true);
+      await document.documentElement.requestFullscreen?.().catch(() => {});
+    }
+  };
   const selectedAppointment = appointments.find(appointment => appointment.id === openId);
   const visibleLimit = compact ? 4 : 2;
   const hasMatches = days.some(day => day.startsWith(selectedMonth) && (grouped.get(day)?.length || 0) > 0);
@@ -90,13 +114,24 @@ export function MonthlySpreadsheetView({ selectedMonth, appointments, technician
     </section>;
   };
 
-  return <section className={`month-calendar monthly-spreadsheet-wrapper${compact ? ' month-calendar--compact' : ''}`} aria-label="Calendário mensal">
+  return <section className={`month-calendar monthly-spreadsheet-wrapper${compact ? ' month-calendar--compact' : ''}${fullscreen ? ' month-calendar--fullscreen' : ''}`} aria-label="Calendário mensal">
     <div className="month-calendar__options monthly-spreadsheet-toolbar">
       <div className="month-calendar__legend" aria-label="Legenda de etapas"><span className="month-tone--provisional"><i />Provisória / em validação</span><span className="month-tone--confirmed"><i />Validada / confirmada</span><span className="month-tone--running"><i />Em execução</span></div>
-      <div className="month-calendar__tools"><label className="month-density"><input type="checkbox" checked={compact} onChange={event => setCompact(event.target.checked)} /> Compacta</label><button type="button" className="month-print" onClick={() => window.print()} aria-label="Imprimir agenda" title="Imprimir agenda"><Printer size={17} /></button></div>
+      <div className="month-calendar__tools"><label className="month-density"><input type="checkbox" checked={compact} onChange={event => setCompact(event.target.checked)} /> Compacta</label><div className="month-zoom" aria-label="Zoom da agenda"><button type="button" onClick={() => setZoom(value => Math.max(0, value - 1))} disabled={zoom === 0} aria-label="Diminuir zoom" title="Diminuir zoom"><Minus size={16} /></button><span aria-live="polite">{columns} {columns === 1 ? 'dia' : 'dias'}/linha</span><button type="button" onClick={() => setZoom(value => Math.min(zoomColumns.length - 1, value + 1))} disabled={zoom === zoomColumns.length - 1} aria-label="Aumentar zoom" title="Aumentar zoom"><Plus size={16} /></button></div><button type="button" className="month-print" onClick={toggleFullscreen} aria-label={fullscreen ? 'Sair da tela cheia' : 'Abrir agenda em tela cheia'} title={fullscreen ? 'Sair da tela cheia' : 'Tela cheia'}>{fullscreen ? <Shrink size={17} /> : <Expand size={17} />}</button><button type="button" className="month-print" onClick={() => window.print()} aria-label="Imprimir agenda" title="Imprimir agenda"><Printer size={17} /></button></div>
     </div>
     {!hasMatches && <p className="month-filter-notice" role="status">{searchTerm || selectedTech !== 'ALL' ? 'Nenhum atendimento neste mês corresponde aos filtros.' : 'Este mês ainda não tem atendimentos.'}</p>}
-    {!mobile ? <MonthlyFrameworkGrid month={selectedMonth} grouped={grouped} technicians={technicians} compact={compact} canCreate={canCreate} onDay={day => { setSelectedDay(day); setOpenDay(day); }} onEvent={showAppointment} onCreate={create} /> : <div className="month-calendar__grid" aria-label={localDate(`${selectedMonth}-01`).toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })}>
+    <div ref={viewportRef} className="month-calendar__viewport" onWheel={event => { if (event.ctrlKey || event.metaKey) { event.preventDefault(); setZoom(value => Math.max(0, Math.min(zoomColumns.length - 1, value + (event.deltaY < 0 ? 1 : -1)))); } }} onPointerDown={event => { if (event.pointerType !== 'mouse' || event.button !== 0 || (event.target as HTMLElement).closest('button,a,input,label,[role="button"]')) return; const el = viewportRef.current; if (!el) return; dragRef.current = { x: event.clientX, y: event.clientY, top: el.scrollTop, left: el.scrollLeft }; el.setPointerCapture(event.pointerId); }} onPointerMove={event => { const drag = dragRef.current; const el = viewportRef.current; if (drag && el) { el.scrollTop = drag.top + drag.y - event.clientY; el.scrollLeft = drag.left + drag.x - event.clientX; } }} onPointerUp={() => { dragRef.current = null; }} onPointerCancel={() => { dragRef.current = null; }}>
+    {!mobile && zoom === 0 ? <MonthlyFrameworkGrid month={selectedMonth} grouped={grouped} technicians={technicians} compact={compact} canCreate={canCreate} onDay={day => { setSelectedDay(day); setOpenDay(day); }} onEvent={showAppointment} onCreate={create} /> : zoom > 0 ? <div className="month-calendar__zoom-grid" style={{ '--month-columns': columns } as CSSProperties} aria-label={`${columns} dias por linha`}>
+      {days.map(day => {
+        const items = grouped.get(day) || [];
+        const outside = !day.startsWith(selectedMonth);
+        const date = localDate(day);
+        return <article key={day} data-date={day} className={`month-zoom-day${outside ? ' month-zoom-day--outside' : ''}${day === today ? ' month-zoom-day--today' : ''}`} aria-label={fullDate(day)}>
+          <div className="month-zoom-day__heading"><button type="button" onClick={() => { setSelectedDay(day); if (!mobile) setOpenDay(day); }} aria-label={`Ver ${items.length} atendimentos de ${fullDate(day)}`}><span>{date.toLocaleDateString('pt-BR', { weekday: 'short' }).replace('.', '')}</span><strong>{date.getDate()}</strong>{date.getDate() === 1 && <span>{date.toLocaleDateString('pt-BR', { month: 'short' })}</span>}</button>{canCreate && <button type="button" className="framework-add" onClick={() => create(day)} aria-label={`Novo atendimento em ${shortDate(day)}`}><Plus size={14} /></button>}</div>
+          <div className="month-zoom-day__events">{items.slice(0, 8).map(appointment => { const stage = appointmentStage(appointment); const team = appointmentTeam(appointment, technicians) || 'Equipe a definir'; return <button type="button" key={appointment.id} className={`month-zoom-event month-tone--${stage.tone}`} onClick={() => showAppointment(appointment)} title={`${appointmentTitle(appointment)}\n${team}`} aria-label={`${appointmentTime(appointment, day)}, ${appointmentTitle(appointment)}, ${team}`}><span><time>{appointmentTime(appointment, day)}</time><strong>{appointmentTitle(appointment)}</strong></span>{!compact && <small><UsersRound size={12} />{team}</small>}</button>; })}{items.length > 8 && <button type="button" className="month-more" onClick={() => { setSelectedDay(day); setOpenDay(day); }}>Mais {items.length - 8}</button>}</div>
+        </article>;
+      })}
+    </div> : <div className="month-calendar__grid" aria-label={localDate(`${selectedMonth}-01`).toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })}>
       {weekdays.map(day => <div key={day} className="month-calendar__weekday">{day}</div>)}
       {days.map(day => {
         const items = grouped.get(day) || [];
@@ -122,7 +157,7 @@ export function MonthlySpreadsheetView({ selectedMonth, appointments, technician
           <span className="month-mobile-count" aria-hidden="true">{items.length ? `${items.length} ag.` : 'Livre'}</span>
         </article>;
       })}
-    </div>}
+    </div>}</div>
     <div className="month-calendar__mobile-agenda">{dayAgenda(selectedDay)}</div>
     {openDay && <ModalOverlay className="month-overlay" onDismiss={dismiss} onClick={event => { if (event.target === event.currentTarget) dismiss(); }}><div role="dialog" aria-modal="true" aria-label={`Agenda de ${fullDate(openDay)}`} className="month-dialog"><button type="button" className="month-dialog__close" onClick={dismiss} aria-label="Fechar agenda do dia"><X size={20} /></button>{dayAgenda(openDay)}</div></ModalOverlay>}
     {selectedAppointment && <ModalOverlay className="month-overlay" onDismiss={() => setOpenId(null)} onClick={event => { if (event.target === event.currentTarget) setOpenId(null); }}>

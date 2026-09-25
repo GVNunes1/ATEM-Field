@@ -47,6 +47,17 @@
 
   /* Navigation has one persistent rhythm and subtle directional feedback. */
   .app-sidebar { width: 224px; min-width: 224px; max-width: 224px; padding: 30px 14px 18px; border-color: var(--border-color); box-shadow: none; height: 100dvh; max-height: 100dvh; }
+  .app-sidebar { transition: width 240ms var(--ease-out), min-width 240ms var(--ease-out), max-width 240ms var(--ease-out), padding 240ms var(--ease-out); }
+  .sidebar-collapse { display: grid; place-items: center; flex: 0 0 30px; width: 30px; height: 30px; margin-left: auto; border: 0; border-radius: 7px; color: var(--text-muted); background: transparent; cursor: pointer; }
+  .sidebar-collapse:hover { color: var(--primary); background: var(--primary-soft); }
+  .app-sidebar--collapsed { width: 68px; min-width: 68px; max-width: 68px; padding-inline: 9px; }
+  .app-sidebar--collapsed .sidebar-brand { flex-direction: column; gap: 8px; padding-inline: 0; margin-bottom: 24px; }
+  .app-sidebar--collapsed .sidebar-logo img { width: 42px; }
+  .app-sidebar--collapsed .sidebar-product, .app-sidebar--collapsed .sidebar-section-label, .app-sidebar--collapsed .sidebar-nav-label, .app-sidebar--collapsed .sidebar-support-shortcut span, .app-sidebar--collapsed .sidebar-totem-shortcut span, .app-sidebar--collapsed .sidebar-user-info { display: none; }
+  .app-sidebar--collapsed .sidebar-collapse { margin: 0; }
+  .app-sidebar--collapsed .sidebar-nav-item, .app-sidebar--collapsed .sidebar-support-shortcut, .app-sidebar--collapsed .sidebar-totem-shortcut, .app-sidebar--collapsed .sidebar-profile-btn { justify-content: center; padding-inline: 0; }
+  .app-sidebar--collapsed .sidebar-user { flex-direction: column; }
+  .app-sidebar--collapsed .sidebar-logout-btn { align-self: center; }
   .sidebar-brand { justify-content: flex-start; gap: 12px; padding: 0 10px; margin-bottom: 42px; }
   .sidebar-logo img { width: 86px; max-height: 45px; }
   .sidebar-product { border-left: 1px solid var(--border-color); padding-left: 12px; color: var(--text-main); font-size: 1.1rem; font-weight: 650; letter-spacing: -.04em; }
@@ -278,7 +289,12 @@
   @media (max-width: 768px) {
     .app-content-wrapper { width: 100%; max-width: 100%; padding: 0 18px calc(94px + env(safe-area-inset-bottom)); }
     .app-main { padding-top: 24px; }
-    .app-sidebar { width: 100%; min-width: 100%; max-width: 100%; height: auto; max-height: none; padding: 10px 16px; }
+    .app-sidebar, .app-sidebar--collapsed { width: 100%; min-width: 100%; max-width: 100%; height: auto; max-height: none; padding: 10px 16px; }
+    .sidebar-collapse { display: none; }
+    .app-sidebar--collapsed .sidebar-brand { flex-direction: row; margin: 0; }
+    .app-sidebar--collapsed .sidebar-product, .app-sidebar--collapsed .sidebar-nav-label, .app-sidebar--collapsed .sidebar-user-info { display: revert; }
+    .app-sidebar--collapsed .sidebar-nav-item { flex-direction: column; padding: 8px 6px; }
+    .app-sidebar--collapsed .sidebar-user { flex-direction: row; }
     .sidebar-brand { padding: 0; margin: 0; gap: 8px; }
     .sidebar-logo img { width: 70px; max-height: 32px; }
     .sidebar-product { font-size: .96rem; padding-left: 8px; }

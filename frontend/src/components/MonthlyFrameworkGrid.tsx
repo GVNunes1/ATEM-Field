@@ -42,7 +42,7 @@ export function MonthlyFrameworkGrid({ month, grouped, technicians, compact, can
       initialView="dayGridMonth" initialDate={`${month}-01`} locale={ptBr} firstDay={0}
       headerToolbar={false} fixedWeekCount={false} showNonCurrentDates expandRows
       height="auto" events={events} editable={false} eventInteractive
-      dayMaxEvents={compact ? 7 : 5} eventDisplay="block" displayEventTime={false}
+      dayMaxEvents={8} eventDisplay="block" displayEventTime={false}
       eventOrder="start,title" eventOrderStrict
       dayHeaderContent={info => <span className="framework-weekday">{info.weekdayText.replace('.', '')}</span>}
       dayCellClass="framework-day"

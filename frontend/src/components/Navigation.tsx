@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   Box,
   CarFront,
@@ -8,6 +8,8 @@ import {
   CircleHelp,
   Home,
   LogOut,
+  PanelLeftClose,
+  PanelLeftOpen,
   PackageCheck,
   TabletSmartphone,
   Users
@@ -32,6 +34,11 @@ export const Navigation: React.FC<NavigationProps> = ({
   onOpenSupport
 }) => {
   const isAdmin = currentUser?.role === 'admin';
+  const [collapsed, setCollapsed] = useState(() => localStorage.getItem('atem.sidebar.collapsed') === 'true');
+  const toggleCollapsed = () => setCollapsed(value => {
+    localStorage.setItem('atem.sidebar.collapsed', String(!value));
+    return !value;
+  });
 
   // Técnicos não veem gerenciamento de equipe/usuários
   const navItems = [
@@ -53,7 +60,7 @@ export const Navigation: React.FC<NavigationProps> = ({
     .toUpperCase();
 
   return (
-    <aside className="app-sidebar" aria-label="Navegação principal">
+    <aside className={`app-sidebar${collapsed ? ' app-sidebar--collapsed' : ''}`} aria-label="Navegação principal">
       {/* Top Logo */}
       <div className="sidebar-brand">
         <div className="sidebar-logo">
@@ -66,6 +73,7 @@ export const Navigation: React.FC<NavigationProps> = ({
           />
         </div>
         <span className="sidebar-product">Field<span>Gestão de campo</span></span>
+        <button type="button" className="sidebar-collapse" onClick={toggleCollapsed} aria-label={collapsed ? 'Expandir menu lateral' : 'Recolher menu lateral'} aria-expanded={!collapsed} title={collapsed ? 'Expandir menu' : 'Recolher menu'}>{collapsed ? <PanelLeftOpen size={18} /> : <PanelLeftClose size={18} />}</button>
       </div>
 
       {/* Navigation Links */}
@@ -81,6 +89,8 @@ export const Navigation: React.FC<NavigationProps> = ({
               onClick={() => setActiveTab(item.id)}
               className={`sidebar-nav-item ${isActive ? 'sidebar-nav-item--active' : ''}`}
               aria-current={isActive ? 'page' : undefined}
+              aria-label={item.label}
+              title={collapsed ? item.label : undefined}
             >
               <span className="sidebar-nav-icon">
                 <Icon size={20} />

@@ -19,7 +19,7 @@ const mainAppointment = {
 };
 const appointments = [
   mainAppointment,
-  ...Array.from({ length: 5 }, (_, index) => ({
+  ...Array.from({ length: 9 }, (_, index) => ({
     ...mainAppointment, id: 202 + index, client_name: `Unidade de teste ${index + 1}`, title: `Atendimento complementar ${index + 1}`,
     appointment_time: `${String(9 + index).padStart(2, '0')}:00`, appointment_end_time: `${String(10 + index).padStart(2, '0')}:00`,
     technician_ids: [2], technician_names: 'Bruno Campos', workflow_status: 'Data provisória', reservations: [], google_event_id: `isolated-${202 + index}`
@@ -118,18 +118,49 @@ const appointments = [
       assert.equal(await monthInput.inputValue(), new Date().toLocaleDateString('sv-SE').slice(0, 7));
       await setMonth('2026-09');
 
+      if (!mobileCalendar) {
+        const sidebar = page.locator('.app-sidebar');
+        const expandedWidth = await sidebar.evaluate(el => el.getBoundingClientRect().width);
+        await page.getByRole('button', { name: 'Recolher menu lateral' }).click();
+        assert.equal(await sidebar.evaluate(el => el.classList.contains('app-sidebar--collapsed')), true, 'Sidebar can collapse');
+        await page.waitForTimeout(300);
+        assert.ok(await sidebar.evaluate(el => el.getBoundingClientRect().width) < expandedWidth, 'Collapsed sidebar frees horizontal space');
+        await page.getByRole('button', { name: 'Expandir menu lateral' }).click();
+        const viewportElement = page.locator('.month-calendar__viewport');
+        const viewportGeometry = await viewportElement.evaluate(el => ({ scroll: el.scrollHeight, client: el.clientHeight }));
+        assert.ok(viewportGeometry.scroll > viewportGeometry.client, 'Month days can be panned within the viewport');
+        await page.getByRole('button', { name: 'Aumentar zoom' }).click();
+        assert.equal(await page.locator('.month-calendar__zoom-grid').evaluate(el => getComputedStyle(el).gridTemplateColumns.split(' ').length), 5, 'Zoom reflows into five days per row');
+        assert.equal(await page.locator('.month-zoom-day[data-date="2026-09-21"] .month-zoom-event').count(), 8, 'Zoomed day shows eight appointments');
+        await page.getByRole('button', { name: 'Aumentar zoom' }).click();
+        assert.equal(await page.locator('.month-calendar__zoom-grid').evaluate(el => getComputedStyle(el).gridTemplateColumns.split(' ').length), 3, 'Further zoom reflows into three days per row');
+        await page.getByRole('button', { name: 'Diminuir zoom' }).click();
+        await page.getByRole('button', { name: 'Diminuir zoom' }).click();
+        await page.getByRole('button', { name: 'Abrir agenda em tela cheia' }).click();
+        assert.equal(await page.locator('.month-calendar--fullscreen').count(), 1, 'Fullscreen expands calendar');
+        const fullscreenBounds = await page.locator('.month-calendar--fullscreen').boundingBox();
+        assert.ok(fullscreenBounds.x <= 1 && fullscreenBounds.y <= 1 && fullscreenBounds.width >= viewport.width - 1 && fullscreenBounds.height >= viewport.height - 1, 'Fullscreen covers the viewport');
+        await page.getByRole('button', { name: 'Sair da tela cheia' }).click();
+        assert.equal(await page.locator('.month-calendar--fullscreen').count(), 0, 'Fullscreen can be closed');
+      } else {
+        await page.getByRole('button', { name: 'Aumentar zoom' }).click();
+        assert.equal(await page.locator('.month-calendar__zoom-grid').evaluate(el => getComputedStyle(el).gridTemplateColumns.split(' ').length), 3, 'Mobile zoom reflows days');
+        assert.equal(await page.locator('.month-zoom-day[data-date="2026-09-21"] .month-zoom-event').count(), 8, 'Mobile zoom shows eight visits');
+        await page.getByRole('button', { name: 'Diminuir zoom' }).click();
+      }
+
       const day = cell('2026-09-21');
       if (!mobileCalendar) {
-        assert.equal(await day.locator(`${eventSelector}:visible`).count(), 5);
+        assert.equal(await day.locator(`${eventSelector}:visible`).count(), 8);
         await page.getByLabel('Compacta', { exact: true }).check();
-        await day.locator(`${eventSelector}:visible`).nth(5).waitFor();
-        assert.equal(await day.locator(`${eventSelector}:visible`).count(), 6, 'Compact mode exposes more events');
+        await day.locator(`${eventSelector}:visible`).nth(7).waitFor();
+        assert.equal(await day.locator(`${eventSelector}:visible`).count(), 8, 'Compact mode preserves eight events');
         await page.getByLabel('Compacta', { exact: true }).uncheck();
-        await day.locator('.framework-more').filter({ hasText: 'Mais 1' }).waitFor();
+        await day.locator('.framework-more').filter({ hasText: 'Mais 2' }).waitFor();
         await day.locator('.framework-more').click();
         const dayDialog = page.getByRole('dialog', { name: /^Agenda de / });
         await verifyDialog(dayDialog, 'Full day agenda');
-        assert.equal(await dayDialog.locator('.month-day-event').count(), 6, 'Overflow opens every event');
+        assert.equal(await dayDialog.locator('.month-day-event').count(), 10, 'Overflow opens every event');
         const nestedOpener = dayDialog.locator('.month-day-event').first();
         await nestedOpener.click();
         const nestedDetails = page.getByRole('dialog', { name: mainAppointment.client_name, exact: true });
@@ -142,7 +173,7 @@ const appointments = [
       } else {
         await day.locator('.month-date').click();
         assert.equal(await page.getByRole('dialog').count(), 0, 'Mobile day selection stays inline');
-        assert.equal(await page.locator('.month-calendar__mobile-agenda .month-day-event').count(), 6, 'Mobile displays full selected-day agenda');
+        assert.equal(await page.locator('.month-calendar__mobile-agenda .month-day-event').count(), 10, 'Mobile displays full selected-day agenda');
         assert.equal(await day.locator('.month-date').getAttribute('aria-pressed'), 'true');
       }
       const opener = () => mobileCalendar
@@ -175,9 +206,9 @@ const appointments = [
       assert.equal(await page.locator(eventSelector).count(), 1, 'Search ignores accents');
       await page.getByRole('button', { name: 'Limpar', exact: true }).click();
       await page.getByLabel('Filtrar por técnico', { exact: true }).selectOption('Bruno Campos');
-      if (!mobileCalendar) await day.locator(`${eventSelector}:visible`).nth(4).waitFor();
+      if (!mobileCalendar) await day.locator(`${eventSelector}:visible`).nth(7).waitFor();
       assert.equal(await cell('2026-09-01').locator(eventSelector).count(), 0, 'Technician filter removes other teams from multi-day events');
-      assert.equal(await day.locator(`${eventSelector}:visible`).count(), mobileCalendar ? 0 : 5, 'Technician-filtered day retains visible limit');
+      assert.equal(await day.locator(`${eventSelector}:visible`).count(), mobileCalendar ? 0 : 8, 'Technician-filtered day retains visible limit');
       assert.equal(await day.locator(eventSelector).filter({ hasText: mainAppointment.client_name }).count(), 0, 'Technician filter removes other teams');
       await page.getByRole('button', { name: 'Limpar', exact: true }).click();
 

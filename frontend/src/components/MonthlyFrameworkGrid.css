@@ -9,7 +9,7 @@
     --fc-monarch-event-contrast: var(--text-main);
   }
   .atem-fullcalendar .fc { font-family: inherit; font-size: .8125rem; }
-  .atem-fullcalendar .fc-daygrid-day-frame { min-height: 312px; }
+  .atem-fullcalendar .fc-daygrid-day-frame { min-height: 445px; }
   .atem-fullcalendar table { margin: 0; border-collapse: collapse; }
   .atem-fullcalendar th, .atem-fullcalendar td { padding: 0; background: transparent; }
   .atem-fullcalendar .framework-weekday { display: block; padding: 8px 4px; font-size: .75rem; color: var(--text-muted); font-weight: 550; text-transform: capitalize; }
@@ -31,6 +31,6 @@
   .framework-event-reservations { display: inline-flex; align-items: center; gap: 3px; margin-left: auto; flex-shrink: 0; }
   .atem-fullcalendar button:focus-visible, .atem-fullcalendar a:focus-visible { outline: 2px solid var(--primary); outline-offset: -2px; }
   .month-calendar__options { border-bottom: 1px solid var(--border-color); }
-  .month-calendar--compact .atem-fullcalendar .fc-daygrid-day-frame { min-height: 312px; }
+  .month-calendar--compact .atem-fullcalendar .fc-daygrid-day-frame { min-height: 310px; }
   .month-calendar--compact .framework-event-content { padding-block: 1px; line-height: 14px; }
 }

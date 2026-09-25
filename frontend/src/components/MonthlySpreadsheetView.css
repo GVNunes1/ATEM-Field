@@ -13,6 +13,30 @@
     background: var(--bg-card, #fff);
     overflow: hidden;
   }
+  .month-calendar--fullscreen { position: fixed; inset: 0; z-index: 900; display: flex; flex-direction: column; border-radius: 0; box-shadow: 0 24px 80px rgb(20 40 70 / 22%); }
+  .month-calendar__viewport { overflow: auto; max-height: min(76dvh, 850px); min-height: 0; cursor: grab; scrollbar-gutter: stable; }
+  .month-calendar__viewport:active { cursor: grabbing; }
+  .month-calendar--fullscreen .month-calendar__viewport { flex: 1; max-height: none; }
+  .month-zoom { display: inline-flex; align-items: center; gap: 4px; border: 1px solid var(--border-color); border-radius: 8px; color: var(--text-secondary); font-size: .75rem; white-space: nowrap; }
+  .month-zoom button { display: grid; place-items: center; width: 30px; height: 30px; padding: 0; border: 0; border-radius: 7px; background: transparent; color: var(--text-secondary); cursor: pointer; }
+  .month-zoom button:hover:not(:disabled) { background: var(--primary-soft); color: var(--primary); }
+  .month-zoom button:disabled { opacity: .35; cursor: default; }
+  .month-calendar__zoom-grid { display: grid; grid-template-columns: repeat(var(--month-columns), minmax(0, 1fr)); border-top: 1px solid var(--border-color); }
+  .month-zoom-day { min-width: 0; min-height: 410px; padding: 5px; border-right: 1px solid var(--border-color); border-bottom: 1px solid var(--border-color); }
+  .month-zoom-day--outside { background: var(--bg-primary); }
+  .month-zoom-day--today { background: #fbfdff; }
+  .month-zoom-day__heading { display: flex; align-items: center; justify-content: center; position: relative; height: 35px; }
+  .month-zoom-day__heading > button:first-child { display: flex; align-items: center; gap: 5px; padding: 3px 7px; border: 0; border-radius: 7px; background: transparent; color: var(--text-main); font-size: .75rem; cursor: pointer; }
+  .month-zoom-day__heading > button:first-child:hover { background: var(--primary-soft); }
+  .month-zoom-day__heading > button:first-child span { color: var(--text-muted); }
+  .month-zoom-day__events { display: grid; gap: 3px; }
+  .month-zoom-event { display: grid; gap: 2px; width: 100%; min-width: 0; padding: 4px 6px; border: 0; border-left: 3px solid var(--event-color); border-radius: 4px; color: var(--text-main); background: var(--event-soft); text-align: left; cursor: pointer; }
+  .month-zoom-event:hover { filter: brightness(.97); }
+  .month-zoom-event > span, .month-zoom-event small { display: flex; align-items: baseline; gap: 5px; min-width: 0; font-size: .75rem; line-height: 16px; }
+  .month-zoom-event strong { display: -webkit-box; overflow: hidden; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; font-weight: 600; }
+  .month-zoom-event time { flex-shrink: 0; font-variant-numeric: tabular-nums; }
+  .month-zoom-event small { align-items: center; overflow: hidden; color: var(--text-secondary); white-space: nowrap; text-overflow: ellipsis; }
+  .month-zoom-event small svg { flex-shrink: 0; }
   .month-calendar__options { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 8px 14px; min-height: 46px; }
   .month-calendar__legend, .month-calendar__tools { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
   .month-calendar__legend { color: var(--text-secondary); font-size: .75rem; }
