@@ -94,6 +94,7 @@ export function App() {
   const [supportOpen, setSupportOpen] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
+  const [totemAgendaError, setTotemAgendaError] = useState('');
 
   const handleLoginSuccess = (user: AuthUser, token: string) => {
     setCurrentUser(user);
@@ -105,7 +106,7 @@ export function App() {
     }
   };
 
-  const handleLogout = () => {
+  const handleLogout = useCallback(() => {
     setCurrentUser(null);
     setSupportOpen(false);
     try {
@@ -114,7 +115,7 @@ export function App() {
     } catch {
       // Ignore
     }
-  };
+  }, []);
 
   const openSupport = useCallback(() => setSupportOpen(true), []);
   const closeSupport = useCallback(() => setSupportOpen(false), []);
@@ -241,6 +242,34 @@ export function App() {
     return () => clearInterval(interval);
   }, [publicPage, refreshLiveInventory]);
 
+  useEffect(() => {
+    if (publicPage || activeTab !== 'totem' || !currentUser) return;
+    let alive = true;
+    const refreshTotemAgenda = async () => {
+      try {
+        const result = await safeFetchJson('/api/appointments', noCacheFetchOptions);
+        if (!result?.success) throw new Error(result?.error || 'Não foi possível atualizar a agenda.');
+        if (alive) {
+          setAppointments(result.appointments || []);
+          setTotemAgendaError('');
+        }
+      } catch {
+        if (alive) setTotemAgendaError('A agenda não pôde ser atualizada. Verifique a conexão e toque em Atualizar.');
+      }
+    };
+    const onVisible = () => { if (document.visibilityState === 'visible') void refreshTotemAgenda(); };
+    void refreshTotemAgenda();
+    const interval = window.setInterval(onVisible, 30000);
+    document.addEventListener('visibilitychange', onVisible);
+    window.addEventListener('focus', onVisible);
+    return () => {
+      alive = false;
+      window.clearInterval(interval);
+      document.removeEventListener('visibilitychange', onVisible);
+      window.removeEventListener('focus', onVisible);
+    };
+  }, [activeTab, currentUser?.id, publicPage]);
+
   if (publicPage) {
     return <PublicInfoView page={publicPage} />;
   }
@@ -253,6 +282,9 @@ export function App() {
         appointments={appointments}
         analyzers={analyzers}
         onRefresh={fetchAllData}
+        agendaSyncError={totemAgendaError}
+        onAuthenticated={handleLoginSuccess}
+        onSessionEnd={handleLogout}
         onExitKiosk={() => handleTabChange('dashboard')}
       />
     );

@@ -35,6 +35,9 @@ interface TabletKioskViewProps {
   appointments: any[];
   analyzers: any[];
   onRefresh: () => Promise<void>;
+  agendaSyncError?: string;
+  onAuthenticated: (user: any, token: string) => void;
+  onSessionEnd: () => void;
   onExitKiosk?: () => void;
 }
 
@@ -49,6 +52,9 @@ export const TabletKioskView: React.FC<TabletKioskViewProps> = ({
   appointments,
   analyzers,
   onRefresh,
+  agendaSyncError,
+  onAuthenticated,
+  onSessionEnd,
   onExitKiosk
 }) => {
   const [selectedTech, setSelectedTech] = useState<any | null>(null);
@@ -65,6 +71,7 @@ export const TabletKioskView: React.FC<TabletKioskViewProps> = ({
   const [pinPromptTech, setPinPromptTech] = useState<any | null>(null);
   const [enteredPin, setEnteredPin] = useState<string>('');
   const [pinError, setPinError] = useState<string>('');
+  const [pinChecking, setPinChecking] = useState(false);
 
   // Modal para reservar padrão
   const [reserveModalAppt, setReserveModalAppt] = useState<any | null>(null);
@@ -118,6 +125,7 @@ export const TabletKioskView: React.FC<TabletKioskViewProps> = ({
       clearTimeout(timeoutId);
       timeoutId = setTimeout(() => {
         setSelectedTech(null);
+        onSessionEnd();
         setFeedbackNotice('Sessão encerrada por inatividade.');
       }, 90000);
     };
@@ -130,7 +138,7 @@ export const TabletKioskView: React.FC<TabletKioskViewProps> = ({
       clearTimeout(timeoutId);
       events.forEach(e => window.removeEventListener(e, resetTimer));
     };
-  }, [selectedTech]);
+  }, [selectedTech, onSessionEnd]);
 
   // Carregar reservas
   const loadReservations = async () => {
@@ -150,6 +158,14 @@ export const TabletKioskView: React.FC<TabletKioskViewProps> = ({
   useEffect(() => {
     void loadReservations();
   }, []);
+
+  useEffect(() => {
+    if (!selectedTech) return;
+    const interval = window.setInterval(() => {
+      if (document.visibilityState === 'visible') void loadReservations();
+    }, 30000);
+    return () => window.clearInterval(interval);
+  }, [selectedTech?.id]);
 
   // Filtrar técnicos ativos
   const activeTechnicians = useMemo(() => {
@@ -174,9 +190,11 @@ export const TabletKioskView: React.FC<TabletKioskViewProps> = ({
 
     return (appointments || [])
       .filter(appt => {
-        if (appt.status && String(appt.status).toLowerCase() === 'cancelado') return false;
+        if (/cancelad/i.test(`${appt.status || ''} ${appt.workflow_status || ''}`)) return false;
         if (appt.appointment_date < today) return false;
 
+        const assignedIds = Array.isArray(appt.technician_ids) ? appt.technician_ids.map(Number) : [];
+        if (assignedIds.length) return assignedIds.includes(techId);
         const matchesId = Number(appt.technician_id) === techId;
         const matchesName = appt.technician_names && appt.technician_names.toLowerCase().includes(techName);
         const matchesList = Array.isArray(appt.technicians) && appt.technicians.some((t: any) => Number(t.id) === techId);
@@ -412,12 +430,16 @@ export const TabletKioskView: React.FC<TabletKioskViewProps> = ({
   // =========================================================================
   // VALIDAÇÃO DE PIN DO TÉCNICO NO TOTEM
   // =========================================================================
-  const handleValidatePin = (pinToTest: string) => {
-    if (!pinPromptTech) return;
-    const last4Phone = pinPromptTech.phone ? String(pinPromptTech.phone).replace(/\D/g, '').slice(-4) : '';
-    const validPins = ['3247', '1234', '6233', '0000', 'atem', last4Phone].filter(Boolean);
-
-    if (validPins.includes(pinToTest) || pinToTest === '3247' || pinToTest === '1234') {
+  const handleValidatePin = async (pinToTest: string) => {
+    if (!pinPromptTech || pinChecking) return;
+    setPinChecking(true);
+    try {
+      const result = await safeFetchJson('/api/auth/login', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ type: 'technician', technician_id: Number(pinPromptTech.id), pin: pinToTest })
+      });
+      if (!result.success || !result.token || !result.user) throw new Error(result.error || 'PIN incorreto.');
+      onAuthenticated(result.user, result.token);
       setSelectedTech(pinPromptTech);
       setPinPromptTech(null);
       setActiveTab('agenda');
@@ -425,9 +447,11 @@ export const TabletKioskView: React.FC<TabletKioskViewProps> = ({
       setFeedbackError('');
       setEnteredPin('');
       setPinError('');
-    } else {
-      setPinError('PIN incorreto. Digite seu PIN (3247).');
+    } catch (failure) {
+      setPinError(failure instanceof Error ? failure.message : 'Não foi possível validar o PIN.');
       setEnteredPin('');
+    } finally {
+      setPinChecking(false);
     }
   };
 
@@ -437,7 +461,7 @@ export const TabletKioskView: React.FC<TabletKioskViewProps> = ({
     setEnteredPin(newPin);
     setPinError('');
     if (newPin.length === 4) {
-      setTimeout(() => handleValidatePin(newPin), 150);
+      setTimeout(() => void handleValidatePin(newPin), 150);
     }
   };
 
@@ -704,7 +728,6 @@ export const TabletKioskView: React.FC<TabletKioskViewProps> = ({
             type="button"
             onClick={() => {
               void Promise.all([loadReservations(), onRefresh()]);
-              setFeedbackNotice('Dados atualizados!');
             }}
             className="tablet-btn-refresh"
             title="Atualizar"
@@ -715,6 +738,7 @@ export const TabletKioskView: React.FC<TabletKioskViewProps> = ({
             type="button"
             onClick={() => {
               setSelectedTech(null);
+              onSessionEnd();
               setFeedbackNotice('');
               setFeedbackError('');
             }}
@@ -819,9 +843,10 @@ export const TabletKioskView: React.FC<TabletKioskViewProps> = ({
         {/* ABA 1: AGENDA DE VISITAS */}
         {activeTab === 'agenda' && (
           <div>
-            <div className="tablet-section-intro">
+          <div className="tablet-section-intro">
               <h3>Meus Atendimentos Agendados</h3>
               <p>Confira seus agendamentos e toque em <strong>"Reservar Padrões"</strong> para vincular analisadores de teste para a visita.</p>
+              {agendaSyncError && <p role="alert">{agendaSyncError}</p>}
             </div>
 
             <div className="tablet-card-list">
@@ -840,7 +865,7 @@ export const TabletKioskView: React.FC<TabletKioskViewProps> = ({
                     <div className="tablet-appt-details">
                       <h3>{appt.client_name || appt.title || 'Atendimento em Campo'}</h3>
                       <p className="tablet-appt-location">
-                        <MapPin size={16} /> {appt.location || appt.sector || 'Localização não especificada'}
+                        <MapPin size={16} /> {appt.client_address || appt.location || appt.sector || 'Localização não especificada'}
                       </p>
 
                       {hasReservations && (

@@ -57,6 +57,13 @@ const base = { title: 'Preventiva', client_name: 'Hospital Central', client_addr
       await page.getByLabel('Filtrar por mês').fill('2026-09');
       assert.equal(await page.locator('.workflow-card').count(), 5, 'All fixture appointments are shown');
       await page.screenshot({ path: path.join(outputDir, `workflow-${viewport.width}.png`) });
+      await page.getByRole('button', { name: 'Carros e padrões de Hospital Central' }).click();
+      const assetsDialog = page.getByRole('dialog', { name: 'Hospital Central' });
+      await assetsDialog.getByText('Padrões e analisadores').waitFor();
+      const assetsBounds = await assetsDialog.boundingBox();
+      assert.ok(assetsBounds.x >= 0 && assetsBounds.x + assetsBounds.width <= viewport.width + 1, 'Assets dialog fits the viewport');
+      await page.screenshot({ path: path.join(outputDir, `workflow-assets-${viewport.width}.png`) });
+      await page.keyboard.press('Escape');
       await page.getByLabel('Filtrar por nível').selectOption('Data provisória');
       assert.equal(await page.locator('.workflow-column').count(), 2, 'Level filter preserves next drop column');
       await page.getByRole('button', { name: /Avançar Hospital sem local/ }).click();
@@ -97,6 +104,7 @@ const base = { title: 'Preventiva', client_name: 'Hospital Central', client_addr
       console.log(`PASS workflow ${viewport.width}x${viewport.height}`);
     }
     const technicianContext = await browser.newContext({ viewport: { width: 1024, height: 768 } });
+    const technicianReservations = [];
     await technicianContext.addInitScript(() => {
       localStorage.setItem('atem.auth.user', JSON.stringify({ id: 4, name: 'Ana Técnica', role: 'technician' }));
       localStorage.setItem('atem.auth.token', 'isolated-fixture');
@@ -106,12 +114,18 @@ const base = { title: 'Preventiva', client_name: 'Hospital Central', client_addr
       const url = new URL(request.url());
       if (!['localhost', '127.0.0.1'].includes(url.hostname)) return route.abort();
       if (!url.pathname.startsWith('/api/')) return route.continue();
+      if (request.method() === 'POST' && url.pathname === '/api/reservations') {
+        technicianReservations.push(request.postDataJSON());
+        return route.fulfill({ json: { success: true, message: 'Padrão reservado.' } });
+      }
       if (request.method() !== 'GET') return route.fulfill({ status: 403, json: { success: false } });
       if (url.pathname === '/api/auth/session') return route.fulfill({ json: { success: true, user: { id: 4, name: 'Ana Técnica', role: 'technician' } } });
       if (url.pathname === '/api/appointments') return route.fulfill({ json: { success: true, appointments: [
-        { ...base, id: 601, client_name: 'Minha atividade', workflow_status: 'Em execução', workflow_assignee_id: 4, technician_ids: [4] },
+        { ...base, id: 601, client_name: 'Minha atividade', workflow_status: 'Em execução', workflow_assignee_id: 4, technician_ids: [4], vehicle_id: 11 },
         { ...base, id: 602, client_name: 'Atividade de outro', workflow_status: 'Em execução', workflow_assignee_id: 2, technician_ids: [4] }
       ] } });
+      if (url.pathname === '/api/analyzers') return route.fulfill({ json: { success: true, analyzers: [{ id: 31, asset_tag: 'QA-31', name: 'Simulador', status: 'Disponível' }] } });
+      if (url.pathname === '/api/fleet/vehicles') return route.fulfill({ json: { success: true, vehicles: [{ id: 11, name: 'Carro 11', plate: 'ABC-1234', status: 'Disponível' }] } });
       return route.fulfill({ json: { success: true, technicians: [technician, supervisor], analyzers: [], categories: [], stats: {}, recentReservations: [] } });
     });
     const technicianPage = await technicianContext.newPage();
@@ -124,6 +138,15 @@ const base = { title: 'Preventiva', client_name: 'Hospital Central', client_addr
     await technicianPage.getByRole('button', { name: 'Concluído' }).click();
     assert.equal(await technicianPage.locator('.workflow-card').count(), 1, 'Technician sees only assigned activity');
     assert.equal(await technicianPage.getByRole('button', { name: /Avançar|Editar dados/ }).count(), 0, 'Technician view is read-only');
+    await technicianPage.getByRole('button', { name: 'Carros e padrões de Minha atividade' }).click();
+    const assetsDialog = technicianPage.getByRole('dialog', { name: 'Minha atividade' });
+    await assetsDialog.getByLabel('Padrão disponível').selectOption('31');
+    await assetsDialog.getByRole('button', { name: 'Reservar padrão' }).click();
+    await assetsDialog.getByText('Padrão reservado.').waitFor();
+    await assetsDialog.getByRole('button', { name: 'Registrar retirada do carro' }).waitFor();
+    assert.deepEqual(technicianReservations, [{ appointment_id: 601, analyzer_id: 31, technician_id: 4, operation_type: 'Atendimento' }], 'Workflow reserves a pattern for this appointment');
+    await technicianPage.keyboard.press('Escape');
+    assert.equal(await technicianPage.getByRole('dialog', { name: 'Minha atividade' }).count(), 0, 'Assets dialog closes with Escape');
     await technicianContext.close();
     console.log('PASS workflow technician ownership');
 

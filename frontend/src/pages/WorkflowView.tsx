@@ -1,7 +1,8 @@
 import { useMemo, useRef, useState } from 'react';
 import type { PointerEvent as ReactPointerEvent } from 'react';
 import type { CSSProperties } from 'react';
-import { AlertCircle, ArrowRight, CalendarDays, GripVertical, MapPin, Pencil, Search, UsersRound } from 'lucide-react';
+import { AlertCircle, ArrowRight, CalendarDays, GripVertical, MapPin, PackageCheck, Pencil, Search, UsersRound, X } from 'lucide-react';
+import { AppointmentAssetsPanel } from '../components/AppointmentAssetsPanel';
 import { CalendarEventEditor, type CalendarAppointment, type CalendarTechnician } from '../components/CalendarEventEditor';
 import { ModalOverlay } from '../components/ModalOverlay';
 import { safeFetchJson } from '../lib/api';
@@ -44,6 +45,7 @@ export function WorkflowView({ appointments, technicians, role, currentUserId, o
   const dragStart = useRef<{ id: number; x: number; y: number } | null>(null);
   const boardScroll = useRef<HTMLDivElement>(null);
   const [editing, setEditing] = useState<CalendarAppointment | null>(null);
+  const [assetsAppointmentId, setAssetsAppointmentId] = useState<number | null>(null);
   const [handoff, setHandoff] = useState<{ appointment: CalendarAppointment; target: WorkflowStage } | null>(null);
   const [assigneeId, setAssigneeId] = useState('');
   const [error, setError] = useState('');
@@ -63,7 +65,8 @@ export function WorkflowView({ appointments, technicians, role, currentUserId, o
 
   const shownStages = level === 'all' ? workflowStages : workflowStages.filter((stage, index) =>
     stage.id === level || workflowStages[index - 1]?.id === level);
-  const moving = appointments.find(item => item.id === dragStart.current?.id);
+  const moving = appointments.find(item => item.id === dragVisual?.id);
+  const assetsAppointment = appointments.find(item => item.id === assetsAppointmentId);
   const canDrop = (stage: WorkflowStage) => Boolean(moving && workflowStatus(moving) && nextWorkflowStatus(workflowStatus(moving)!) === stage && canAdvanceWorkflow(role, workflowStatus(moving)!));
   const handoffCandidates = useMemo(() => {
     if (!handoff) return [];
@@ -164,13 +167,14 @@ export function WorkflowView({ appointments, technicians, role, currentUserId, o
               <h3>{appointment.client_name || appointment.title || 'Atendimento sem título'}</h3>{appointment.title && appointment.title !== appointment.client_name && <p className="workflow-card__activity">{appointment.title}</p>}
               <div className="workflow-card__facts"><span><MapPin size={14} />{appointment.client_address || 'Local a preencher'}</span><span><UsersRound size={14} />{teamText(appointment)}</span><span className="workflow-card__owner">Responsável: {appointment.workflow_assignee_name || technicians.find(person => Number(person.id) === Number(appointment.workflow_assignee_id))?.name || 'Não atribuído'}</span></div>
               {missing.length > 0 && allowed && <p className="workflow-card__missing"><AlertCircle size={14} />Falta: {missing.join(', ')}</p>}
-              <div className="workflow-card__actions">{canEdit && <button type="button" onClick={() => { setError(''); setEditing(appointment); }} aria-label={`Editar dados de ${appointment.client_name || appointment.title}`}><Pencil size={14} />Editar dados</button>}{next && allowed && <button type="button" onClick={() => requestAdvance(appointment, next)} disabled={busyId !== null} aria-label={`Avançar ${appointment.client_name || appointment.title} para ${next}`}>{busyId === appointment.id ? 'Salvando…' : 'Encaminhar'}<ArrowRight size={14} /></button>}</div>
+              <div className="workflow-card__actions"><button type="button" onClick={() => setAssetsAppointmentId(appointment.id)} aria-label={`Carros e padrões de ${appointment.client_name || appointment.title}`}><PackageCheck size={14} />Carros e padrões</button>{canEdit && <button type="button" onClick={() => { setError(''); setEditing(appointment); }} aria-label={`Editar dados de ${appointment.client_name || appointment.title}`}><Pencil size={14} />Editar dados</button>}{next && allowed && <button type="button" onClick={() => requestAdvance(appointment, next)} disabled={busyId !== null} aria-label={`Avançar ${appointment.client_name || appointment.title} para ${next}`}>{busyId === appointment.id ? 'Salvando…' : 'Encaminhar'}<ArrowRight size={14} /></button>}</div>
             </article>;
           })}{items.length === 0 && <p className="workflow-column__empty">Nenhum atendimento nesta etapa.</p>}{items.length > limit && <button type="button" className="workflow-column__more" onClick={() => setLimits(previous => ({ ...previous, [stage.id]: limit + 30 }))}>Mostrar mais {Math.min(30, items.length - limit)} de {items.length - limit}</button>}</div>
         </section>;
       })}
     </div></div>
     {dragVisual && <div className="workflow-drag-ghost" style={{ left: dragVisual.x + 14, top: dragVisual.y + 14 }} aria-hidden="true">{appointments.find(item => item.id === dragVisual.id)?.client_name || appointments.find(item => item.id === dragVisual.id)?.title}</div>}
+    {assetsAppointment && <ModalOverlay className="workflow-assets-overlay" onDismiss={() => setAssetsAppointmentId(null)}><section className="workflow-assets-dialog" role="dialog" aria-modal="true" aria-labelledby="workflow-assets-title"><header className="workflow-assets-dialog__header"><div><span className="field-overline">Ativos do atendimento</span><h2 id="workflow-assets-title">{assetsAppointment.client_name || assetsAppointment.title}</h2><p>{dateText(assetsAppointment.appointment_date)} · {workflowStatus(assetsAppointment)}</p></div><button type="button" className="workflow-assets-dialog__close" aria-label="Fechar carros e padrões" onClick={() => setAssetsAppointmentId(null)}><X size={20} /></button></header><AppointmentAssetsPanel key={assetsAppointment.id} appointment={assetsAppointment} technicians={technicians} currentUser={{ id: currentUserId, role }} onRefresh={onRefresh} /></section></ModalOverlay>}
     {handoff && <ModalOverlay className="workflow-handoff-overlay" onDismiss={busyId !== null ? undefined : () => setHandoff(null)}><section className="workflow-handoff" role="dialog" aria-modal="true" aria-labelledby="workflow-handoff-title"><h2 id="workflow-handoff-title">Encaminhar atendimento</h2><p><strong>{handoff.appointment.client_name || handoff.appointment.title}</strong> irá para <strong>{handoff.target}</strong>.</p><label>Responsável nesta etapa<select value={assigneeId} onChange={event => setAssigneeId(event.target.value)} aria-label="Responsável pela próxima etapa" required><option value="">Selecione um colaborador</option>{handoffCandidates.map(person => <option key={person.id} value={person.id}>{person.name}</option>)}</select></label>{handoffCandidates.length === 0 && <p className="workflow-handoff__hint" role="alert">Não há colaborador elegível. Confira os usuários ativos e a equipe escalada antes de avançar.</p>}{error && <p className="workflow-handoff__hint" role="alert">{error}</p>}<div className="workflow-handoff__actions"><button type="button" className="btn btn-secondary" disabled={busyId !== null} onClick={() => { setHandoff(null); setError(''); }}>Cancelar</button><button type="button" className="btn btn-primary" disabled={busyId !== null || !assigneeId || handoffCandidates.length === 0} onClick={() => void confirmHandoff()}>{busyId !== null ? 'Encaminhando…' : 'Confirmar encaminhamento'}</button></div></section></ModalOverlay>}
     {editing && <CalendarEventEditor key={editing.id} appointment={editing} technicians={technicians} canManage canAssignTeam={role !== 'commercial'} canDelete={role !== 'commercial'} onDismiss={() => setEditing(null)} onSaved={async message => { setEditing(null); setNotice(message); setError(''); await onRefresh(); }} />}
   </div>;

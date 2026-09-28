@@ -20,6 +20,7 @@ let writes=0; const errors=[]; let checks=0;
  for(const [width,height] of (process.env.QA_LANDSCAPE_ONLY ? [[812,375]] : process.env.QA_MOBILE_ONLY ? [[375,812],[768,1024],[1024,768],[812,375]] : [[1440,900],[375,812],[768,1024],[1024,768],[812,375]])) {
   const context=await browser.newContext({viewport:{width,height}});
   await context.route('**/api/**',route=>{
+   if(route.request().url().includes('/api/auth/login')) return route.fulfill({json:{success:true,token:'isolated-fixture',user:{id:1,name:'EQAT',role:'technician'}}});
    if(route.request().method()!=='GET'){writes++;return route.fulfill({status:403,json:{success:false}});}
    return route.fulfill({json:fixture});
   });
