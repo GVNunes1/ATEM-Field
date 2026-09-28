@@ -9,8 +9,11 @@ const projectRef = process.env.SUPABASE_PROJECT_REF;
 if (!projectRef || !process.env.SUPABASE_ACCESS_TOKEN) throw new Error('Supabase MCP credentials are unavailable.');
 
 const queries = {
+  advisors_security: '',
   workflow_status_counts: `select coalesce(workflow_status,'(nulo)') as stage, count(*) as appointments from public.appointments where status is distinct from 'Cancelado' group by 1 order by appointments desc`,
   workflow_assignment_schema: `select column_name, data_type from information_schema.columns where table_schema='public' and table_name='appointments' and column_name like 'workflow_assign%' order by column_name`,
+  pattern_checkout_trigger: `select tgname, tgenabled from pg_trigger where tgrelid='public.reservations'::regclass and tgname='trg_start_workflow_on_pattern_checkout'`,
+  pattern_checkout_columns: `select column_name from information_schema.columns where table_schema='public' and table_name='reservations' and column_name in ('operation_type','checkout_at','technician_id','appointment_id','status') order by column_name`,
   counts: `select count(*) as appointments,
     count(*) filter (where google_calendar_id is not null and google_event_id is not null) as google_linked,
     count(*) filter (where google_calendar_id is null and external_id like 'GGCAL-%') as legacy_google,
@@ -171,12 +174,13 @@ const queries = {
   'archive-calendar-tombstones': fs.readFileSync(path.resolve(__dirname, '../migrations/20260925195133_archive_cancelled_google_events.sql'), 'utf8'),
   'cleanup-calendar-tombstones': fs.readFileSync(path.resolve(__dirname, 'cleanup_cancelled_google_batch.sql'), 'utf8'),
   'apply-workflow-assignment': fs.readFileSync(path.resolve(__dirname, '../migrations/20260928115601_workflow_assignment.sql'), 'utf8'),
+  'apply-pattern-checkout-workflow': fs.readFileSync(path.resolve(__dirname, '../migrations/20260928121606_start_workflow_on_pattern_checkout.sql'), 'utf8'),
 };
 
 async function main() {
   const keys = process.argv.slice(2);
   if (!keys.length || keys.some(key => !Object.hasOwn(queries, key))) throw new Error(`Choose audits: ${Object.keys(queries).join(', ')}`);
-  const writeMode = keys.some(key => ['apply-calendar-migration', 'archive-calendar-tombstones', 'cleanup-calendar-tombstones', 'apply-workflow-assignment'].includes(key));
+  const writeMode = keys.some(key => ['apply-calendar-migration', 'archive-calendar-tombstones', 'cleanup-calendar-tombstones', 'apply-workflow-assignment', 'apply-pattern-checkout-workflow'].includes(key));
   if (writeMode && keys.length !== 1) throw new Error('Run each database maintenance action separately from audits.');
   const child = spawn('npx.cmd', ['-y', '@supabase/mcp-server-supabase@0.13.0', '--project-ref', projectRef, ...(!writeMode ? ['--read-only'] : [])], {
     cwd: path.resolve(__dirname, '..'), env: process.env, windowsHide: true, shell: true,
@@ -213,7 +217,9 @@ async function main() {
     if (!execute) throw new Error(`execute_sql unavailable. MCP tools: ${(available.tools || []).map(tool => tool.name).join(', ')}`);
     const executions = keys[0] === 'cleanup-calendar-tombstones' ? Array(7).fill(keys[0]) : keys;
     for (const [index, key] of executions.entries()) {
-      const result = await request('tools/call', { name: 'execute_sql', arguments: { query: queries[key] } });
+      const result = await request('tools/call', key === 'advisors_security'
+        ? { name: 'get_advisors', arguments: { type: 'security' } }
+        : { name: 'execute_sql', arguments: { query: queries[key] } });
       if (result.isError) throw new Error(`${key}: ${JSON.stringify(result.content)}`);
       process.stdout.write(`AUDIT ${key}${executions.length > 1 ? ` ${index + 1}/${executions.length}` : ''}\n`);
       for (const item of result.content || []) if (item.type === 'text') process.stdout.write(item.text + '\n');

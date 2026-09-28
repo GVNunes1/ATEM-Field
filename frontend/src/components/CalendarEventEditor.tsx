@@ -30,6 +30,7 @@ export interface CalendarAppointment {
   workflow_assignee_name?: string | null;
   technician_id?: number;
   technician_ids?: number[];
+  vehicle_id?: number | null;
   technician_names?: string;
   technician_name?: string;
   reservations?: unknown[];

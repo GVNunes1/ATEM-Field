@@ -2048,7 +2048,7 @@ router.get('/fleet/usage', requireAuthentication, async (_req: Request, res: Res
   }
 });
 
-router.post('/reservations', async (req: Request, res: Response) => {
+router.post('/reservations', requireAuthentication, requireRole(['admin', 'manager', 'supervisor', 'technician']), async (req: Request, res: Response) => {
   try {
     const {
       appointment_id,
@@ -2076,6 +2076,16 @@ router.post('/reservations', async (req: Request, res: Response) => {
       if (appointment && !effectiveTechnicianId) {
         const teamIds = await getAppointmentTeamIds(Number(appointment_id));
         effectiveTechnicianId = teamIds[0] || null;
+      }
+    }
+
+    const reservationActor = (req as any).user;
+    if (reservationActor.role === 'technician') {
+      if (Number(reservationActor.sub) !== effectiveTechnicianId) {
+        return res.status(403).json({ success: false, error: 'O técnico só pode reservar padrões em seu próprio nome.' });
+      }
+      if (appointment_id && !(await getAppointmentTeamIds(Number(appointment_id))).includes(Number(reservationActor.sub))) {
+        return res.status(403).json({ success: false, error: 'O técnico não está escalado neste atendimento.' });
       }
     }
 
@@ -2329,7 +2339,7 @@ router.post('/reservations/:id/approve', async (req: Request, res: Response) => 
   }
 });
 
-router.post('/reservations/:id/checkout', async (req: Request, res: Response) => {
+router.post('/reservations/:id/checkout', requireAuthentication, requireRole(['admin', 'manager', 'supervisor', 'technician']), async (req: Request, res: Response) => {
   try {
     const resId = Number(req.params.id);
 
@@ -2347,13 +2357,22 @@ router.post('/reservations/:id/checkout', async (req: Request, res: Response) =>
       return res.status(400).json({ success: false, error: 'Reserva sem padrão associado.' });
     }
 
-    // REGRA DE APROVAÇÃO: Se estiver aguardando aprovação, bloquear retirada até o Admin aprovar
     if (reservation.status === 'Aguardando Aprovação') {
-      return res.status(403).json({
-        success: false,
-        error: `Esta solicitação de ${reservation.operation_type || 'Calibração/Empréstimo'} ainda está aguardando aprovação do Administrador Geral para liberação da saída.`
-      });
+      return res.status(403).json({ success: false, error: 'Esta saída ainda aguarda aprovação do Administrador Geral.' });
     }
+
+    if (reservation.status !== 'Reservado') {
+      return res.status(409).json({ success: false, error: `A reserva está em “${reservation.status}” e não pode ser retirada novamente.` });
+    }
+
+    const actor = (req as any).user;
+    if (actor.role === 'technician' && Number(actor.sub) !== Number(reservation.technician_id)) {
+      return res.status(403).json({ success: false, error: 'Somente o técnico responsável pela reserva pode retirar este padrão.' });
+    }
+    const { data: linkedAppointment, error: linkedAppointmentError } = reservation.appointment_id
+      ? await supabaseAdmin.from('appointments').select('workflow_status').eq('id', reservation.appointment_id).maybeSingle()
+      : { data: null, error: null };
+    if (linkedAppointmentError) throw linkedAppointmentError;
 
     // REGRA DE OURO: Verificar se o analisador está fisicamente com outro técnico neste momento ('Em Uso')
     const { data: activeUsage } = await supabaseAdmin
@@ -2378,19 +2397,28 @@ router.post('/reservations/:id/checkout', async (req: Request, res: Response) =>
       });
     }
 
-    const { error: updateErr } = await supabaseAdmin
+    const { data: checkedOut, error: updateErr } = await supabaseAdmin
       .from('reservations')
       .update({ status: 'Em Uso', checkout_at: new Date().toISOString() })
-      .eq('id', resId);
+      .eq('id', resId)
+      .eq('status', 'Reservado')
+      .select('id')
+      .maybeSingle();
 
     if (updateErr) throw updateErr;
+    if (!checkedOut) return res.status(409).json({ success: false, error: 'Esta reserva já mudou. Atualize os dados antes de retirar.' });
 
     await supabaseAdmin
       .from('analyzers')
       .update({ status: 'Em Uso' })
       .eq('id', reservation.analyzer_id);
 
-    res.json({ success: true, message: 'Check-out de retirada registrado com sucesso!' });
+    const { data: workflowAfter, error: workflowAfterError } = linkedAppointment?.workflow_status === 'Confirmado com cliente'
+      ? await supabaseAdmin.from('appointments').select('workflow_status').eq('id', reservation.appointment_id).maybeSingle()
+      : { data: null, error: null };
+    if (workflowAfterError) console.error('[Workflow] Falha ao confirmar a etapa após retirada:', workflowAfterError.message);
+    const workflowStarted = workflowAfter?.workflow_status === 'Em execução';
+    res.json({ success: true, workflow_started: workflowStarted, message: workflowStarted ? 'Padrão retirado. Atendimento em execução.' : 'Check-out de retirada registrado com sucesso!' });
   } catch (err: any) {
     res.status(500).json({ success: false, error: err.message });
   }

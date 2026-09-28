@@ -3,6 +3,8 @@ import { isNonTechnicalAppointment } from '../lib/appointmentUtils';
 import { safeFetchJson } from '../lib/api';
 import { CalendarEventEditor, type CalendarAppointment, type CalendarTechnician } from '../components/CalendarEventEditor';
 import { MonthlySpreadsheetView } from '../components/MonthlySpreadsheetView';
+import { AppointmentAssetsPanel } from '../components/AppointmentAssetsPanel';
+import { ModalOverlay } from '../components/ModalOverlay';
 import { canAdvanceSchedule, canCreateSchedule, canManageSchedule } from '../lib/permissions';
 import { appointmentStage } from '../lib/calendarMonth';
 import {
@@ -23,13 +25,14 @@ import {
   Search,
   Trash2,
   UserRound,
-  UsersRound
+  UsersRound,
+  X
 } from 'lucide-react';
 
 interface AppointmentsViewProps {
   appointments: CalendarAppointment[];
   onOpenChecklistModal: (apptId: number) => void;
-  currentUser?: { role?: string } | null;
+  currentUser?: { id?: number | string; role?: string } | null;
   onRefresh?: () => Promise<void>;
 }
 
@@ -69,7 +72,10 @@ export function AppointmentsView({ appointments, onOpenChecklistModal, currentUs
   const [selectedTech, setSelectedTech] = useState('ALL');
   const [technicians, setTechnicians] = useState<CalendarTechnician[]>([]);
   const [workflowActionId, setWorkflowActionId] = useState<number | null>(null);
+  const [handoffAppointment, setHandoffAppointment] = useState<CalendarAppointment | null>(null);
+  const [handoffAssigneeId, setHandoffAssigneeId] = useState('');
   const [editingAppointment, setEditingAppointment] = useState<CalendarAppointment | null>(null);
+  const [quickAppointmentId, setQuickAppointmentId] = useState<number | null>(null);
   const [isCreating, setIsCreating] = useState(false);
   const [createDate, setCreateDate] = useState<string | undefined>(undefined);
   const [syncStatus, setSyncStatus] = useState<GoogleSyncStatus | null>(null);
@@ -182,6 +188,7 @@ export function AppointmentsView({ appointments, onOpenChecklistModal, currentUs
     typeof appointment.appointment_date === 'string'
     && appointment.appointment_date.startsWith(selectedMonth)
   )), [appointments, selectedMonth]);
+  const quickAppointment = appointments.find(item => Number(item.id) === quickAppointmentId);
 
   const filtered = useMemo(() => {
     const query = searchTerm.trim().toLocaleLowerCase('pt-BR');
@@ -229,18 +236,35 @@ export function AppointmentsView({ appointments, onOpenChecklistModal, currentUs
     'Validado pelo supervisor': 'Confirmado com cliente'
   } as Record<string, string>)[status];
 
-  const advanceWorkflow = async (appointment: CalendarAppointment) => {
+  const advanceWorkflow = (appointment: CalendarAppointment) => {
     const currentStatus = appointment.workflow_status || 'Data provisória';
     const nextStatus = workflowNextStatus(currentStatus);
     if (!nextStatus) return;
-    setWorkflowActionId(Number(appointment.id));
+    setHandoffAppointment(appointment);
+    setHandoffAssigneeId('');
+  };
+
+  const nextHandoffStatus = handoffAppointment ? workflowNextStatus(handoffAppointment.workflow_status || 'Data provisória') : null;
+  const handoffCandidates = technicians.filter(person => {
+    if (!nextHandoffStatus || person.status !== 'Ativo') return false;
+    const specialty = String(person.role || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+    if (nextHandoffStatus === 'Aguardando validação do supervisor') return /^supervisor/.test(specialty);
+    if (nextHandoffStatus === 'Validado pelo supervisor') return /^(comercial|vendas|sales)/.test(specialty);
+    return (handoffAppointment?.technician_ids || [handoffAppointment?.technician_id]).map(Number).includes(Number(person.id));
+  });
+
+  const submitAdvanceWorkflow = async () => {
+    if (!handoffAppointment || !nextHandoffStatus || !handoffAssigneeId) return;
+    setWorkflowActionId(Number(handoffAppointment.id));
     setActionError('');
     try {
-      const result = await safeFetchJson(`/api/appointments/${appointment.id}/workflow`, {
-        method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ workflow_status: nextStatus })
+      const result = await safeFetchJson(`/api/appointments/${handoffAppointment.id}/workflow`, {
+        method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ workflow_status: nextHandoffStatus, workflow_assignee_id: Number(handoffAssigneeId) })
       });
       if (!result.success) throw new Error(result.error || 'Não foi possível avançar o workflow.');
       await onRefresh?.();
+      setHandoffAppointment(null);
+      setNotice(`Atendimento encaminhado para ${handoffCandidates.find(person => Number(person.id) === Number(handoffAssigneeId))?.name || 'o responsável'}.`);
     } catch (error) {
       setActionError(error instanceof Error ? error.message : 'Não foi possível avançar o workflow.');
     } finally { setWorkflowActionId(null); }
@@ -406,6 +430,8 @@ export function AppointmentsView({ appointments, onOpenChecklistModal, currentUs
           onAdvanceAppointment={appointment => { void advanceWorkflow(appointment); }}
           workflowActionId={workflowActionId}
           isAdmin={isAdmin}
+          currentUser={currentUser}
+          onRefresh={onRefresh}
           searchTerm={searchTerm}
           selectedTech={selectedTech}
           deletingId={deletingId}
@@ -463,6 +489,7 @@ export function AppointmentsView({ appointments, onOpenChecklistModal, currentUs
                             {hasSubtitle && <p>{appointment.title}</p>}
                             <div className="agenda-appointment-card__location"><MapPin size={15} /><span>{appointment.client_address || 'Endereço não informado'}</span></div>
                           </div>
+                          <button type="button" className="btn btn-secondary btn-sm" onClick={() => setQuickAppointmentId(Number(appointment.id))}>Ver atendimento e recursos</button>
                           <div className="agenda-appointment-card__team" aria-label="Equipe atribuída">
                             <div className="agenda-team-label"><UsersRound size={14} /> {technicianList.length > 1 ? `${technicianList.length} técnicos` : 'Técnico'}</div>
                             <div className="agenda-team-badges">
@@ -528,6 +555,8 @@ export function AppointmentsView({ appointments, onOpenChecklistModal, currentUs
           <p>Ajuste os filtros ou selecione outro mês no controle de navegação.</p>
         </div>
       )}
+      {quickAppointment && <ModalOverlay className="month-overlay" onDismiss={() => setQuickAppointmentId(null)}><section role="dialog" aria-modal="true" aria-labelledby="quick-appointment-title" className="month-dialog month-event-detail"><header><span className="month-status">{appointmentStage(quickAppointment).label}</span><button type="button" className="month-dialog__close" aria-label="Fechar atendimento" onClick={() => setQuickAppointmentId(null)}><X size={20} /></button><h2 id="quick-appointment-title">{quickAppointment.client_name || quickAppointment.title}</h2></header><dl className="month-event-detail__fields"><div><dt>Data</dt><dd>{safeDate(quickAppointment.appointment_date).toLocaleDateString('pt-BR')}</dd></div><div><dt>Horário</dt><dd>{quickAppointment.appointment_time || 'Dia inteiro'}</dd></div><div><dt>Equipe</dt><dd>{quickAppointment.technician_names || 'Equipe a definir'}</dd></div><div><dt>Local</dt><dd>{quickAppointment.client_address || 'Local não informado'}</dd></div></dl>{!isNonTechnicalAppointment(quickAppointment) && <AppointmentAssetsPanel appointment={quickAppointment} technicians={technicians} currentUser={currentUser} onRefresh={onRefresh} />}</section></ModalOverlay>}
+      {handoffAppointment && nextHandoffStatus && <ModalOverlay className="month-overlay" onDismiss={workflowActionId === null ? () => setHandoffAppointment(null) : undefined}><section role="dialog" aria-modal="true" aria-labelledby="agenda-handoff-title" className="month-dialog agenda-handoff-dialog"><header><h2 id="agenda-handoff-title">Encaminhar atendimento</h2><p>{handoffAppointment.client_name || handoffAppointment.title} irá para <strong>{nextHandoffStatus}</strong>.</p></header><label>Responsável nesta etapa<select value={handoffAssigneeId} onChange={event => setHandoffAssigneeId(event.target.value)}><option value="">Selecione um colaborador</option>{handoffCandidates.map(person => <option key={person.id} value={person.id}>{person.name}</option>)}</select></label>{handoffCandidates.length === 0 && <p role="alert">Não há colaborador elegível. Confira a equipe escalada e os usuários ativos.</p>}{actionError && <p role="alert">{actionError}</p>}<footer className="month-dialog__actions"><button type="button" className="btn btn-secondary" disabled={workflowActionId !== null} onClick={() => setHandoffAppointment(null)}>Cancelar</button><button type="button" className="btn btn-primary" disabled={workflowActionId !== null || !handoffAssigneeId} onClick={() => void submitAdvanceWorkflow()}>{workflowActionId !== null ? 'Encaminhando…' : 'Confirmar encaminhamento'}</button></footer></section></ModalOverlay>}
       {(editingAppointment || isCreating) && (
         <CalendarEventEditor
           appointment={editingAppointment}

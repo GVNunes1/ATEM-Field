@@ -70,6 +70,12 @@
   .sidebar-nav-item--active::before { transform: scaleY(1); }
   .sidebar-nav-item--active .sidebar-nav-icon { color: var(--primary) !important; }
   .sidebar-nav-icon { color: #6b778b; transition: color 180ms, transform 220ms var(--ease-out); }
+  .agenda-handoff-dialog { width: min(440px, 100%); }
+  .agenda-handoff-dialog header { padding-right: 0; }
+  .agenda-handoff-dialog h2 { margin: 0 0 8px; font-size: 1.2rem; }
+  .agenda-handoff-dialog p { color: var(--text-secondary); font-size: .86rem; line-height: 1.5; }
+  .agenda-handoff-dialog label { display: grid; gap: 7px; margin-top: 18px; color: var(--text-secondary); font-size: .84rem; font-weight: 600; }
+  .agenda-handoff-dialog select { width: 100%; min-height: 44px; padding: 9px 12px; border: 1px solid var(--border-color); border-radius: 8px; background: #fff; color: var(--text-main); font: inherit; }
   .sidebar-nav-icon svg { width: 19px; height: 19px; stroke-width: 1.7; }
   .sidebar-nav-item:hover .sidebar-nav-icon { transform: translateX(2px); }
   .sidebar-nav-item:active { transform: translateY(1px); }

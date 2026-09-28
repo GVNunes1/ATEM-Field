@@ -184,8 +184,11 @@ const appointments = [
       await verifyDialog(eventDialog, 'Event details');
       await eventDialog.getByText(mainAppointment.client_address, { exact: true }).waitFor();
       await eventDialog.getByText('Confirmado com cliente', { exact: true }).waitFor();
-      await eventDialog.getByText('QA-101 · Analisador de segurança · Reservado', { exact: true }).waitFor();
-      await eventDialog.getByText('QA-102 · Simulador de sinais · Devolvido', { exact: true }).waitFor();
+      await eventDialog.getByText('QA-101 · Analisador de segurança', { exact: true }).waitFor();
+      await eventDialog.getByText('QA-102 · Simulador de sinais', { exact: true }).waitFor();
+      await eventDialog.getByText('Reservado', { exact: true }).waitFor();
+      await eventDialog.getByText('Devolvido', { exact: true }).waitFor();
+      await eventDialog.getByText('Carro da agenda', { exact: true }).waitFor();
       assert.equal(await eventDialog.getByRole('button', { name: 'Checklist e reservas', exact: true }).isVisible(), true);
       assert.equal(await eventDialog.getByRole('button', { name: 'Editar', exact: true }).isVisible(), true);
       assert.equal(await eventDialog.evaluate(el => getComputedStyle(el).animationName), 'none', 'Reduced motion removes dialog animation');

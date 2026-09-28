@@ -5,6 +5,7 @@ import { isNonTechnicalAppointment } from '../lib/appointmentUtils';
 import { appointmentStage, appointmentTeam, appointmentTime, appointmentTitle, dateKey, groupMonthAppointments, lastAppointmentDay, localDate, monthDays } from '../lib/calendarMonth';
 import { ModalOverlay } from './ModalOverlay';
 import { MonthlyFrameworkGrid } from './MonthlyFrameworkGrid';
+import { AppointmentAssetsPanel } from './AppointmentAssetsPanel';
 import type { CalendarAppointment, CalendarTechnician } from './CalendarEventEditor';
 import './MonthlySpreadsheetView.css';
 
@@ -18,6 +19,8 @@ export interface MonthlySpreadsheetViewProps {
   onAdvanceAppointment?: (appointment: CalendarAppointment) => void;
   workflowActionId?: number | null;
   isAdmin: boolean;
+  currentUser?: { id?: number | string; role?: string } | null;
+  onRefresh?: () => Promise<void>;
   onEditAppointment: (appointment: CalendarAppointment) => void;
   onCreateAppointment: (dateStr: string) => void;
   onDeleteAppointment: (appointment: CalendarAppointment) => void;
@@ -40,13 +43,7 @@ const syncLabels: Record<string, string> = { synced: 'Sincronizado', pending: 'E
 const zoomColumns = [7, 5, 3, 1];
 const mobileZoomColumns = [7, 3, 2, 1];
 
-function reservationDescription(value: unknown) {
-  if (!value || typeof value !== 'object') return 'Reserva vinculada';
-  const record = value as Record<string, unknown>;
-  return [record.asset_tag, record.analyzer_name || record.analyzer_type, record.status].filter(item => typeof item === 'string' && item).join(' · ') || 'Reserva vinculada';
-}
-
-export function MonthlySpreadsheetView({ selectedMonth, appointments, technicians, canManage, canCreate = canManage, canAdvanceAppointment, onAdvanceAppointment, workflowActionId, onEditAppointment, onCreateAppointment, onDeleteAppointment, onOpenChecklistModal, deletingId, searchTerm = '', selectedTech = 'ALL' }: MonthlySpreadsheetViewProps) {
+export function MonthlySpreadsheetView({ selectedMonth, appointments, technicians, canManage, canCreate = canManage, canAdvanceAppointment, onAdvanceAppointment, workflowActionId, currentUser, onRefresh, onEditAppointment, onCreateAppointment, onDeleteAppointment, onOpenChecklistModal, deletingId, searchTerm = '', selectedTech = 'ALL' }: MonthlySpreadsheetViewProps) {
   const mobile = useSyncExternalStore(subscribeViewport, () => window.matchMedia(mobileQuery).matches, () => false);
   const today = dateKey(new Date());
   const days = useMemo(() => monthDays(selectedMonth), [selectedMonth]);
@@ -171,7 +168,7 @@ export function MonthlySpreadsheetView({ selectedMonth, appointments, technician
           <div><dt>Etapa do agendamento</dt><dd>{appointmentStage(selectedAppointment).full}</dd></div>
           <div><dt>Google Agenda</dt><dd>{syncLabels[selectedAppointment.google_sync_status || ''] || (selectedAppointment.google_event_id ? 'Evento vinculado' : 'Sem vínculo com o Google')}{selectedAppointment.google_sync_error && <span className="month-sync-error">{selectedAppointment.google_sync_error}</span>}</dd></div>
         </dl>
-        <section className="month-event-detail__reservations"><h3><ClipboardCheck size={17} /> Padrões e analisadores</h3>{selectedAppointment.reservations?.length ? <><p>{selectedAppointment.reservations.length} reservas vinculadas, incluindo histórico.</p><ul>{selectedAppointment.reservations.map((reservation, index) => <li key={index}>{reservationDescription(reservation)}</li>)}</ul></> : <p>Nenhuma reserva vinculada.</p>}</section>
+        {!isNonTechnicalAppointment(selectedAppointment) && <AppointmentAssetsPanel appointment={selectedAppointment} technicians={technicians} currentUser={currentUser} onRefresh={onRefresh} />}
         <footer className="month-dialog__actions">
           {canAdvanceAppointment?.(selectedAppointment) && <button type="button" className="btn btn-primary" disabled={workflowActionId === selectedAppointment.id} onClick={() => { dismiss(); onAdvanceAppointment?.(selectedAppointment); }}>{selectedAppointment.workflow_status === 'Validado pelo supervisor' ? 'Confirmar com cliente' : selectedAppointment.workflow_status === 'Aguardando validação do supervisor' ? 'Validar programação' : 'Enviar à supervisão'}</button>}
           {!isNonTechnicalAppointment(selectedAppointment) && <button type="button" className="btn btn-primary" onClick={() => { dismiss(); onOpenChecklistModal(selectedAppointment.id); }}><ClipboardCheck size={16} /> Checklist e reservas</button>}

@@ -1,0 +1,32 @@
+@media screen {
+  .appointment-assets { display: grid; gap: 18px; margin-top: 18px; }
+  .appointment-assets__section { border-top: 1px solid var(--border-color); padding-top: 17px; }
+  .appointment-assets__section h3 { display: flex; align-items: center; gap: 9px; margin: 0 0 12px; color: var(--text-main); font-size: .94rem; font-weight: 650; }
+  .appointment-assets__section > p { margin: 0 0 12px; color: var(--text-muted); font-size: .84rem; }
+  .appointment-assets__list { display: grid; gap: 8px; margin: 0 0 12px; padding: 0; list-style: none; }
+  .appointment-assets__list li, .appointment-assets__vehicle { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 12px; border: 1px solid var(--border-color); border-radius: 8px; background: var(--bg-primary); }
+  .appointment-assets__list li > span, .appointment-assets__vehicle { min-width: 0; }
+  .appointment-assets__list strong, .appointment-assets__vehicle strong { display: block; color: var(--text-main); font-size: .84rem; overflow-wrap: anywhere; }
+  .appointment-assets__list small, .appointment-assets__vehicle span { display: block; margin-top: 3px; color: var(--text-muted); font-size: .76rem; }
+  .appointment-assets__inline-form { display: flex; align-items: end; gap: 9px; flex-wrap: wrap; }
+  .appointment-assets__inline-form label { flex: 1 1 180px; }
+  .appointment-assets label { display: grid; gap: 5px; color: var(--text-secondary); font-size: .79rem; font-weight: 600; }
+  .appointment-assets select, .appointment-assets input:not([type=checkbox]):not([type=file]), .appointment-assets textarea { width: 100%; min-height: 42px; box-sizing: border-box; padding: 8px 10px; border: 1px solid var(--border-color); border-radius: 8px; background: #fff; color: var(--text-main); font: inherit; font-size: .87rem; }
+  .appointment-assets input[type=file] { max-width: 100%; font-size: .8rem; }
+  .appointment-assets__inline-form .btn, .appointment-assets__list .btn, .appointment-assets__section > .btn { min-height: 42px; }
+  .appointment-assets__vehicle-form { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin-top: 12px; }
+  .appointment-assets__vehicle-form > label:has(textarea), .appointment-assets__file, .appointment-assets__form-actions { grid-column: 1 / -1; }
+  .appointment-assets .appointment-assets__check { display: flex; align-items: center; gap: 8px; min-height: 38px; }
+  .appointment-assets__check input { width: 17px; height: 17px; accent-color: var(--primary); }
+  .appointment-assets__file { align-items: start; }
+  .appointment-assets__form-actions { display: flex; justify-content: flex-end; gap: 8px; }
+  .appointment-assets__message { margin: 0; padding: 9px 11px; border-radius: 8px; background: #eaf7f0; color: #166534; font-size: .82rem; }
+  .appointment-assets__message--error { background: #fef2f2; color: #b42318; }
+  .appointment-assets__hint { margin-top: 8px !important; }
+  @media (max-width: 520px) {
+    .appointment-assets__list li { align-items: flex-start; flex-direction: column; }
+    .appointment-assets__vehicle-form { grid-template-columns: minmax(0, 1fr); }
+    .appointment-assets__vehicle-form > label:has(textarea), .appointment-assets__file, .appointment-assets__form-actions { grid-column: auto; }
+    .appointment-assets__inline-form .btn, .appointment-assets__list .btn { width: 100%; justify-content: center; }
+  }
+}
