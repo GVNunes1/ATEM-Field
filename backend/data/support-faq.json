@@ -1,58 +1,180 @@
 [
   {
-    "id": "support-overview",
+    "id": "overview",
     "question": "O que o ATEM Field faz?",
-    "answer": "O ATEM Field organiza agenda de atendimentos, equipe técnica, padrões de teste, reservas de analisadores, checklists e histórico operacional. Use a navegação lateral para abrir cada área.",
-    "spokenSummary": "O ATEM organiza agenda, equipe, padrões, reservas e checklists em um só lugar.",
-    "keywords": ["atem", "sistema", "funcionalidades", "faz", "organiza", "ajuda"],
-    "source": { "id": "atem-overview", "title": "FAQ curada do ATEM Field", "section": "Visão geral", "kind": "faq" }
+    "answer": "O ATEM Field reúne agenda, workflow, padrões, reservas, frota e histórico. Os menus disponíveis dependem do perfil.",
+    "keywords": ["atem", "sistema", "funcionalidades", "ajuda"],
+    "source": { "id": "overview", "title": "Procedimentos ATEM Field", "section": "Visão geral", "kind": "faq" }
   },
   {
-    "id": "support-reservation",
-    "question": "Como faço uma reserva de analisador?",
-    "answer": "Abra Reservas, selecione o atendimento e o analisador disponível, confira o técnico responsável e confirme. A disponibilidade deve ser conferida na tela antes de concluir; o assistente não cria reservas automaticamente.",
-    "spokenSummary": "Abra Reservas, selecione atendimento e analisador disponível e confirme os dados.",
-    "keywords": ["reserva", "reservar", "analisador", "equipamento", "disponivel", "checkout"],
-    "source": { "id": "atem-reservas", "title": "FAQ curada do ATEM Field", "section": "Reservas", "kind": "faq" }
+    "id": "agenda",
+    "question": "Como consultar atendimento na agenda?",
+    "answer": "Abra Agenda, localize a data e selecione o atendimento.",
+    "keywords": ["agenda", "calendario", "calendário", "atendimento", "visualizar", "consultar", "data"],
+    "source": { "id": "agenda", "title": "Procedimentos ATEM Field", "section": "Agenda", "kind": "faq" },
+    "procedure": {
+      "purpose": "Localizar e conferir um atendimento.",
+      "roles": "Usuários com acesso à Agenda.",
+      "steps": ["Abra Agenda no menu lateral.", "Escolha o mês e localize a data.", "Selecione o atendimento para ver horário, local, equipe, etapa e recursos associados."],
+      "validations": ["Confira a data, o horário e a equipe antes de agir."],
+      "result": "Os detalhes do atendimento ficam disponíveis no ATEM Field."
+    }
   },
   {
-    "id": "support-checklist",
-    "question": "Onde encontro os checklists e padrões de teste?",
-    "answer": "Abra Padrões para consultar os analisadores e Templates para visualizar os checklists por categoria. Antes de executar um teste, confirme o modelo do equipamento e os parâmetros exigidos no template aprovado.",
-    "spokenSummary": "Use Padrões para os analisadores e Templates para os checklists aprovados.",
-    "keywords": ["checklist", "template", "padrao", "padrões", "teste", "parametros", "categoria"],
-    "source": { "id": "atem-checklists", "title": "FAQ curada do ATEM Field", "section": "Checklists", "kind": "faq" }
+    "id": "google-sync",
+    "question": "O Google Agenda não está sincronizando. O que faço?",
+    "answer": "Atualize a Agenda e confira a integração. A sincronização manual com o Google é restrita ao administrador.",
+    "keywords": ["google", "sincronizar", "sincronizacao", "sincronização", "evento", "totem", "atualizar"],
+    "source": { "id": "google-sync", "title": "Procedimentos ATEM Field", "section": "Sincronização", "kind": "faq" },
+    "procedure": {
+      "purpose": "Verificar um evento ausente ou desatualizado.",
+      "roles": "Todos podem atualizar a visualização; só o administrador inicia a sincronização manual com o Google.",
+      "steps": ["Na Agenda, clique em Atualizar e confira o período exibido.", "Confirme no Google Agenda que o evento existe no calendário integrado.", "Se ainda não aparecer, informe título, data e horário ao administrador para verificar a conexão e usar Sincronizar agora."],
+      "validations": ["Confira se o evento aparece uma única vez, com data e horário corretos."],
+      "cautions": ["Não recrie o evento para forçar a sincronização; isso pode gerar duplicidade."]
+    }
   },
   {
-    "id": "support-calendar",
-    "question": "Como vejo a agenda e os atendimentos?",
-    "answer": "Abra Agenda para visualizar os atendimentos sincronizados, filtrar por período e consultar o técnico associado. Se o atendimento estiver desatualizado, use a ação de atualização disponível na tela e confirme o indicador de sincronização.",
-    "spokenSummary": "Abra Agenda para consultar atendimentos, períodos e técnicos associados.",
-    "keywords": ["agenda", "atendimento", "calendario", "calendário", "sincronizacao", "sincronização", "tecnico"],
-    "source": { "id": "atem-agenda", "title": "FAQ curada do ATEM Field", "section": "Agenda", "kind": "faq" }
+    "id": "workflow",
+    "question": "Como encaminhar um atendimento no Workflow?",
+    "answer": "Abra o card, complete os campos obrigatórios, avance a etapa e atribua o próximo responsável.",
+    "keywords": ["workflow", "fluxo", "card", "etapa", "status", "encaminhar", "responsavel", "responsável", "atribuir", "comercial", "supervisor", "gerente"],
+    "source": { "id": "workflow", "title": "Procedimentos ATEM Field", "section": "Workflow", "kind": "faq" },
+    "procedure": {
+      "purpose": "Encaminhar a atividade para a próxima pessoa e etapa.",
+      "roles": "Comercial e supervisor atuam nas suas etapas; o gerente acompanha todos os fluxos; a equipe técnica recebe a execução.",
+      "prerequisites": ["O atendimento deve existir na Agenda ou no Workflow."],
+      "steps": ["Abra Workflow e localize o card.", "Confira e preencha os campos obrigatórios da etapa.", "Defina o próximo responsável e avance o status; também é possível arrastar o card para a coluna seguinte.", "Confira a nova coluna e o responsável exibido."],
+      "validations": ["A transição exige os campos obrigatórios."],
+      "result": "O atendimento fica visível na etapa e para o responsável atribuídos.",
+      "cautions": ["Se a transição for recusada, leia a mensagem da tela e complete os dados pendentes."]
+    }
   },
   {
-    "id": "support-history",
+    "id": "reserve-analyzer",
+    "question": "Como reservar um padrão ou analisador para um atendimento?",
+    "answer": "Abra o atendimento na Agenda ou no Workflow e vincule um padrão disponível.",
+    "keywords": ["reservar", "reserva", "padrao", "padrão", "padroes", "padrões", "analisador", "analisadores", "equipamento", "vincular"],
+    "source": { "id": "reserve-analyzer", "title": "Procedimentos ATEM Field", "section": "Reserva de padrões", "kind": "faq" },
+    "procedure": {
+      "purpose": "Vincular um padrão ao atendimento sem sair da atividade.",
+      "roles": "Usuários autorizados a gerenciar recursos do atendimento.",
+      "prerequisites": ["O atendimento pode estar provisório ou confirmado.", "O padrão não pode estar reservado ou emprestado em conflito com o período."],
+      "steps": ["Abra o atendimento na Agenda ou no Workflow.", "Na seção Padrões e analisadores, escolha a ação de reserva.", "Selecione o equipamento, confira data, disponibilidade e responsável e confirme.", "Confira se ele aparece vinculado ao atendimento."],
+      "validations": ["Uma reserva conflitante ou um equipamento em uso deve ser bloqueado."],
+      "result": "O padrão fica associado ao atendimento.",
+      "cautions": ["Calibração ou certificado vencido exige aviso; isso não libera um equipamento reservado ou emprestado."]
+    }
+  },
+  {
+    "id": "checkout-analyzer",
+    "question": "Como retirar um padrão reservado?",
+    "answer": "Localize a reserva e registre a retirada antes do uso.",
+    "keywords": ["retirar", "retirada", "checkout", "saida", "saída", "padrao", "padrão", "analisador", "reservado"],
+    "source": { "id": "checkout-analyzer", "title": "Procedimentos ATEM Field", "section": "Retirada de padrões", "kind": "faq" },
+    "procedure": {
+      "purpose": "Registrar a saída do padrão.",
+      "prerequisites": ["A reserva deve existir e estar como Reservado."],
+      "steps": ["Abra o atendimento ou localize a reserva em Reservas/Padrões.", "Confira o patrimônio, atendimento e responsável.", "Use Retirar e aguarde a confirmação."],
+      "validations": ["A reserva deve mudar para Em Uso.", "A retirada de padrão em atendimento Confirmado pode avançar o Workflow para Em execução."],
+      "result": "A saída fica registrada.",
+      "cautions": ["Não substitua fisicamente o patrimônio indicado por outro equipamento."]
+    }
+  },
+  {
+    "id": "reserve-vehicle",
+    "question": "Como reservar um carro para atendimento?",
+    "answer": "Abra o atendimento e vincule um carro disponível para o período.",
+    "keywords": ["reservar", "reserva", "carro", "veiculo", "veículo", "frota", "automovel", "automóvel"],
+    "source": { "id": "reserve-vehicle", "title": "Procedimentos ATEM Field", "section": "Reserva de frota", "kind": "faq" },
+    "procedure": {
+      "purpose": "Associar um carro ao atendimento.",
+      "roles": "Perfis com permissão de gestão da agenda e da frota.",
+      "prerequisites": ["O atendimento deve existir, mesmo que provisório.", "Conheça a data e o horário previstos."],
+      "steps": ["Abra o atendimento na Agenda ou no Workflow.", "Acesse a seção de frota e escolha a reserva.", "Confira disponibilidade, horários e margem de retorno.", "Confirme e verifique o carro vinculado."],
+      "validations": ["Não deve haver conflito com outra agenda ou utilização do carro."],
+      "result": "O carro fica associado ao atendimento no período escolhido."
+    }
+  },
+  {
+    "id": "checkout-vehicle",
+    "question": "Como retirar um carro da frota?",
+    "answer": "Registre a saída com quilometragem, foto e vistoria.",
+    "keywords": ["retirar", "retirada", "saida", "saída", "carro", "veiculo", "veículo", "frota", "km", "quilometragem", "foto", "vistoria"],
+    "source": { "id": "checkout-vehicle", "title": "Procedimentos ATEM Field", "section": "Retirada de frota", "kind": "faq" },
+    "procedure": {
+      "purpose": "Registrar a retirada e as condições iniciais do carro.",
+      "roles": "Usuários autorizados da frota; não é necessário ser o técnico escalado, mas as travas de disponibilidade continuam.",
+      "prerequisites": ["O carro não pode estar em uso por outra pessoa nem ter conflito de horário."],
+      "steps": ["Abra a seção de frota do atendimento ou abra Frota e escolha o carro.", "Informe quilometragem atual, tipo de uso e vistoria.", "Anexe a foto solicitada, registre danos ou observações e confirme.", "Confira se o carro consta como em uso pelo usuário correto."],
+      "validations": ["Um carro não pode ficar em uso simultâneo por duas pessoas."],
+      "result": "A saída e as condições iniciais ficam registradas.",
+      "cautions": ["Se houver reserva futura, confira a previsão de devolução e a margem de retorno."]
+    }
+  },
+  {
+    "id": "return-vehicle",
+    "question": "Como devolver um carro da frota?",
+    "answer": "Registre a devolução com quilometragem final e condições do veículo.",
+    "keywords": ["devolver", "devolucao", "devolução", "retorno", "carro", "veiculo", "veículo", "frota", "abastecimento", "pneu"],
+    "source": { "id": "return-vehicle", "title": "Procedimentos ATEM Field", "section": "Devolução de frota", "kind": "faq" },
+    "procedure": {
+      "purpose": "Encerrar o uso do carro e registrar suas condições.",
+      "prerequisites": ["Deve haver uma retirada em andamento."],
+      "steps": ["Abra Frota e localize o carro em uso.", "Abra a devolução e informe a quilometragem final.", "Responda à vistoria de danos e aos campos de abastecimento e calibragem de pneus exibidos.", "Confirme e confira o encerramento do uso."],
+      "validations": ["Os dados obrigatórios devem ser aceitos pelo sistema."],
+      "result": "A devolução fica registrada e o uso ativo é encerrado.",
+      "cautions": ["Informe a condição real; não marque como realizado algo que não ocorreu."]
+    }
+  },
+  {
+    "id": "templates",
+    "question": "Onde encontro os checklists e templates?",
+    "answer": "O acesso a Templates depende do perfil. O menu não é exibido para técnicos e pode estar oculto para supervisores e gerentes.",
+    "keywords": ["checklist", "checklists", "template", "templates", "oculto", "escondido", "menu"],
+    "source": { "id": "templates", "title": "Procedimentos ATEM Field", "section": "Checklists", "kind": "faq" },
+    "procedure": {
+      "purpose": "Encontrar um checklist aprovado.",
+      "steps": ["Abra o atendimento ou a área em que o checklist será utilizado.", "Se seu perfil permite Templates, confira se esse item está oculto nas preferências da barra lateral.", "Selecione o checklist correspondente à atividade e ao modelo."],
+      "validations": ["Confirme o procedimento aplicável antes de preenchê-lo."],
+      "cautions": ["Mostrar o menu não concede permissão; peça ajuda ao responsável se o recurso não estiver disponível."]
+    }
+  },
+  {
+    "id": "history",
     "question": "Onde consulto o histórico de reservas?",
-    "answer": "Abra Histórico para consultar reservas anteriores e os respectivos analisadores e técnicos. Use os filtros da tela para reduzir a lista antes de abrir um registro.",
-    "spokenSummary": "Abra Histórico para consultar reservas anteriores e seus responsáveis.",
-    "keywords": ["historico", "histórico", "reserva", "reservas", "registro", "anteriores"],
-    "source": { "id": "atem-historico", "title": "FAQ curada do ATEM Field", "section": "Histórico", "kind": "faq" }
+    "answer": "Abra Histórico e use a busca e os filtros disponíveis.",
+    "keywords": ["historico", "histórico", "registro", "registros", "anteriores", "movimentacoes", "movimentações"],
+    "source": { "id": "history", "title": "Procedimentos ATEM Field", "section": "Histórico", "kind": "faq" },
+    "procedure": {
+      "purpose": "Localizar uma movimentação anterior.",
+      "steps": ["Abra Histórico no menu lateral.", "Use a busca e os filtros para reduzir os registros.", "Abra o item e confira data, equipamento e responsável."],
+      "result": "O registro fica disponível conforme as permissões do perfil."
+    }
   },
   {
-    "id": "support-login",
+    "id": "login",
     "question": "Não consigo entrar no sistema. O que faço?",
-    "answer": "Confira se o perfil correto está selecionado e se o PIN foi digitado sem espaços. Se o problema persistir, solicite a revisão do cadastro ao administrador; não compartilhe seu PIN no chat.",
-    "spokenSummary": "Confira o perfil e o PIN. Se persistir, procure o administrador sem compartilhar o PIN.",
-    "keywords": ["login", "entrar", "acesso", "senha", "pin", "credenciais", "administrador"],
-    "source": { "id": "atem-login", "title": "FAQ curada do ATEM Field", "section": "Acesso", "kind": "faq" }
+    "answer": "Selecione seu usuário na lista única e informe seu PIN ou senha. Se persistir, procure o administrador sem compartilhar a credencial.",
+    "keywords": ["login", "entrar", "acesso", "senha", "pin", "credenciais", "usuario", "usuário"],
+    "source": { "id": "login", "title": "Procedimentos ATEM Field", "section": "Acesso", "kind": "faq" },
+    "procedure": {
+      "purpose": "Resolver um problema de acesso sem expor credenciais.",
+      "steps": ["Na tela de login, selecione seu nome na lista de usuários.", "Digite o PIN ou senha, confira se não há espaços extras e tente novamente.", "Se continuar sem acesso, peça ao administrador para revisar cadastro e perfil."],
+      "validations": ["Após entrar, confira o nome e o perfil exibidos."],
+      "cautions": ["Nunca envie PIN ou senha ao assistente, a colegas ou em capturas de tela."]
+    }
   },
   {
-    "id": "support-not-found",
+    "id": "technical-help",
     "question": "Como pedir ajuda técnica sobre um equipamento?",
-    "answer": "Informe o tipo do equipamento, fabricante, modelo e o procedimento ou código de erro. A consulta técnica deve usar somente manual, checklist ou procedimento aprovado; quando a fonte não estiver disponível, encaminhe o caso ao responsável técnico.",
-    "spokenSummary": "Informe tipo, fabricante, modelo e código de erro; dúvidas sem fonte aprovada devem ser encaminhadas ao responsável técnico.",
-    "keywords": ["equipamento", "fabricante", "modelo", "erro", "manual", "procedimento", "tecnica", "técnica"],
-    "source": { "id": "atem-tecnico", "title": "FAQ curada do ATEM Field", "section": "Consulta técnica", "kind": "faq" }
+    "answer": "Informe equipamento, fabricante, modelo, sintoma e código de erro. Sem procedimento aprovado, encaminhe ao responsável técnico.",
+    "keywords": ["equipamento", "fabricante", "modelo", "erro", "manual", "procedimento", "tecnica", "técnica", "diagnostico", "diagnóstico"],
+    "source": { "id": "technical-help", "title": "Procedimentos ATEM Field", "section": "Consulta técnica", "kind": "faq" },
+    "procedure": {
+      "purpose": "Reunir informações para uma orientação técnica segura.",
+      "steps": ["Identifique tipo, fabricante e modelo.", "Anote o sintoma, o código de erro e a etapa em que ocorreu.", "Consulte somente manual, checklist ou procedimento aprovado para aquele modelo.", "Sem fonte aprovada ou se o caso não estiver coberto, encaminhe ao responsável técnico."],
+      "cautions": ["Não improvise parâmetros, tolerâncias ou reparos a partir de uma resposta genérica."]
+    }
   }
 ]

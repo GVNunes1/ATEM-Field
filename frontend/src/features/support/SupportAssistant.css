@@ -140,6 +140,8 @@
 
 .support-message-bubble {
   padding: 12px 14px;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
   color: var(--text-main);
   font-size: 0.84rem;
   line-height: 1.55;

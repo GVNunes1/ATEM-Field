@@ -106,6 +106,20 @@ export function getBestSupportMatch(question: string): SupportMatch | null {
   return best && best.score >= 0.2 ? best : null;
 }
 
+export function renderSupportProcedure(match: SupportMatch): string {
+  const procedure = match.procedure;
+  if (!procedure) return match.answer;
+
+  const sections = [procedure.purpose || match.answer];
+  if (procedure.roles) sections.push(`Quem pode fazer: ${procedure.roles}`);
+  if (procedure.prerequisites?.length) sections.push(`Antes de começar:\n${procedure.prerequisites.map(item => `• ${item}`).join('\n')}`);
+  if (procedure.steps?.length) sections.push(`Passo a passo:\n${procedure.steps.map((step, index) => `${index + 1}. ${step}`).join('\n')}`);
+  if (procedure.validations?.length) sections.push(`Confira:\n${procedure.validations.map(item => `• ${item}`).join('\n')}`);
+  if (procedure.result) sections.push(`Resultado esperado: ${procedure.result}`);
+  if (procedure.cautions?.length) sections.push(`Se houver problema ou dúvida:\n${procedure.cautions.map(item => `• ${item}`).join('\n')}`);
+  return sections.join('\n\n');
+}
+
 export function buildSupportContext(matches: SupportMatch[]): string {
   return matches
     .map(match => {
