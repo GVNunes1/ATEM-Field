@@ -89,6 +89,13 @@ const appointments = [
       const geometry = await page.locator(mobileCalendar ? '.month-calendar__grid' : '.atem-fullcalendar').evaluate(el => ({ overflow: el.scrollWidth - el.clientWidth }));
       assert.ok(geometry.overflow <= 1, 'Month grid does not overflow');
       assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1), 'Page fits viewport width');
+      if (!mobileCalendar) {
+        const heading = page.locator('.framework-day-heading').first();
+        const dateBox = await heading.locator('.framework-date').boundingBox();
+        const addBox = await heading.locator('.framework-add').boundingBox();
+        const headingInfo = await heading.evaluate(el => ({ width: el.getBoundingClientRect().width, parent: el.parentElement?.getBoundingClientRect().width, parentClass: el.parentElement?.className, grandparent: el.parentElement?.parentElement?.getBoundingClientRect().width, grandparentClass: el.parentElement?.parentElement?.className, display: getComputedStyle(el).display, grid: getComputedStyle(el).gridTemplateColumns }));
+        assert.ok(dateBox && addBox && dateBox.x + dateBox.width <= addBox.x, `New appointment button does not overlap the day number: ${JSON.stringify({ dateBox, addBox, headingInfo })}`);
+      }
 
       const helperResults = await page.evaluate(async ({ appointments, technicians }) => {
         const helpers = await import('/src/lib/calendarMonth.ts');

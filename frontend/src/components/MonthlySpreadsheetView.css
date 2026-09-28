@@ -25,8 +25,8 @@
   .month-zoom-day { min-width: 0; min-height: 410px; padding: 5px; border-right: 1px solid var(--border-color); border-bottom: 1px solid var(--border-color); }
   .month-zoom-day--outside { background: var(--bg-primary); }
   .month-zoom-day--today { background: #fbfdff; }
-  .month-zoom-day__heading { display: flex; align-items: center; justify-content: center; position: relative; height: 35px; }
-  .month-zoom-day__heading > button:first-child { display: flex; align-items: center; gap: 5px; padding: 3px 7px; border: 0; border-radius: 7px; background: transparent; color: var(--text-main); font-size: .75rem; cursor: pointer; }
+  .month-zoom-day__heading { display: grid; grid-template-columns: 28px minmax(0, 1fr) 28px; align-items: center; height: 35px; }
+  .month-zoom-day__heading > button:first-child { grid-column: 2; justify-self: center; display: flex; align-items: center; gap: 5px; padding: 3px 7px; border: 0; border-radius: 7px; background: transparent; color: var(--text-main); font-size: .75rem; cursor: pointer; }
   .month-zoom-day__heading > button:first-child:hover { background: var(--primary-soft); }
   .month-zoom-day__heading > button:first-child span { color: var(--text-muted); }
   .month-zoom-day__events { display: grid; gap: 3px; }
@@ -58,12 +58,12 @@
   .month-cell--outside { background: var(--bg-primary, #f7f8fa); }
   .month-cell--outside .month-date { color: var(--text-muted); }
   .month-cell--today { background: #fbfdff; }
-  .month-cell__heading { display: flex; align-items: center; justify-content: center; position: relative; min-height: 30px; margin-bottom: 3px; }
-  .month-date { display: inline-flex; align-items: center; gap: 3px; justify-content: center; min-width: 30px; height: 30px; padding: 0 4px; color: var(--text-main); font-size: .8125rem; font-weight: 550; font-variant-numeric: tabular-nums; border: 0; border-radius: 6px; background: transparent; cursor: pointer; }
+  .month-cell__heading { display: grid; grid-template-columns: 26px minmax(0, 1fr) 26px; align-items: center; min-height: 30px; margin-bottom: 3px; }
+  .month-date { grid-column: 2; justify-self: center; display: inline-flex; align-items: center; gap: 3px; justify-content: center; min-width: 30px; height: 30px; padding: 0 4px; color: var(--text-main); font-size: .8125rem; font-weight: 550; font-variant-numeric: tabular-nums; border: 0; border-radius: 6px; background: transparent; cursor: pointer; }
   .month-date span { display: inline-grid; place-items: center; width: 26px; height: 26px; border-radius: 50%; }
   .month-date small { font-size: .75rem; font-weight: 400; }
   .month-date[aria-current="date"] span { color: #fff; background: var(--primary); }
-  .month-add { width: 26px; height: 26px; position: absolute; right: 0; color: var(--text-muted); }
+  .month-add { grid-column: 3; justify-self: end; width: 26px; height: 26px; color: var(--text-muted); }
   .month-cell__events { display: grid; gap: 3px; }
   .month-event { position: relative; display: grid; gap: 2px; width: 100%; min-width: 0; padding: 3px 5px 3px 8px; overflow: hidden; color: var(--text-main); text-align: left; border: 0; border-radius: 5px; background: transparent; cursor: pointer; transition: background 160ms ease; }
   .month-event::before { content: ''; position: absolute; top: 7px; left: 1px; width: 4px; height: 4px; border-radius: 50%; background: var(--event-color); }

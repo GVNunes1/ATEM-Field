@@ -1342,7 +1342,10 @@ router.get('/appointments', requireAuthentication, async (req: Request, res: Res
     }
 
     const enriched = list.map((appt: any) => {
-      const tIds = apptTechIdsMap.get(appt.id) || (appt.technician_id ? [appt.technician_id] : []);
+      const tIds = [...new Set([
+        ...(appt.technician_id ? [Number(appt.technician_id)] : []),
+        ...(apptTechIdsMap.get(appt.id) || []).map(Number)
+      ])];
       const tech = appt.technician_id ? techMap.get(appt.technician_id) : null;
       const assignee = appt.workflow_assignee_id ? techMap.get(appt.workflow_assignee_id) : null;
       const techNames = appt.technician_names || (tech ? tech.name : 'Equipe de Campo');

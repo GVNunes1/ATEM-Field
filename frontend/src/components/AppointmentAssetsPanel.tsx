@@ -46,6 +46,7 @@ export function AppointmentAssetsPanel({ appointment, technicians, currentUser, 
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
+  const [confirmedReservations, setConfirmedReservations] = useState<Reservation[]>([]);
   const teamIds = useMemo(() => [...new Set([...(appointment.technician_ids || []), appointment.technician_id].filter(Boolean).map(Number))], [appointment.technician_ids, appointment.technician_id]);
   const team = technicians.filter(person => teamIds.includes(Number(person.id)) && person.status !== 'Inativo');
   const isManager = managementRoles.has(currentUser?.role || '');
@@ -53,19 +54,21 @@ export function AppointmentAssetsPanel({ appointment, technicians, currentUser, 
   const canOperate = isManager || isTeamMember;
   const canWithdrawVehicle = isManager || currentUser?.role === 'technician';
   const linkedVehicle = vehicles.find(vehicle => Number(vehicle.id) === Number(appointment.vehicle_id));
-  const reservations = (appointment.reservations || []) as Reservation[];
+  const reservations = useMemo(() => {
+    const fromAgenda = (appointment.reservations || []) as Reservation[];
+    const knownIds = new Set(fromAgenda.map(item => Number(item.id)));
+    return [...fromAgenda, ...confirmedReservations.filter(item => !knownIds.has(Number(item.id)))];
+  }, [appointment.reservations, confirmedReservations]);
   const availablePatterns = analyzers.filter(item => !/reservado|em uso|emprest|manuten|indispon|baixado/i.test(item.status));
 
   useEffect(() => {
     let alive = true;
-    Promise.all([
-      safeFetchJson('/api/analyzers', { cache: 'no-store' }),
-      safeFetchJson('/api/fleet/vehicles', { cache: 'no-store' })
-    ]).then(([patterns, fleet]) => {
-      if (!alive) return;
-      setAnalyzers(patterns.analyzers || []);
-      setVehicles(fleet.vehicles || []);
-    }).catch(() => { if (alive) setError('Não foi possível carregar padrões e veículos. Tente reabrir o atendimento.'); });
+    void safeFetchJson('/api/analyzers', { cache: 'no-store' })
+      .then(patterns => { if (alive) setAnalyzers(patterns.analyzers || []); })
+      .catch(() => { if (alive) setError('Não foi possível carregar os padrões. Tente reabrir o atendimento.'); });
+    void safeFetchJson('/api/fleet/vehicles', { cache: 'no-store' })
+      .then(fleet => { if (alive) setVehicles(fleet.vehicles || []); })
+      .catch(() => { if (alive) setError(previous => previous || 'Não foi possível carregar os veículos. As reservas de padrões continuam disponíveis.'); });
     return () => { alive = false; };
   }, []);
 
@@ -82,6 +85,15 @@ export function AppointmentAssetsPanel({ appointment, technicians, currentUser, 
     try {
       const result = await safeFetchJson('/api/reservations', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ appointment_id: appointment.id, analyzer_id: Number(patternId), technician_id: Number(technicianId), operation_type: 'Atendimento' }) });
       if (!result.success) throw new Error(result.error || 'Não foi possível reservar o padrão.');
+      const selectedPattern = analyzers.find(item => Number(item.id) === Number(patternId));
+      setConfirmedReservations(items => items.some(item => Number(item.id) === Number(result.reservationId)) ? items : [...items, {
+        id: Number(result.reservationId),
+        analyzer_id: Number(patternId),
+        technician_id: Number(technicianId),
+        status: result.status || 'Reservado',
+        asset_tag: selectedPattern?.asset_tag,
+        analyzer_name: selectedPattern?.name
+      }]);
       setNotice([result.message || 'Padrão reservado para este atendimento.', result.calibration_warning ? result.calibration_message || 'Calibração vencida; confirme antes de retirar.' : ''].filter(Boolean).join(' '));
       setAnalyzers(items => items.map(item => Number(item.id) === Number(patternId) ? { ...item, status: 'Reservado' } : item));
       setPatternId('');

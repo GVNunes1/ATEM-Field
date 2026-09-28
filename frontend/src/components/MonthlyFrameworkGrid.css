@@ -10,14 +10,16 @@
   }
   .atem-fullcalendar .fc { font-family: inherit; font-size: .8125rem; }
   .atem-fullcalendar .fc-daygrid-day-frame { min-height: 445px; }
+  .atem-fullcalendar .fc-daygrid-day-top { display: block; width: 100%; }
+  .atem-fullcalendar :has(> .framework-day-heading) { display: block; width: 100%; }
   .atem-fullcalendar table { margin: 0; border-collapse: collapse; }
   .atem-fullcalendar th, .atem-fullcalendar td { padding: 0; background: transparent; }
   .atem-fullcalendar .framework-weekday { display: block; padding: 8px 4px; font-size: .75rem; color: var(--text-muted); font-weight: 550; text-transform: capitalize; }
-  .framework-day-heading { display: flex; justify-content: center; position: relative; width: 100%; min-height: 33px; }
+  .framework-day-heading { display: grid; grid-template-columns: 28px minmax(0, 1fr) 28px; align-items: center; width: 100%; min-height: 34px; }
   .framework-date, .framework-add { display: inline-grid; place-items: center; padding: 0; border: 0; background: transparent; color: var(--text-main); cursor: pointer; border-radius: 50%; }
-  .framework-date { width: 28px; height: 28px; margin: 3px; font-size: .8125rem; font-variant-numeric: tabular-nums; }
+  .framework-date { grid-column: 2; justify-self: center; width: 28px; height: 28px; font-size: .8125rem; font-variant-numeric: tabular-nums; }
   .framework-date[aria-current="date"] { background: var(--primary); color: #fff; }
-  .framework-add { position: absolute; right: 4px; top: 3px; width: 28px; height: 28px; color: var(--text-muted); }
+  .framework-add { grid-column: 3; justify-self: end; width: 28px; height: 28px; color: var(--text-muted); }
   .framework-date:hover, .framework-add:hover { background: var(--primary-soft); color: var(--primary); }
   .atem-fullcalendar .framework-event { padding: 0; margin-inline: 3px; border: 0; border-left: 3px solid var(--event-color); border-radius: 4px; color: var(--text-main); background: var(--event-soft); text-align: left; box-shadow: none; cursor: pointer; }
   .atem-fullcalendar .framework-event:hover { filter: brightness(.975); }

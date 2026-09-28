@@ -26,11 +26,12 @@ if (!['localhost', '127.0.0.1'].includes(new URL(baseUrl).hostname)) throw new E
           const body = request.postDataJSON();
           requests.push({ path: url.pathname, body });
           if (url.pathname === '/api/reservations') {
-            appointment.reservations.push({ id: 77, analyzer_id: 31, technician_id: 4, status: 'Reservado', asset_tag: 'QA-31', analyzer_name: 'Simulador' });
+            // The agenda GET can lag behind a successful reservation POST.
             return route.fulfill({ json: { success: true, reservationId: 77, message: 'Reservado' } });
           }
           if (url.pathname === '/api/reservations/77/checkout') {
-            appointment.reservations[0].status = 'Em Uso'; appointment.workflow_status = 'Em execução';
+            appointment.reservations.push({ id: 77, analyzer_id: 31, technician_id: 4, status: 'Em Uso', asset_tag: 'QA-31', analyzer_name: 'Simulador' });
+            appointment.workflow_status = 'Em execução';
             return route.fulfill({ json: { success: true, workflow_started: true, message: 'Padrão retirado. Atendimento em execução.' } });
           }
           if (url.pathname === '/api/fleet/vehicles/11/checkout') return route.fulfill({ status: 201, json: { success: true, usage: { id: 51 } } });
@@ -50,6 +51,7 @@ if (!['localhost', '127.0.0.1'].includes(new URL(baseUrl).hostname)) throw new E
       const dialog = page.getByRole('dialog', { name: 'Hospital Central' });
       await dialog.getByLabel('Padrão disponível').selectOption('31');
       await dialog.getByRole('button', { name: 'Reservar padrão' }).click();
+      await dialog.getByText('QA-31 · Simulador').waitFor();
       await dialog.getByRole('button', { name: 'Registrar retirada', exact: true }).waitFor();
       await dialog.getByRole('button', { name: 'Registrar retirada', exact: true }).click();
       await dialog.getByText('Padrão retirado. Atendimento em execução.').waitFor();
