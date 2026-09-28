@@ -100,7 +100,8 @@ export async function getCalendarAppointment(id: number) {
   ]);
   if (error || linksError) throw error || linksError;
   if (!appointment) throw Object.assign(new Error('Agendamento não encontrado.'), { status: 404 });
-  return { ...appointment, technician_ids: (links || []).map(link => link.technician_id) };
+  const assignedIds = (links || []).map(link => link.technician_id);
+  return { ...appointment, technician_ids: assignedIds.length ? assignedIds : (appointment.technician_id ? [appointment.technician_id] : []) };
 }
 
 export async function queueCalendarEdit(id: number, input: any, actorId: string) {

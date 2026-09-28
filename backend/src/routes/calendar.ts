@@ -1,6 +1,6 @@
 import { Router, Request, Response } from 'express';
 import { AuthenticatedRequest, requireAuthentication, requireRole } from '../security/authService';
-import { createCalendarAppointment, deleteCalendarAppointment, listWritableCalendars, queueCalendarEdit, resolveCalendarConflict } from '../services/calendarSyncEngine';
+import { createCalendarAppointment, deleteCalendarAppointment, getCalendarAppointment, listWritableCalendars, queueCalendarEdit, resolveCalendarConflict } from '../services/calendarSyncEngine';
 import { getGoogleCalendarSyncStatus, runGoogleCalendarSync } from '../services/googleCalendarSync';
 import { schedulingRoles } from '../security/roles';
 
@@ -50,10 +50,22 @@ function fail(res: Response, error: any) {
 
 for (const resolve of [false, true]) {
   calendarRouter[resolve ? 'post' : 'patch'](`/appointments/:id/calendar${resolve ? '/resolve' : ''}`,
-    requireAuthentication, requireRole(['admin', 'manager', 'supervisor']), async (req: AuthenticatedRequest, res: Response) => {
+    requireAuthentication, requireRole(resolve ? ['admin', 'manager', 'supervisor'] : schedulingRoles), async (req: AuthenticatedRequest, res: Response) => {
       try {
         const id = Number(req.params.id);
         if (!Number.isSafeInteger(id) || id <= 0) return res.status(400).json({ success: false, error: 'Agendamento inválido.' });
+        if (!resolve && req.user!.role === 'commercial') {
+          const current = await getCalendarAppointment(id);
+          if (!['Data provisória', 'Validado pelo supervisor'].includes(current.workflow_status || 'Data provisória')) {
+            return res.status(403).json({ success: false, error: 'O Comercial só pode editar as etapas que lhe pertencem.' });
+          }
+          if (!Array.isArray(req.body.technician_ids)) return res.status(400).json({ success: false, error: 'Equipe inválida.' });
+          const requested = [...req.body.technician_ids].map(Number).sort((a, b) => a - b);
+          const assigned = [...current.technician_ids].map(Number).sort((a, b) => a - b);
+          if (JSON.stringify(requested) !== JSON.stringify(assigned)) {
+            return res.status(403).json({ success: false, error: 'A equipe só pode ser alterada pela supervisão.' });
+          }
+        }
         if (!resolve || req.body.resolution === 'atem') {
           const status = await getGoogleCalendarSyncStatus();
           if (!status.write_authorized) return res.status(409).json({ success: false, requires_write_auth: true,

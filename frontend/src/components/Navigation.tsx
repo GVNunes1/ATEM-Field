@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Box,
   CarFront,
@@ -11,12 +11,26 @@ import {
   PanelLeftClose,
   PanelLeftOpen,
   PackageCheck,
+  Settings2,
   TabletSmartphone,
+  Workflow,
   Users
 } from 'lucide-react';
 import { AuthUser } from '../types/auth';
 import { roleLabel } from '../lib/permissions';
+import { ModalOverlay } from './ModalOverlay';
 import './Navigation.css';
+
+const hiddenKey = (id: number | string | undefined) => `atem.sidebar.hidden.${id ?? 'guest'}`;
+const defaultHidden = (role?: string) => role === 'manager' || role === 'supervisor' ? ['templates'] : [];
+const readHidden = (id: number | string | undefined, role?: string): string[] => {
+  try {
+    const saved = localStorage.getItem(hiddenKey(id));
+    if (saved === null) return defaultHidden(role);
+    const parsed: unknown = JSON.parse(saved);
+    return Array.isArray(parsed) ? parsed.filter((value): value is string => typeof value === 'string') : defaultHidden(role);
+  } catch { return defaultHidden(role); }
+};
 
 interface NavigationProps {
   activeTab: string;
@@ -35,6 +49,14 @@ export const Navigation: React.FC<NavigationProps> = ({
 }) => {
   const isAdmin = currentUser?.role === 'admin';
   const [collapsed, setCollapsed] = useState(() => localStorage.getItem('atem.sidebar.collapsed') === 'true');
+  const [hidden, setHidden] = useState<string[]>(() => readHidden(currentUser?.id, currentUser?.role));
+  const [showPreferences, setShowPreferences] = useState(false);
+  useEffect(() => setHidden(readHidden(currentUser?.id, currentUser?.role)), [currentUser?.id, currentUser?.role]);
+  const toggleVisibility = (id: string) => {
+    const next = hidden.includes(id) ? hidden.filter(item => item !== id) : [...hidden, id];
+    setHidden(next);
+    localStorage.setItem(hiddenKey(currentUser?.id), JSON.stringify(next));
+  };
   const toggleCollapsed = () => setCollapsed(value => {
     localStorage.setItem('atem.sidebar.collapsed', String(!value));
     return !value;
@@ -44,10 +66,12 @@ export const Navigation: React.FC<NavigationProps> = ({
   const navItems = [
     { id: 'dashboard', label: 'Dashboard', icon: Home },
     { id: 'appointments', label: 'Agenda', icon: Calendar },
+    ...(['admin', 'manager', 'supervisor', 'commercial'].includes(currentUser?.role || '') ? [{ id: 'workflow', label: 'Workflow', icon: Workflow }] : []),
+    ...(currentUser?.role === 'technician' ? [{ id: 'workflow', label: 'Minhas atividades', icon: Workflow }] : []),
     { id: 'operations', label: 'Reservas', icon: PackageCheck },
     { id: 'inventory', label: 'Padrões', icon: Box },
     { id: 'fleet', label: 'Frota', icon: CarFront },
-    { id: 'templates', label: 'Templates', icon: CheckSquare },
+    ...(currentUser?.role !== 'technician' ? [{ id: 'templates', label: 'Templates', icon: CheckSquare }] : []),
     ...(isAdmin ? [{ id: 'technicians', label: 'Técnicos', icon: Users }] : []),
     { id: 'history', label: 'Histórico', icon: ClipboardList }
   ];
@@ -79,7 +103,7 @@ export const Navigation: React.FC<NavigationProps> = ({
       {/* Navigation Links */}
       <nav className="sidebar-nav">
         <span className="sidebar-section-label">Área de trabalho</span>
-        {navItems.map(item => {
+        {navItems.filter(item => item.id === 'dashboard' || !hidden.includes(item.id)).map(item => {
           const Icon = item.icon;
           const isActive = activeTab === item.id;
           return (
@@ -103,6 +127,7 @@ export const Navigation: React.FC<NavigationProps> = ({
 
       {/* Bottom Profile and Totem Shortcut */}
       <div className="sidebar-footer">
+        <button type="button" className="sidebar-preferences-shortcut" onClick={() => setShowPreferences(true)} aria-label="Personalizar menu" title="Personalizar menu"><Settings2 size={18} aria-hidden="true" /><span>Personalizar menu</span></button>
         {onOpenSupport && (
           <button
             id="support-open-button"
@@ -155,6 +180,7 @@ export const Navigation: React.FC<NavigationProps> = ({
           )}
         </div>
       </div>
+      {showPreferences && <ModalOverlay onDismiss={() => setShowPreferences(false)} className="sidebar-preferences-overlay"><section className="sidebar-preferences-dialog" role="dialog" aria-modal="true" aria-labelledby="sidebar-preferences-title"><div className="sidebar-preferences-heading"><div><h2 id="sidebar-preferences-title">Personalizar menu</h2><p>Escolha o que aparece na barra lateral. Dashboard permanece visível.</p></div><button type="button" onClick={() => setShowPreferences(false)} aria-label="Fechar personalização">×</button></div><div className="sidebar-preferences-list">{navItems.filter(item => item.id !== 'dashboard').map(item => { const Icon = item.icon; return <label key={item.id} className="sidebar-preferences-row"><Icon size={18} aria-hidden="true" /><span>{item.label}</span><input type="checkbox" checked={!hidden.includes(item.id)} onChange={() => toggleVisibility(item.id)} aria-label={`Mostrar ${item.label}`} /></label>; })}</div><button type="button" className="sidebar-preferences-done" onClick={() => setShowPreferences(false)}>Concluído</button></section></ModalOverlay>}
     </aside>
   );
 };

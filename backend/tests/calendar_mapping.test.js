@@ -22,6 +22,7 @@ test('no-op edit produces no Google patch and excludes unrelated event fields', 
   assert.deepEqual(buildCalendarEdit(form(), baseline, technicians).eventPatch, {});
   const changed = buildCalendarEdit(form({ title: 'Novo título' }), baseline, technicians).eventPatch;
   assert.deepEqual(changed, { summary: 'Novo título' });
+  assert.deepEqual(buildCalendarEdit(form({ client_address: 'Rua B' }), baseline, technicians).eventPatch, { location: 'Rua B' });
   for (const protectedField of ['attendees', 'organizer', 'recurrence', 'attachments', 'conferenceData', 'reminders']) {
     assert.equal(changed[protectedField], undefined);
   }

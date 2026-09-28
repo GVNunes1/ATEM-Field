@@ -9,6 +9,8 @@ const projectRef = process.env.SUPABASE_PROJECT_REF;
 if (!projectRef || !process.env.SUPABASE_ACCESS_TOKEN) throw new Error('Supabase MCP credentials are unavailable.');
 
 const queries = {
+  workflow_status_counts: `select coalesce(workflow_status,'(nulo)') as stage, count(*) as appointments from public.appointments where status is distinct from 'Cancelado' group by 1 order by appointments desc`,
+  workflow_assignment_schema: `select column_name, data_type from information_schema.columns where table_schema='public' and table_name='appointments' and column_name like 'workflow_assign%' order by column_name`,
   counts: `select count(*) as appointments,
     count(*) filter (where google_calendar_id is not null and google_event_id is not null) as google_linked,
     count(*) filter (where google_calendar_id is null and external_id like 'GGCAL-%') as legacy_google,
@@ -168,12 +170,13 @@ const queries = {
   'apply-calendar-migration': fs.readFileSync(path.resolve(__dirname, '../migrations/20260921195933_calendar_removal_and_profile_permissions.sql'), 'utf8'),
   'archive-calendar-tombstones': fs.readFileSync(path.resolve(__dirname, '../migrations/20260925195133_archive_cancelled_google_events.sql'), 'utf8'),
   'cleanup-calendar-tombstones': fs.readFileSync(path.resolve(__dirname, 'cleanup_cancelled_google_batch.sql'), 'utf8'),
+  'apply-workflow-assignment': fs.readFileSync(path.resolve(__dirname, '../migrations/20260928115601_workflow_assignment.sql'), 'utf8'),
 };
 
 async function main() {
   const keys = process.argv.slice(2);
   if (!keys.length || keys.some(key => !Object.hasOwn(queries, key))) throw new Error(`Choose audits: ${Object.keys(queries).join(', ')}`);
-  const writeMode = keys.some(key => ['apply-calendar-migration', 'archive-calendar-tombstones', 'cleanup-calendar-tombstones'].includes(key));
+  const writeMode = keys.some(key => ['apply-calendar-migration', 'archive-calendar-tombstones', 'cleanup-calendar-tombstones', 'apply-workflow-assignment'].includes(key));
   if (writeMode && keys.length !== 1) throw new Error('Run each database maintenance action separately from audits.');
   const child = spawn('npx.cmd', ['-y', '@supabase/mcp-server-supabase@0.13.0', '--project-ref', projectRef, ...(!writeMode ? ['--read-only'] : [])], {
     cwd: path.resolve(__dirname, '..'), env: process.env, windowsHide: true, shell: true,

@@ -12,6 +12,7 @@ import { LoginView } from './pages/LoginView';
 import { PublicInfoView, PublicPage } from './pages/PublicInfoView';
 import { ProfileView } from './pages/ProfileView';
 import { FleetView } from './pages/FleetView';
+import { WorkflowView } from './pages/WorkflowView';
 import { AuthUser } from './types/auth';
 import { safeFetchJson } from './lib/api';
 import { SupportAssistant } from './features/support/SupportAssistant';
@@ -34,6 +35,7 @@ function getInitialTab(): string {
   if (path === 'historico' || path === 'history') return 'history';
   if (path === 'frota' || path === 'fleet') return 'fleet';
   if (path === 'agenda' || path === 'appointments') return 'appointments';
+  if (path === 'workflow' || path === 'fluxo') return 'workflow';
   const urlParams = new URLSearchParams(window.location.search);
   const tabParam = urlParams.get('tab');
   if (tabParam) return tabParam;
@@ -130,6 +132,8 @@ export function App() {
         window.history.pushState({}, '', '/padroes');
       } else if (tab === 'appointments') {
         window.history.pushState({}, '', '/agenda');
+      } else if (tab === 'workflow') {
+        window.history.pushState({}, '', '/workflow');
       } else if (tab === 'operations') {
         window.history.pushState({}, '', '/reservas');
       } else if (tab === 'technicians') {
@@ -276,7 +280,7 @@ export function App() {
       />
       <div className="app-content-wrapper">
         <header className="workspace-topbar">
-          <div className="workspace-breadcrumb"><span>ATEM Field</span><ChevronRight size={14} aria-hidden="true" /><strong>{({ dashboard: 'Dashboard', appointments: 'Agenda', operations: 'Reservas', inventory: 'Padrões', fleet: 'Frota', technicians: 'Técnicos', history: 'Histórico', templates: 'Templates', checklist: 'Templates', profile: 'Perfil' } as Record<string, string>)[activeTab] || 'Área de trabalho'}</strong></div>
+          <div className="workspace-breadcrumb"><span>ATEM Field</span><ChevronRight size={14} aria-hidden="true" /><strong>{({ dashboard: 'Dashboard', appointments: 'Agenda', workflow: 'Workflow', operations: 'Reservas', inventory: 'Padrões', fleet: 'Frota', technicians: 'Técnicos', history: 'Histórico', templates: 'Templates', checklist: 'Templates', profile: 'Perfil' } as Record<string, string>)[activeTab] || 'Área de trabalho'}</strong></div>
           <div className="workspace-tools">
             <span className="workspace-date"><CalendarDays size={15} aria-hidden="true" />{new Date().toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' })}</span>
             <button className="workspace-refresh" onClick={handleRefresh} disabled={refreshing} aria-label="Atualizar dados" title={lastUpdated ? `Atualizado às ${lastUpdated.toLocaleTimeString('pt-BR')}` : 'Atualizar dados'}><RefreshCw size={16} className={refreshing ? 'spin' : undefined} /><span>{refreshing ? 'Atualizando' : 'Atualizar'}</span></button>
@@ -306,6 +310,9 @@ export function App() {
               {activeTab === 'appointments' && (
                 <AppointmentsView appointments={appointments} onOpenChecklistModal={handleOpenReservationForAppointment} currentUser={currentUser} onRefresh={fetchAllData} />
               )}
+              {activeTab === 'workflow' && (['admin', 'manager', 'supervisor', 'commercial', 'technician'].includes(currentUser.role)
+                ? <WorkflowView appointments={appointments} technicians={technicians} role={currentUser.role} currentUserId={currentUser.id} onRefresh={fetchAllData} />
+                : <div className="field-empty field-surface" role="alert"><h1>Acesso restrito</h1><p>O Workflow é destinado ao Comercial, Supervisão e Gerência.</p></div>)}
               {(activeTab === 'templates' || activeTab === 'checklist') && (
                 <ChecklistView categories={categories} onRefresh={fetchAllData} />
               )}

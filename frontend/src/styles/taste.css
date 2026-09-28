@@ -53,9 +53,9 @@
   .app-sidebar--collapsed { width: 68px; min-width: 68px; max-width: 68px; padding-inline: 9px; }
   .app-sidebar--collapsed .sidebar-brand { flex-direction: column; gap: 8px; padding-inline: 0; margin-bottom: 24px; }
   .app-sidebar--collapsed .sidebar-logo img { width: 42px; }
-  .app-sidebar--collapsed .sidebar-product, .app-sidebar--collapsed .sidebar-section-label, .app-sidebar--collapsed .sidebar-nav-label, .app-sidebar--collapsed .sidebar-support-shortcut span, .app-sidebar--collapsed .sidebar-totem-shortcut span, .app-sidebar--collapsed .sidebar-user-info { display: none; }
+  .app-sidebar--collapsed .sidebar-product, .app-sidebar--collapsed .sidebar-section-label, .app-sidebar--collapsed .sidebar-nav-label, .app-sidebar--collapsed .sidebar-support-shortcut span, .app-sidebar--collapsed .sidebar-totem-shortcut span, .app-sidebar--collapsed .sidebar-preferences-shortcut span, .app-sidebar--collapsed .sidebar-user-info { display: none; }
   .app-sidebar--collapsed .sidebar-collapse { margin: 0; }
-  .app-sidebar--collapsed .sidebar-nav-item, .app-sidebar--collapsed .sidebar-support-shortcut, .app-sidebar--collapsed .sidebar-totem-shortcut, .app-sidebar--collapsed .sidebar-profile-btn { justify-content: center; padding-inline: 0; }
+  .app-sidebar--collapsed .sidebar-nav-item, .app-sidebar--collapsed .sidebar-support-shortcut, .app-sidebar--collapsed .sidebar-totem-shortcut, .app-sidebar--collapsed .sidebar-preferences-shortcut, .app-sidebar--collapsed .sidebar-profile-btn { justify-content: center; padding-inline: 0; }
   .app-sidebar--collapsed .sidebar-user { flex-direction: column; }
   .app-sidebar--collapsed .sidebar-logout-btn { align-self: center; }
   .sidebar-brand { justify-content: flex-start; gap: 12px; padding: 0 10px; margin-bottom: 42px; }

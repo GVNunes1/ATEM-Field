@@ -28,7 +28,7 @@ import {
 import { syncOfficialTechniciansDatabase } from '../scripts/syncOfficialTechnicians';
 import { AuthService, CryptoService, requireAuthentication, requireRole, isManagementRole, requireManagement } from '../security/authService';
 import { calendarRouter, publicCalendarAppointment } from './calendar';
-import { canTransitionWorkflow, roleFromSpecialty, schedulingRoles } from '../security/roles';
+import { canReceiveWorkflowStage, canTransitionWorkflow, missingWorkflowFields, roleFromSpecialty, schedulingRoles } from '../security/roles';
 
 const router = Router();
 router.use(calendarRouter);
@@ -1343,6 +1343,7 @@ router.get('/appointments', requireAuthentication, async (req: Request, res: Res
     const enriched = list.map((appt: any) => {
       const tIds = apptTechIdsMap.get(appt.id) || (appt.technician_id ? [appt.technician_id] : []);
       const tech = appt.technician_id ? techMap.get(appt.technician_id) : null;
+      const assignee = appt.workflow_assignee_id ? techMap.get(appt.workflow_assignee_id) : null;
       const techNames = appt.technician_names || (tech ? tech.name : 'Equipe de Campo');
 
       return {
@@ -1351,6 +1352,7 @@ router.get('/appointments', requireAuthentication, async (req: Request, res: Res
         technician_name: techNames,
         technician_names: techNames,
         technician_phone: tech ? tech.phone : 'N/A',
+        workflow_assignee_name: assignee ? assignee.name : null,
         equipments: apptEquipsMap.get(appt.id) || [],
         reservations: apptResMap.get(appt.id) || []
       };
@@ -1498,7 +1500,7 @@ router.patch('/appointments/:id/workflow', requireAuthentication, requireRole(sc
     const appointmentId = parsePositiveId(req.params.id);
     if (!appointmentId) return res.status(400).json({ success: false, error: 'Agendamento inválido.' });
 
-    const { workflow_status, vehicle_id } = req.body || {};
+    const { workflow_status, workflow_assignee_id, vehicle_id } = req.body || {};
     const allowedStatuses = new Set([
       'Data provisória',
       'Aguardando validação do supervisor',
@@ -1524,6 +1526,27 @@ router.patch('/appointments/:id/workflow', requireAuthentication, requireRole(sc
     if ((workflow_status !== undefined && !canTransitionWorkflow(actorRole, currentStatus, workflow_status))
       || (vehicle_id !== undefined && actorRole === 'commercial')) {
       return res.status(403).json({ success: false, error: 'Esta etapa ou atribuição de veículo pertence a outro perfil.' });
+    }
+
+    if (workflow_status !== undefined) {
+      const assigneeId = parsePositiveId(workflow_assignee_id);
+      if (!assigneeId) return res.status(422).json({ success: false, error: 'Escolha o colaborador responsável pela próxima etapa.' });
+      const { data: assigned, error: assignedError } = await supabaseAdmin
+        .from('appointment_technicians').select('technician_id').eq('appointment_id', appointmentId);
+      if (assignedError) throw assignedError;
+      const hasTechnician = Boolean(assigned?.length || appointment.technician_id);
+      const missing = missingWorkflowFields(appointment, workflow_status, hasTechnician);
+      if (missing.length) return res.status(422).json({ success: false, error: `Preencha antes de avançar: ${missing.join(', ')}.`, missing_fields: missing });
+      const { data: assignee, error: assigneeError } = await supabaseAdmin.from('technicians')
+        .select('id,name,role,status').eq('id', assigneeId).maybeSingle();
+      if (assigneeError) throw assigneeError;
+      if (!assignee || String(assignee.status || '').toLowerCase() !== 'ativo') {
+        return res.status(422).json({ success: false, error: 'Selecione um colaborador ativo.' });
+      }
+      const isAssignedTechnician = Boolean(assigned?.some(item => Number(item.technician_id) === assigneeId) || Number(appointment.technician_id) === assigneeId);
+      if (!canReceiveWorkflowStage(workflow_status, assignee.role, isAssignedTechnician)) {
+        return res.status(422).json({ success: false, error: 'O responsável não pertence ao perfil ou à equipe exigida para esta etapa.' });
+      }
     }
 
     const nextVehicleId = vehicle_id === null || vehicle_id === '' || vehicle_id === undefined
@@ -1586,15 +1609,24 @@ router.patch('/appointments/:id/workflow', requireAuthentication, requireRole(sc
     };
     if (workflow_status === 'Validado pelo supervisor') update.workflow_validated_at = now;
     if (workflow_status === 'Confirmado com cliente') update.commercial_confirmed_at = now;
+    if (workflow_status !== undefined) {
+      update.workflow_assignee_id = Number(workflow_assignee_id);
+      update.workflow_assigned_at = now;
+      update.workflow_assigned_by = String((req as any).user.sub);
+    }
     if (vehicle_id !== undefined) update.vehicle_assigned_at = nextVehicleId ? now : null;
 
-    const { data: updated, error: updateError } = await supabaseAdmin
+    const guardedUpdate = supabaseAdmin
       .from('appointments')
       .update(update)
-      .eq('id', appointmentId)
+      .eq('id', appointmentId);
+    const { data: updated, error: updateError } = await (appointment.workflow_status == null
+      ? guardedUpdate.is('workflow_status', null)
+      : guardedUpdate.eq('workflow_status', appointment.workflow_status))
       .select('*')
-      .single();
+      .maybeSingle();
     if (updateError) throw updateError;
+    if (!updated) return res.status(409).json({ success: false, error: 'O atendimento mudou. Atualize o Workflow antes de avançar.' });
     res.json({ success: true, appointment: updated });
   } catch (err: any) {
     res.status(500).json({ success: false, error: err.message });

@@ -1,7 +1,7 @@
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
 const express = require('express');
-const { roleFromSpecialty, canTransitionWorkflow } = require('../dist/security/roles');
+const { roleFromSpecialty, canTransitionWorkflow, missingWorkflowFields, canReceiveWorkflowStage } = require('../dist/security/roles');
 let profile = { id: 77, name: 'Fixture', role: 'Supervisor', status: 'Ativo' };
 let lookupError = false;
 const modulePath = require.resolve('../dist/services/supabase');
@@ -22,6 +22,18 @@ test('Administrator-maintained specialties map to operational roles without admi
   assert.equal(canTransitionWorkflow('supervisor', 'Validado pelo supervisor', 'Confirmado com cliente'), false);
   assert.equal(canTransitionWorkflow('commercial', 'Validado pelo supervisor', 'Confirmado com cliente'), true);
   assert.equal(canTransitionWorkflow('manager', 'Data provisória', 'Confirmado com cliente'), true);
+  assert.equal(canTransitionWorkflow('supervisor', 'Confirmado com cliente', 'Em execução'), true);
+  assert.equal(canTransitionWorkflow('commercial', 'Confirmado com cliente', 'Em execução'), false);
+  const ready = { title: 'Visita', client_name: 'Hospital', client_address: 'Rua A', appointment_date: '2026-09-28', appointment_time: '08:00', appointment_end_time: '17:00', all_day: false };
+  assert.deepEqual(missingWorkflowFields(ready, 'Aguardando validação do supervisor', false), []);
+  assert.deepEqual(missingWorkflowFields(ready, 'Validado pelo supervisor', false), ['Técnico escalado']);
+  assert.deepEqual(missingWorkflowFields({ ...ready, client_address: '' }, 'Aguardando validação do supervisor', false), ['Local / endereço']);
+  assert.equal(canReceiveWorkflowStage('Aguardando validação do supervisor', 'Supervisor', false), true);
+  assert.equal(canReceiveWorkflowStage('Validado pelo supervisor', 'Comercial', false), true);
+  assert.equal(canReceiveWorkflowStage('Confirmado com cliente', 'Técnico de Campo', true), true);
+  assert.equal(canReceiveWorkflowStage('Confirmado com cliente', 'Técnico de Campo', false), false);
+  assert.equal(canReceiveWorkflowStage('Concluído', 'Supervisor', false), true);
+  assert.equal(canReceiveWorkflowStage('Concluído', 'Técnico de Campo', true), false);
 });
 
 test('Existing sessions receive current permissions; demotions, inactive profiles and lookup failures fail closed', async () => {

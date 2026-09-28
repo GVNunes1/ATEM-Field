@@ -12,7 +12,7 @@ interface GoogleEventSnapshot {
   description?: string;
 }
 
-export interface CalendarTechnician { id: number; name: string }
+export interface CalendarTechnician { id: number; name: string; role?: string; status?: string }
 
 export interface CalendarAppointment {
   id: number;
@@ -26,6 +26,8 @@ export interface CalendarAppointment {
   all_day?: boolean;
   status?: string;
   workflow_status?: string;
+  workflow_assignee_id?: number | null;
+  workflow_assignee_name?: string | null;
   technician_id?: number;
   technician_ids?: number[];
   technician_names?: string;
@@ -61,6 +63,7 @@ interface CalendarEventEditorProps {
   initialDate?: string;
   canManage?: boolean;
   canAssignTeam?: boolean;
+  canDelete?: boolean;
   onDismiss: () => void;
   onSaved: (message: string) => Promise<void>;
   onDeleted?: (message: string) => Promise<void>;
@@ -95,7 +98,7 @@ function describeRemoteTime(event: GoogleEventSnapshot | null) {
   return event?.start?.dateTime ? `${format(event.start.dateTime)} a ${format(event.end?.dateTime)}` : 'Não informado';
 }
 
-export function CalendarEventEditor({ appointment, technicians, initialDate, canManage, canAssignTeam = true, onDismiss, onSaved, onDeleted }: CalendarEventEditorProps) {
+export function CalendarEventEditor({ appointment, technicians, initialDate, canManage, canAssignTeam = true, canDelete = true, onDismiss, onSaved, onDeleted }: CalendarEventEditorProps) {
   const isCreateMode = !appointment;
   const [record, setRecord] = useState<CalendarAppointment | null>(appointment || null);
   const isAllDay = Boolean(appointment?.all_day);
@@ -260,7 +263,7 @@ export function CalendarEventEditor({ appointment, technicians, initialDate, can
             <h2 id="calendar-editor-title">{isCreateMode ? 'Novo atendimento' : (conflict ? 'Revisar alterações' : 'Editar atendimento')}</h2>
           </div>
           <div className="calendar-editor__heading-actions">
-            {!isCreateMode && (
+            {!isCreateMode && canDelete && (
               <button
                 type="button"
                 className="btn btn-secondary btn-sm calendar-editor__delete"

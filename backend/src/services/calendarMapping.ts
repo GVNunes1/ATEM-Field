@@ -63,6 +63,7 @@ export function buildCalendarEdit(input: any, appointment: any, technicians: any
   const raw = appointment.google_event || {};
   const eventPatch: any = {};
   if (title !== appointment.title) eventPatch.summary = title;
+  if (address !== String(appointment.client_address || '')) eventPatch.location = address;
   if (clientName !== appointment.client_name || (eventPatch.summary && raw.extendedProperties?.private?.atem_client_name && raw.extendedProperties.private.atem_client_name !== clientName)) {
     eventPatch.extendedProperties = { private: { atem_client_name: clientName } };
   }
