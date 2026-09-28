@@ -3,6 +3,7 @@ import { exec } from 'child_process';
 import path from 'path';
 import { supabaseAdmin } from '../services/supabase';
 import { isNonTechnicalAppointment } from '../utils/appointmentUtils';
+import { buildOperationalInsights } from '../services/operationalInsights';
 import {
   parseAnalyzersExcelBuffer,
   generateAnalyzersExcelTemplate,
@@ -161,12 +162,12 @@ async function refreshAppointmentTechnicianSummary(appointmentIds: number[]) {
 }
 
 // Helper to fetch all rows across PostgREST pagination limits (1000 per page)
-async function fetchAllFromTable<T = any>(table: string, orderBy = 'id', filterFn?: (q: any) => any): Promise<T[]> {
+async function fetchAllFromTable<T = any>(table: string, orderBy = 'id', filterFn?: (q: any) => any, columns = '*'): Promise<T[]> {
   let all: T[] = [];
   let from = 0;
   const step = 1000;
   while (true) {
-    let q = (supabaseAdmin.from(table as any) as any).select('*');
+    let q = (supabaseAdmin.from(table as any) as any).select(columns);
     if (filterFn) {
       q = filterFn(q);
     }
@@ -1364,6 +1365,99 @@ router.get('/appointments', requireAuthentication, async (req: Request, res: Res
   }
 });
 
+router.get('/appointments/operational-insights', requireAuthentication, async (_req: Request, res: Response) => {
+  try {
+    const today = new Date().toLocaleDateString('sv-SE', { timeZone: 'America/Sao_Paulo' });
+    const end = new Date(Date.now() + 14 * 86_400_000).toLocaleDateString('sv-SE', { timeZone: 'America/Sao_Paulo' });
+    const [appointments, reservations, analyzers, vehicles, usageResult] = await Promise.all([
+      fetchAllFromTable('appointments', 'id', query => query.gte('appointment_date', today).lte('appointment_date', end),
+        'id,title,client_name,appointment_date,appointment_time,workflow_status,commercial_confirmed_at,technician_id,technician_names,vehicle_id,last_activity_at,created_at,status'),
+      fetchAllFromTable('reservations', 'id', query => query.gte('reserved_date', today).lte('reserved_date', end),
+        'id,appointment_id,analyzer_id,status,reserved_date'),
+      fetchAllFromTable('analyzers', 'id', undefined, 'id,status,calibration_expiry'),
+      fetchAllFromTable('fleet_vehicles', 'id', undefined, 'id,name,plate,status'),
+      supabaseAdmin.from('fleet_usage').select('id,vehicle_id,appointment_id,status').eq('status', 'Em Uso')
+    ]);
+    if (usageResult.error) throw usageResult.error;
+    const result = buildOperationalInsights(appointments, reservations, analyzers, vehicles, usageResult.data || []);
+    res.set('Cache-Control', 'private, no-store');
+    res.json({ success: true, ...result });
+  } catch (error: any) {
+    res.status(500).json({ success: false, error: error.message || 'Não foi possível carregar os alertas.' });
+  }
+});
+
+router.get('/appointments/:id/readiness', requireAuthentication, async (req: Request, res: Response) => {
+  const id = parsePositiveId(req.params.id);
+  if (!id) return res.status(400).json({ success: false, error: 'Atendimento inválido.' });
+  try {
+    const [{ data: appointment, error: appointmentError }, { data: reservations, error: reservationError }] = await Promise.all([
+      supabaseAdmin.from('appointments')
+        .select('id,title,client_name,appointment_date,appointment_time,workflow_status,commercial_confirmed_at,technician_id,technician_names,vehicle_id,last_activity_at,created_at,status')
+        .eq('id', id).maybeSingle(),
+      supabaseAdmin.from('reservations').select('id,appointment_id,analyzer_id,status,reserved_date').eq('appointment_id', id)
+    ]);
+    if (appointmentError || reservationError) throw appointmentError || reservationError;
+    if (!appointment) return res.status(404).json({ success: false, error: 'Atendimento não encontrado.' });
+    const analyzerIds = [...new Set((reservations || []).map(item => Number(item.analyzer_id)).filter(Boolean))];
+    const [{ data: analyzers, error: analyzerError }, { data: vehicles, error: vehicleError }, { data: usages, error: usageError }] = await Promise.all([
+      analyzerIds.length ? supabaseAdmin.from('analyzers').select('id,status,calibration_expiry').in('id', analyzerIds) : Promise.resolve({ data: [], error: null }),
+      appointment.vehicle_id ? supabaseAdmin.from('fleet_vehicles').select('id,name,plate,status').eq('id', appointment.vehicle_id) : Promise.resolve({ data: [], error: null }),
+      appointment.vehicle_id ? supabaseAdmin.from('fleet_usage').select('id,vehicle_id,appointment_id,status').eq('vehicle_id', appointment.vehicle_id).eq('status', 'Em Uso') : Promise.resolve({ data: [], error: null })
+    ]);
+    if (analyzerError || vehicleError || usageError) throw analyzerError || vehicleError || usageError;
+    const result = buildOperationalInsights([appointment], reservations || [], analyzers || [], vehicles || [], usages || []);
+    res.set('Cache-Control', 'private, no-store');
+    res.json({ success: true, readiness: result.readiness[0] || null });
+  } catch (error: any) {
+    res.status(500).json({ success: false, error: error.message || 'Não foi possível calcular a prontidão.' });
+  }
+});
+
+router.get('/appointments/:id/timeline', requireAuthentication, async (req: Request, res: Response) => {
+  const id = parsePositiveId(req.params.id);
+  if (!id) return res.status(400).json({ success: false, error: 'Atendimento inválido.' });
+  try {
+    const [{ data: appointment, error: appointmentError }, { data: events, error: auditError }] = await Promise.all([
+      supabaseAdmin.from('appointments').select('id,created_at').eq('id', id).maybeSingle(),
+      supabaseAdmin.from('appointment_audit')
+        .select('id,event_type,actor_id,actor_name,details,occurred_at')
+        .eq('appointment_id', id).order('occurred_at', { ascending: false }).limit(100)
+    ]);
+    if (appointmentError || auditError) throw appointmentError || auditError;
+    if (!appointment) return res.status(404).json({ success: false, error: 'Atendimento não encontrado.' });
+    const actorIds = [...new Set((events || []).flatMap(item => [Number(item.actor_id), Number(item.details?.assignee_id)])
+      .filter(id => Number.isSafeInteger(id) && id > 0))];
+    const vehicleIds = [...new Set((events || []).flatMap(item => [
+      Number(item.details?.vehicle_id), Number(item.details?.to_vehicle_id)
+    ]).filter(id => Number.isSafeInteger(id) && id > 0))];
+    const analyzerIds = [...new Set((events || []).map(item => Number(item.details?.analyzer_id))
+      .filter(id => Number.isSafeInteger(id) && id > 0))];
+    const [{ data: actors, error: actorError }, { data: vehicles, error: vehicleError }, { data: analyzers, error: analyzerError }] = await Promise.all([
+      actorIds.length ? supabaseAdmin.from('technicians').select('id,name').in('id', actorIds) : Promise.resolve({ data: [], error: null }),
+      vehicleIds.length ? supabaseAdmin.from('fleet_vehicles').select('id,name,plate').in('id', vehicleIds) : Promise.resolve({ data: [], error: null }),
+      analyzerIds.length ? supabaseAdmin.from('analyzers').select('id,name,asset_tag').in('id', analyzerIds) : Promise.resolve({ data: [], error: null })
+    ]);
+    if (actorError || vehicleError || analyzerError) throw actorError || vehicleError || analyzerError;
+    const names = new Map((actors || []).map(item => [String(item.id), item.name]));
+    const vehicleNames = new Map((vehicles || []).map(item => [String(item.id), [item.name, item.plate].filter(Boolean).join(' · ')]));
+    const analyzerNames = new Map((analyzers || []).map(item => [String(item.id), [item.asset_tag, item.name].filter(Boolean).join(' · ')]));
+    res.set('Cache-Control', 'private, no-store');
+    res.json({ success: true, events: (events || []).map(item => ({
+      id: item.id, event_type: item.event_type, occurred_at: item.occurred_at,
+      details: {
+        ...item.details,
+        assignee_name: names.get(String(item.details?.assignee_id)) || null,
+        vehicle_name: vehicleNames.get(String(item.details?.to_vehicle_id || item.details?.vehicle_id)) || null,
+        analyzer_name: analyzerNames.get(String(item.details?.analyzer_id)) || null
+      },
+      actor_name: item.actor_name || names.get(String(item.actor_id)) || (item.actor_id ? 'Administrador' : 'Sistema')
+    })) });
+  } catch (error: any) {
+    res.status(500).json({ success: false, error: error.message || 'Não foi possível carregar o histórico.' });
+  }
+});
+
 router.post('/appointments', (req: Request, res: Response, next) => {
   req.url = '/appointments/calendar';
   calendarRouter(req, res, next);
@@ -1615,6 +1709,7 @@ router.patch('/appointments/:id/workflow', requireAuthentication, requireRole(sc
       update.workflow_assigned_by = String((req as any).user.sub);
     }
     if (vehicle_id !== undefined) update.vehicle_assigned_at = nextVehicleId ? now : null;
+    if (vehicle_id !== undefined) update.vehicle_assigned_by = String((req as any).user.sub);
 
     const guardedUpdate = supabaseAdmin
       .from('appointments')
@@ -2244,6 +2339,7 @@ router.post('/reservations', requireAuthentication, requireRole(['admin', 'manag
         technician_id: effectiveTechnicianId,
         reserved_date: targetDate,
         operation_type: operation_type || 'Atendimento',
+        audit_actor_id: String((req as any).user?.sub || ''),
         status: initialStatus,
         approved_by: approvedBy,
         approved_at: approvedAt,
@@ -2395,7 +2491,7 @@ router.post('/reservations/:id/checkout', requireAuthentication, requireRole(['a
 
     const { data: checkedOut, error: updateErr } = await supabaseAdmin
       .from('reservations')
-      .update({ status: 'Em Uso', checkout_at: new Date().toISOString() })
+      .update({ status: 'Em Uso', checkout_at: new Date().toISOString(), audit_actor_id: String((req as any).user?.sub || '') })
       .eq('id', resId)
       .eq('status', 'Reservado')
       .select('id')

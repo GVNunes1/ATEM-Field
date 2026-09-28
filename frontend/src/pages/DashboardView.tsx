@@ -1,5 +1,7 @@
-import { ArrowDownLeft, ArrowRight, ArrowUpRight, Box, CalendarDays, CheckCircle2, Clock3, MapPin, PackageCheck, RefreshCw } from 'lucide-react';
+import { AlertCircle, ArrowDownLeft, ArrowRight, ArrowUpRight, Box, CalendarDays, CheckCircle2, Clock3, MapPin, PackageCheck, RefreshCw } from 'lucide-react';
 import { isNonTechnicalAppointment } from '../lib/appointmentUtils';
+import type { OperationalInsights } from '../lib/operationalInsights';
+import './OperationalOverview.css';
 
 interface DashboardStats {
   availableAnalyzers: number;
@@ -31,13 +33,15 @@ interface DashboardViewProps {
   stats: DashboardStats | null;
   recentReservations: RecentReservation[];
   appointments: DashboardAppointment[];
+  insights: OperationalInsights;
+  onOpenOperationalAppointment: (id: number) => void;
   onNavigate: (tab: string) => void;
   onOpenReservation: (id: number) => void;
   onRetry: () => void;
 }
 const number = (value: number) => Number(value || 0).toLocaleString('pt-BR');
 
-export function DashboardView({ stats, recentReservations, appointments, onNavigate, onOpenReservation, onRetry }: DashboardViewProps) {
+export function DashboardView({ stats, recentReservations, appointments, insights, onOpenOperationalAppointment, onNavigate, onOpenReservation, onRetry }: DashboardViewProps) {
   const now = new Date();
   const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
   const todaysAppointments = appointments.filter(item => item.appointment_date === today && item.status?.toLocaleLowerCase('pt-BR') !== 'cancelado')
@@ -45,6 +49,16 @@ export function DashboardView({ stats, recentReservations, appointments, onNavig
   const available = Math.max(0, Number(stats?.availableAnalyzers || 0));
   const total = Math.max(0, Number(stats?.totalAnalyzers || 0));
   const availability = total ? Math.min(100, Math.round(available / total * 100)) : 0;
+  const readiness = insights.readiness.filter(item => item.state !== 'planning');
+  const readyCount = readiness.filter(item => item.state === 'ready').length;
+  const alertGroups = [...insights.alerts.reduce((groups, alert) => {
+    const current = groups.get(alert.appointment_id);
+    if (current) current.messages.push(alert.message);
+    else groups.set(alert.appointment_id, { appointment_id: alert.appointment_id, severity: alert.severity, messages: [alert.message] });
+    return groups;
+  }, new Map<number, { appointment_id: number; severity: 'warning' | 'critical'; messages: string[] }>()).values()];
+  const alerts = alertGroups.slice(0, 6);
+  const appointmentById = new Map(appointments.map(item => [item.id, item]));
 
   return (
     <div className="field-dashboard">
@@ -64,6 +78,16 @@ export function DashboardView({ stats, recentReservations, appointments, onNavig
           ].map(metric => <button className={`field-metric ${metric.tone}`} key={metric.label} onClick={() => onNavigate(metric.destination)}><span className="field-metric-label">{metric.label}<metric.icon size={17} aria-hidden="true" /></span><strong>{number(metric.value)}</strong><span className="field-metric-detail">{metric.detail}<ArrowUpRight size={14} aria-hidden="true" /></span></button>)}
         </section>
       )}
+      <section className="operational-overview field-surface" aria-labelledby="operational-overview-title">
+        <div className="operational-overview__heading"><div><span className="field-overline">Próximos 14 dias</span><h2 id="operational-overview-title">Prontidão e exceções</h2><p>{insights.available ? `${readyCount} de ${readiness.length} atendimentos confirmados prontos para sair.` : 'Aguardando dados operacionais.'}</p></div><button className="field-text-button" onClick={() => onNavigate('appointments')}>Abrir agenda <ArrowRight size={16} /></button></div>
+        {!insights.available ? <p className="operational-overview__empty" role="status">Prontidão indisponível no momento. Atualize os dados para tentar novamente.</p> : alerts.length ? <ul className="operational-overview__alerts">{alerts.map(alert => {
+          const appointment = appointmentById.get(alert.appointment_id);
+          return <li key={alert.appointment_id}><button type="button" onClick={() => onOpenOperationalAppointment(alert.appointment_id)}>
+            <AlertCircle size={17} aria-hidden="true" /><span><strong>{appointment?.client_name || appointment?.title || 'Atendimento'} · {alert.messages[0]}{alert.messages.length > 1 ? ` e mais ${alert.messages.length - 1} pendência(s)` : ''}</strong><small>{appointment?.appointment_date ? new Date(`${appointment.appointment_date}T12:00:00`).toLocaleDateString('pt-BR') : 'Sem data'} · {alert.severity === 'critical' ? 'Ação prioritária' : 'Acompanhar'}</small></span><ArrowUpRight size={15} aria-hidden="true" />
+          </button></li>;
+        })}</ul> : <p className="operational-overview__empty"><CheckCircle2 size={17} /> Nenhuma exceção identificada no período.</p>}
+        {alertGroups.length > alerts.length && <p className="operational-overview__more">Mais {alertGroups.length - alerts.length} atendimento(s) com alertas; consulte a Agenda.</p>}
+      </section>
       <div className="field-overview-grid">
         <section className="field-agenda field-surface" aria-labelledby="daily-agenda-title">
           <header className="field-section-heading"><div><h2 id="daily-agenda-title">Agenda de hoje <span className="field-count">{todaysAppointments.length}</span></h2><p>{now.toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' })}</p></div><button className="field-text-button" onClick={() => onNavigate('appointments')}>Ver agenda <ArrowRight size={16} /></button></header>

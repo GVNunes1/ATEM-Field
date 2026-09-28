@@ -18,6 +18,7 @@ import { safeFetchJson } from './lib/api';
 import { SupportAssistant } from './features/support/SupportAssistant';
 import { CalendarDays, ChevronRight, RefreshCw } from 'lucide-react';
 import { PageSkeleton } from './components/PageSkeleton';
+import type { OperationalInsights } from './lib/operationalInsights';
 
 const noCacheFetchOptions: RequestInit = {
   cache: 'no-store',
@@ -86,6 +87,8 @@ export function App() {
   const [recentReservations, setRecentReservations] = useState<any[]>([]);
   const [analyzers, setAnalyzers] = useState<any[]>([]);
   const [appointments, setAppointments] = useState<any[]>([]);
+  const [operationalInsights, setOperationalInsights] = useState<OperationalInsights>({ available: false, readiness: [], alerts: [] });
+  const [focusedAppointmentId, setFocusedAppointmentId] = useState<number | null>(null);
   const [categories, setCategories] = useState<any[]>([]);
   const [technicians, setTechnicians] = useState<any[]>([]);
   const [selectedAppointmentForReservation, setSelectedAppointmentForReservation] = useState<number | string | null>(null);
@@ -156,6 +159,10 @@ export function App() {
     setSelectedAppointmentForReservation(apptId);
     handleTabChange('operations');
   };
+  const openOperationalAppointment = (appointmentId: number) => {
+    setFocusedAppointmentId(appointmentId);
+    handleTabChange('appointments');
+  };
 
   useEffect(() => {
     const onPopState = () => {
@@ -168,12 +175,13 @@ export function App() {
   const fetchAllData = useCallback(async () => {
     try {
       setLoadError('');
-      const [statsData, analyzersData, apptsData, catsData, techsData] = await Promise.all([
+      const [statsData, analyzersData, apptsData, catsData, techsData, insightsData] = await Promise.all([
         safeFetchJson('/api/dashboard/stats', noCacheFetchOptions).catch(() => ({ success: false })),
         safeFetchJson('/api/analyzers', noCacheFetchOptions).catch(() => ({ success: false })),
         safeFetchJson('/api/appointments', noCacheFetchOptions).catch(() => ({ success: false })),
         safeFetchJson('/api/categories', noCacheFetchOptions).catch(() => ({ success: false })),
-        safeFetchJson('/api/technicians', noCacheFetchOptions).catch(() => ({ success: false }))
+        safeFetchJson('/api/technicians', noCacheFetchOptions).catch(() => ({ success: false })),
+        safeFetchJson('/api/appointments/operational-insights', noCacheFetchOptions).catch(() => ({ success: false }))
       ]);
 
       if (statsData?.success) {
@@ -187,6 +195,9 @@ export function App() {
       }
       if (catsData?.success) setCategories(catsData.categories || []);
       if (techsData?.success) setTechnicians(techsData.technicians || []);
+      setOperationalInsights(insightsData?.success
+        ? { available: true, readiness: insightsData.readiness || [], alerts: insightsData.alerts || [] }
+        : { available: false, readiness: [], alerts: [] });
       const sources = [statsData, analyzersData, apptsData, catsData, techsData];
       const unavailable = sources.filter(source => !source?.success).length;
       if (unavailable) {
@@ -246,14 +257,39 @@ export function App() {
   }, [publicPage, refreshLiveInventory]);
 
   useEffect(() => {
+    if (publicPage || !currentUser || activeTab !== 'dashboard') return;
+    let alive = true;
+    const refreshInsights = async () => {
+      try {
+        const result = await safeFetchJson('/api/appointments/operational-insights', noCacheFetchOptions);
+        if (alive) setOperationalInsights(result?.success
+          ? { available: true, readiness: result.readiness || [], alerts: result.alerts || [] }
+          : { available: false, readiness: [], alerts: [] });
+      } catch {
+        if (alive) setOperationalInsights({ available: false, readiness: [], alerts: [] });
+      }
+    };
+    void refreshInsights();
+    const interval = window.setInterval(() => { if (document.visibilityState === 'visible') void refreshInsights(); }, 60_000);
+    window.addEventListener('focus', refreshInsights);
+    return () => { alive = false; window.clearInterval(interval); window.removeEventListener('focus', refreshInsights); };
+  }, [activeTab, currentUser?.id, publicPage]);
+
+  useEffect(() => {
     if (publicPage || !currentUser || !['appointments', 'workflow', 'totem'].includes(activeTab)) return;
     let alive = true;
     const refreshAppointments = async () => {
       try {
-        const result = await safeFetchJson('/api/appointments', noCacheFetchOptions);
+        const [result, insightResult] = await Promise.all([
+          safeFetchJson('/api/appointments', noCacheFetchOptions),
+          safeFetchJson('/api/appointments/operational-insights', noCacheFetchOptions).catch(() => null)
+        ]);
         if (!result?.success) throw new Error(result?.error || 'Não foi possível atualizar a agenda.');
         if (alive) {
           setAppointments(result.appointments || []);
+          setOperationalInsights(insightResult?.success
+            ? { available: true, readiness: insightResult.readiness || [], alerts: insightResult.alerts || [] }
+            : { available: false, readiness: [], alerts: [] });
           setAgendaRefreshError('');
         }
       } catch (error) {
@@ -340,7 +376,7 @@ export function App() {
           ) : (
             <div key={activeTab} className="page-transition">
               {activeTab === 'dashboard' && (
-                <DashboardView stats={stats} recentReservations={recentReservations} appointments={appointments} onNavigate={handleTabChange} onOpenReservation={handleOpenReservationForAppointment} onRetry={handleRefresh} />
+                <DashboardView stats={stats} recentReservations={recentReservations} appointments={appointments} insights={operationalInsights} onOpenOperationalAppointment={openOperationalAppointment} onNavigate={handleTabChange} onOpenReservation={handleOpenReservationForAppointment} onRetry={handleRefresh} />
               )}
               {activeTab === 'inventory' && (
                 <InventoryView analyzers={analyzers} onRefresh={fetchAllData} currentUser={currentUser} />
@@ -349,10 +385,10 @@ export function App() {
                 <FleetView appointments={appointments} currentUser={currentUser} onRefresh={fetchAllData} />
               )}
               {activeTab === 'appointments' && (
-                <AppointmentsView appointments={appointments} onOpenChecklistModal={handleOpenReservationForAppointment} currentUser={currentUser} onRefresh={fetchAllData} />
+                <AppointmentsView appointments={appointments} insights={operationalInsights} focusAppointmentId={focusedAppointmentId} onFocusHandled={() => setFocusedAppointmentId(null)} onOpenChecklistModal={handleOpenReservationForAppointment} currentUser={currentUser} onRefresh={fetchAllData} />
               )}
               {activeTab === 'workflow' && (['admin', 'manager', 'supervisor', 'commercial', 'technician'].includes(currentUser.role)
-                ? <WorkflowView appointments={appointments} technicians={technicians} role={currentUser.role} currentUserId={currentUser.id} onRefresh={fetchAllData} />
+                ? <WorkflowView appointments={appointments} insights={operationalInsights} technicians={technicians} role={currentUser.role} currentUserId={currentUser.id} onRefresh={fetchAllData} />
                 : <div className="field-empty field-surface" role="alert"><h1>Acesso restrito</h1><p>O Workflow é destinado ao Comercial, Supervisão e Gerência.</p></div>)}
               {(activeTab === 'templates' || activeTab === 'checklist') && (
                 <ChecklistView categories={categories} onRefresh={fetchAllData} />

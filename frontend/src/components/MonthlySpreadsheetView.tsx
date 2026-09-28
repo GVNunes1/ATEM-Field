@@ -6,12 +6,15 @@ import { appointmentStage, appointmentTeam, appointmentTime, appointmentTitle, d
 import { ModalOverlay } from './ModalOverlay';
 import { MonthlyFrameworkGrid } from './MonthlyFrameworkGrid';
 import { AppointmentAssetsPanel } from './AppointmentAssetsPanel';
+import { AppointmentOperationsPanel } from './AppointmentOperationsPanel';
+import type { AppointmentReadiness } from '../lib/operationalInsights';
 import type { CalendarAppointment, CalendarTechnician } from './CalendarEventEditor';
 import './MonthlySpreadsheetView.css';
 
 export interface MonthlySpreadsheetViewProps {
   selectedMonth: string;
   appointments: CalendarAppointment[];
+  readiness?: AppointmentReadiness[];
   technicians: CalendarTechnician[];
   canManage: boolean;
   canCreate?: boolean;
@@ -43,7 +46,7 @@ const syncLabels: Record<string, string> = { synced: 'Sincronizado', pending: 'E
 const zoomColumns = [7, 5, 3, 1];
 const mobileZoomColumns = [7, 3, 2, 1];
 
-export function MonthlySpreadsheetView({ selectedMonth, appointments, technicians, canManage, canCreate = canManage, canAdvanceAppointment, onAdvanceAppointment, workflowActionId, currentUser, onRefresh, onEditAppointment, onCreateAppointment, onDeleteAppointment, onOpenChecklistModal, deletingId, searchTerm = '', selectedTech = 'ALL' }: MonthlySpreadsheetViewProps) {
+export function MonthlySpreadsheetView({ selectedMonth, appointments, readiness = [], technicians, canManage, canCreate = canManage, canAdvanceAppointment, onAdvanceAppointment, workflowActionId, currentUser, onRefresh, onEditAppointment, onCreateAppointment, onDeleteAppointment, onOpenChecklistModal, deletingId, searchTerm = '', selectedTech = 'ALL' }: MonthlySpreadsheetViewProps) {
   const mobile = useSyncExternalStore(subscribeViewport, () => window.matchMedia(mobileQuery).matches, () => false);
   const today = dateKey(new Date());
   const days = useMemo(() => monthDays(selectedMonth), [selectedMonth]);
@@ -169,6 +172,7 @@ export function MonthlySpreadsheetView({ selectedMonth, appointments, technician
           <div><dt>Google Agenda</dt><dd>{syncLabels[selectedAppointment.google_sync_status || ''] || (selectedAppointment.google_event_id ? 'Evento vinculado' : 'Sem vínculo com o Google')}{selectedAppointment.google_sync_error && <span className="month-sync-error">{selectedAppointment.google_sync_error}</span>}</dd></div>
         </dl>
         {!isNonTechnicalAppointment(selectedAppointment) && <AppointmentAssetsPanel appointment={selectedAppointment} technicians={technicians} currentUser={currentUser} onRefresh={onRefresh} />}
+        <AppointmentOperationsPanel appointmentId={selectedAppointment.id} readiness={readiness.find(item => item.appointment_id === selectedAppointment.id)} />
         <footer className="month-dialog__actions">
           {canAdvanceAppointment?.(selectedAppointment) && <button type="button" className="btn btn-primary" disabled={workflowActionId === selectedAppointment.id} onClick={() => { dismiss(); onAdvanceAppointment?.(selectedAppointment); }}>{selectedAppointment.workflow_status === 'Validado pelo supervisor' ? 'Confirmar com cliente' : selectedAppointment.workflow_status === 'Aguardando validação do supervisor' ? 'Validar programação' : 'Enviar à supervisão'}</button>}
           {!isNonTechnicalAppointment(selectedAppointment) && <button type="button" className="btn btn-primary" onClick={() => { dismiss(); onOpenChecklistModal(selectedAppointment.id); }}><ClipboardCheck size={16} /> Checklist e reservas</button>}

@@ -5,6 +5,8 @@ import { CalendarEventEditor, type CalendarAppointment, type CalendarTechnician 
 import { MonthlySpreadsheetView } from '../components/MonthlySpreadsheetView';
 import { AppointmentAssetsPanel } from '../components/AppointmentAssetsPanel';
 import { ModalOverlay } from '../components/ModalOverlay';
+import { AppointmentOperationsPanel } from '../components/AppointmentOperationsPanel';
+import type { OperationalInsights } from '../lib/operationalInsights';
 import { canAdvanceSchedule, canCreateSchedule, canManageSchedule } from '../lib/permissions';
 import { appointmentStage } from '../lib/calendarMonth';
 import {
@@ -31,6 +33,9 @@ import {
 
 interface AppointmentsViewProps {
   appointments: CalendarAppointment[];
+  insights: OperationalInsights;
+  focusAppointmentId?: number | null;
+  onFocusHandled?: () => void;
   onOpenChecklistModal: (apptId: number) => void;
   currentUser?: { id?: number | string; role?: string } | null;
   onRefresh?: () => Promise<void>;
@@ -63,7 +68,7 @@ function monthLabel(value: string) {
   return new Intl.DateTimeFormat('pt-BR', { month: 'long', year: 'numeric' })
     .format(new Date(year, month - 1, 1));
 }
-export function AppointmentsView({ appointments, onOpenChecklistModal, currentUser, onRefresh }: AppointmentsViewProps) {
+export function AppointmentsView({ appointments, insights, focusAppointmentId, onFocusHandled, onOpenChecklistModal, currentUser, onRefresh }: AppointmentsViewProps) {
   const today = new Date();
   const todayKey = dateKey(today);
   const [selectedMonth, setSelectedMonth] = useState(() => monthKey(today));
@@ -91,6 +96,20 @@ export function AppointmentsView({ appointments, onOpenChecklistModal, currentUs
       return 'spreadsheet';
     }
   });
+  useEffect(() => {
+    if (focusAppointmentId == null) return;
+    const appointment = appointments.find(item => Number(item.id) === focusAppointmentId);
+    if (!appointment) return;
+    let cancelled = false;
+    queueMicrotask(() => {
+      if (cancelled) return;
+      setSelectedMonth(String(appointment.appointment_date).slice(0, 7));
+      setViewMode('cards');
+      setQuickAppointmentId(focusAppointmentId);
+      onFocusHandled?.();
+    });
+    return () => { cancelled = true; };
+  }, [focusAppointmentId, appointments, onFocusHandled]);
 
   const changeViewMode = (mode: 'spreadsheet' | 'cards') => {
     setViewMode(mode);
@@ -423,6 +442,7 @@ export function AppointmentsView({ appointments, onOpenChecklistModal, currentUs
           key={`${selectedMonth}-${todayRequest}`}
           selectedMonth={selectedMonth}
           appointments={appointments}
+          readiness={insights.readiness}
           technicians={technicians}
           canManage={canManage}
           canCreate={canCreate}
@@ -555,7 +575,7 @@ export function AppointmentsView({ appointments, onOpenChecklistModal, currentUs
           <p>Ajuste os filtros ou selecione outro mês no controle de navegação.</p>
         </div>
       )}
-      {quickAppointment && <ModalOverlay className="month-overlay" onDismiss={() => setQuickAppointmentId(null)}><section role="dialog" aria-modal="true" aria-labelledby="quick-appointment-title" className="month-dialog month-event-detail"><header><span className="month-status">{appointmentStage(quickAppointment).label}</span><button type="button" className="month-dialog__close" aria-label="Fechar atendimento" onClick={() => setQuickAppointmentId(null)}><X size={20} /></button><h2 id="quick-appointment-title">{quickAppointment.client_name || quickAppointment.title}</h2></header><dl className="month-event-detail__fields"><div><dt>Data</dt><dd>{safeDate(quickAppointment.appointment_date).toLocaleDateString('pt-BR')}</dd></div><div><dt>Horário</dt><dd>{quickAppointment.appointment_time || 'Dia inteiro'}</dd></div><div><dt>Equipe</dt><dd>{quickAppointment.technician_names || 'Equipe a definir'}</dd></div><div><dt>Local</dt><dd>{quickAppointment.client_address || 'Local não informado'}</dd></div></dl>{!isNonTechnicalAppointment(quickAppointment) && <AppointmentAssetsPanel appointment={quickAppointment} technicians={technicians} currentUser={currentUser} onRefresh={onRefresh} />}</section></ModalOverlay>}
+      {quickAppointment && <ModalOverlay className="month-overlay" onDismiss={() => setQuickAppointmentId(null)}><section role="dialog" aria-modal="true" aria-labelledby="quick-appointment-title" className="month-dialog month-event-detail"><header><span className="month-status">{appointmentStage(quickAppointment).label}</span><button type="button" className="month-dialog__close" aria-label="Fechar atendimento" onClick={() => setQuickAppointmentId(null)}><X size={20} /></button><h2 id="quick-appointment-title">{quickAppointment.client_name || quickAppointment.title}</h2></header><dl className="month-event-detail__fields"><div><dt>Data</dt><dd>{safeDate(quickAppointment.appointment_date).toLocaleDateString('pt-BR')}</dd></div><div><dt>Horário</dt><dd>{quickAppointment.appointment_time || 'Dia inteiro'}</dd></div><div><dt>Equipe</dt><dd>{quickAppointment.technician_names || 'Equipe a definir'}</dd></div><div><dt>Local</dt><dd>{quickAppointment.client_address || 'Local não informado'}</dd></div></dl>{!isNonTechnicalAppointment(quickAppointment) && <AppointmentAssetsPanel appointment={quickAppointment} technicians={technicians} currentUser={currentUser} onRefresh={onRefresh} />}<AppointmentOperationsPanel appointmentId={quickAppointment.id} readiness={insights.readiness.find(item => item.appointment_id === quickAppointment.id)} /></section></ModalOverlay>}
       {handoffAppointment && nextHandoffStatus && <ModalOverlay className="month-overlay" onDismiss={workflowActionId === null ? () => setHandoffAppointment(null) : undefined}><section role="dialog" aria-modal="true" aria-labelledby="agenda-handoff-title" className="month-dialog agenda-handoff-dialog"><header><h2 id="agenda-handoff-title">Encaminhar atendimento</h2><p>{handoffAppointment.client_name || handoffAppointment.title} irá para <strong>{nextHandoffStatus}</strong>.</p></header><label>Responsável nesta etapa<select value={handoffAssigneeId} onChange={event => setHandoffAssigneeId(event.target.value)}><option value="">Selecione um colaborador</option>{handoffCandidates.map(person => <option key={person.id} value={person.id}>{person.name}</option>)}</select></label>{handoffCandidates.length === 0 && <p role="alert">Não há colaborador elegível. Confira a equipe escalada e os usuários ativos.</p>}{actionError && <p role="alert">{actionError}</p>}<footer className="month-dialog__actions"><button type="button" className="btn btn-secondary" disabled={workflowActionId !== null} onClick={() => setHandoffAppointment(null)}>Cancelar</button><button type="button" className="btn btn-primary" disabled={workflowActionId !== null || !handoffAssigneeId} onClick={() => void submitAdvanceWorkflow()}>{workflowActionId !== null ? 'Encaminhando…' : 'Confirmar encaminhamento'}</button></footer></section></ModalOverlay>}
       {(editingAppointment || isCreating) && (
         <CalendarEventEditor

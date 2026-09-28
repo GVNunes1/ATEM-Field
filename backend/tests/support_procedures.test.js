@@ -10,7 +10,10 @@ const cases = [
   ['como retirar um padrão?', 'checkout-analyzer'],
   ['google agenda não sincroniza', 'google-sync'],
   ['como encaminhar no workflow?', 'workflow'],
-  ['não consigo entrar', 'login']
+  ['não consigo entrar', 'login'],
+  ['como saber se um atendimento está pronto para sair?', 'readiness'],
+  ['onde vejo alertas de agendamento?', 'operational-alerts'],
+  ['quem alterou o atendimento?', 'appointment-timeline']
 ];
 
 for (const [question, sourceId] of cases) {

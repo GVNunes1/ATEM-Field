@@ -166,6 +166,43 @@
     }
   },
   {
+    "id": "readiness",
+    "question": "Como saber se um atendimento está pronto para sair?",
+    "answer": "Abra o atendimento na Agenda ou o card no Workflow e consulte Pronto para sair.",
+    "keywords": ["prontidao", "prontidão", "pronto", "sair", "pendencias", "pendências", "preparacao", "preparação"],
+    "source": { "id": "readiness", "title": "Procedimentos ATEM Field", "section": "Prontidão do atendimento", "kind": "faq" },
+    "procedure": {
+      "purpose": "Conferir o que ainda falta antes da visita.",
+      "steps": ["Abra o atendimento na Agenda ou use Prontidão e histórico no card do Workflow.", "Confira confirmação do cliente, equipe, carro, padrões, conflito de uso e calibração.", "Abra Carros e padrões ou edite o atendimento para resolver cada pendência."],
+      "validations": ["O selo Pronto aparece apenas quando todas as checagens aplicáveis estão atendidas."],
+      "cautions": ["O painel aponta dados registrados; confirme a condição física dos recursos antes da saída."]
+    }
+  },
+  {
+    "id": "operational-alerts",
+    "question": "Onde vejo os alertas de agendamento?",
+    "answer": "No Dashboard, o bloco Prontidão e exceções mostra atendimentos próximos com pendências e fluxos provisórios sem atualização há mais de dois dias.",
+    "keywords": ["alerta", "alertas", "excecao", "exceções", "atrasado", "parado", "dois dias", "dashboard"],
+    "source": { "id": "operational-alerts", "title": "Procedimentos ATEM Field", "section": "Alertas operacionais", "kind": "faq" },
+    "procedure": {
+      "purpose": "Identificar e resolver uma pendência operacional.",
+      "steps": ["Abra o Dashboard e localize Prontidão e exceções.", "Clique no atendimento sinalizado para ver as checagens detalhadas.", "Corrija os dados ou recursos pendentes e atualize a tela para conferir o novo estado."],
+      "cautions": ["Um alerta de carro em uso indica conflito potencial; confira a devolução antes de considerar o carro disponível."]
+    }
+  },
+  {
+    "id": "appointment-timeline",
+    "question": "Onde vejo quem alterou um atendimento?",
+    "answer": "Abra o atendimento na Agenda ou Prontidão e histórico no Workflow e consulte a linha do tempo.",
+    "keywords": ["linha do tempo", "historico de alteracoes", "histórico de alterações", "quem alterou", "mudancas", "mudanças", "auditoria"],
+    "source": { "id": "appointment-timeline", "title": "Procedimentos ATEM Field", "section": "Linha do tempo", "kind": "faq" },
+    "procedure": {
+      "purpose": "Conferir alterações operacionais registradas no atendimento.",
+      "steps": ["Abra o atendimento na Agenda ou seu card no Workflow.", "Desça até Linha do tempo e confira evento, responsável e data/hora.", "Se não houver eventos antigos, lembre que o registro detalhado começou com a ativação dessa função."],
+      "result": "Mudanças novas de etapa, agenda, carro, padrão e retirada ficam registradas."
+    }
+  },
+  {
     "id": "technical-help",
     "question": "Como pedir ajuda técnica sobre um equipamento?",
     "answer": "Informe equipamento, fabricante, modelo, sintoma e código de erro. Sem procedimento aprovado, encaminhe ao responsável técnico.",
