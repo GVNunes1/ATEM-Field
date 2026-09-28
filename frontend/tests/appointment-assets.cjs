@@ -65,6 +65,14 @@ if (!['localhost', '127.0.0.1'].includes(new URL(baseUrl).hostname)) throw new E
       assert.equal(requests[2].body.appointment_id, 901);
       assert.equal(requests[2].body.km_initial, 12345.6);
       assert.ok(requests[2].body.odometer_photo_data.startsWith('data:image/png;base64,'));
+      appointment.technician_id = 8;
+      appointment.technician_ids = [8];
+      await page.reload();
+      await page.getByLabel('Selecionar mês').fill('2026-09');
+      await page.locator(selector).filter({ hasText: 'Hospital Central' }).first().click();
+      const unassignedDialog = page.getByRole('dialog', { name: 'Hospital Central' });
+      await unassignedDialog.getByRole('button', { name: 'Registrar retirada do carro' }).waitFor();
+      assert.equal(await unassignedDialog.getByRole('button', { name: 'Reservar padrão' }).count(), 0);
       console.log(`PASS appointment assets ${width}`);
       await context.close();
     }

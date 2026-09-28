@@ -1797,7 +1797,7 @@ router.post('/fleet/vehicles/:id/checkout', requireAuthentication, async (req: R
     const odometerPhotoData = parsePhotoData(req.body?.odometer_photo_data, 'A foto do hodômetro');
     const actor = (req as any).user || {};
     const isManager = isManagementRole(actor.role);
-    const managerOverride = Boolean(req.body?.manager_override);
+    const managerOverride = isManager && Boolean(req.body?.manager_override);
 
     const { data: vehicle, error: vehicleError } = await supabaseAdmin.from('fleet_vehicles').select('*').eq('id', vehicleId).maybeSingle();
     if (vehicleError) throw vehicleError;
@@ -1819,10 +1819,6 @@ router.post('/fleet/vehicles/:id/checkout', requireAuthentication, async (req: R
       if (error) throw error;
       if (!data) return res.status(404).json({ success: false, error: 'Agendamento não encontrado.' });
       appointment = data;
-      const teamIds = await getAppointmentTeamIds(appointmentId);
-      if (!isManager && !managerOverride && !teamIds.includes(Number(actor.sub))) {
-        return res.status(403).json({ success: false, error: 'Somente um usuário escalado nesta agenda pode retirar o veículo reservado.' });
-      }
       if (appointment.vehicle_id && Number(appointment.vehicle_id) !== vehicleId) {
         if (!isManager && !managerOverride) {
           return res.status(409).json({ success: false, error: 'Este agendamento já possui outro veículo reservado.' });
