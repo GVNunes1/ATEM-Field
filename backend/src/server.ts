@@ -60,7 +60,7 @@ app.get('/health', (req, res) => {
   res.json({
     status: 'ok',
     service: 'quick-turing-backend',
-    apiVersion: 4,
+    apiVersion: 5,
     timestamp: new Date().toISOString()
   });
 });

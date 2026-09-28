@@ -294,7 +294,7 @@ router.post('/sync/agenda-online', requireAuthentication, requireRole(['admin'])
   }
 });
 
-router.get('/sync/google/status', requireAuthentication, requireRole(schedulingRoles), async (_req: Request, res: Response) => {
+router.get('/sync/google/status', requireAuthentication, async (_req: Request, res: Response) => {
   try {
     res.json({ success: true, ...(await getGoogleCalendarSyncStatus()) });
   } catch (error: any) {

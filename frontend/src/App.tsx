@@ -94,7 +94,7 @@ export function App() {
   const [supportOpen, setSupportOpen] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
-  const [totemAgendaError, setTotemAgendaError] = useState('');
+  const [agendaRefreshError, setAgendaRefreshError] = useState('');
 
   const handleLoginSuccess = (user: AuthUser, token: string) => {
     setCurrentUser(user);
@@ -181,7 +181,10 @@ export function App() {
         setRecentReservations(statsData.recentReservations || []);
       }
       if (analyzersData?.success) setAnalyzers(analyzersData.analyzers || []);
-      if (apptsData?.success) setAppointments(apptsData.appointments || []);
+      if (apptsData?.success) {
+        setAppointments(apptsData.appointments || []);
+        setAgendaRefreshError('');
+      }
       if (catsData?.success) setCategories(catsData.categories || []);
       if (techsData?.success) setTechnicians(techsData.technicians || []);
       const sources = [statsData, analyzersData, apptsData, catsData, techsData];
@@ -243,22 +246,22 @@ export function App() {
   }, [publicPage, refreshLiveInventory]);
 
   useEffect(() => {
-    if (publicPage || activeTab !== 'totem' || !currentUser) return;
+    if (publicPage || !currentUser || !['appointments', 'workflow', 'totem'].includes(activeTab)) return;
     let alive = true;
-    const refreshTotemAgenda = async () => {
+    const refreshAppointments = async () => {
       try {
         const result = await safeFetchJson('/api/appointments', noCacheFetchOptions);
         if (!result?.success) throw new Error(result?.error || 'Não foi possível atualizar a agenda.');
         if (alive) {
           setAppointments(result.appointments || []);
-          setTotemAgendaError('');
+          setAgendaRefreshError('');
         }
-      } catch {
-        if (alive) setTotemAgendaError('A agenda não pôde ser atualizada. Verifique a conexão e toque em Atualizar.');
+      } catch (error) {
+        if (alive) setAgendaRefreshError(error instanceof Error ? error.message : 'A agenda não pôde ser atualizada. Verifique a conexão.');
       }
     };
-    const onVisible = () => { if (document.visibilityState === 'visible') void refreshTotemAgenda(); };
-    void refreshTotemAgenda();
+    const onVisible = () => { if (document.visibilityState === 'visible') void refreshAppointments(); };
+    void refreshAppointments();
     const interval = window.setInterval(onVisible, 30000);
     document.addEventListener('visibilitychange', onVisible);
     window.addEventListener('focus', onVisible);
@@ -282,7 +285,7 @@ export function App() {
         appointments={appointments}
         analyzers={analyzers}
         onRefresh={fetchAllData}
-        agendaSyncError={totemAgendaError}
+        agendaSyncError={agendaRefreshError}
         onAuthenticated={handleLoginSuccess}
         onSessionEnd={handleLogout}
         onExitKiosk={() => handleTabChange('dashboard')}
@@ -323,6 +326,12 @@ export function App() {
             <div className="load-error" role="alert">
               <span>{loadError}</span>
               <button className="btn btn-secondary btn-sm" onClick={fetchAllData}>Tentar novamente</button>
+            </div>
+          )}
+          {agendaRefreshError && ['appointments', 'workflow'].includes(activeTab) && (
+            <div className="load-error" role="alert">
+              <span>Agenda não atualizada: {agendaRefreshError}</span>
+              <button className="btn btn-secondary btn-sm" onClick={handleRefresh}>Tentar novamente</button>
             </div>
           )}
 
