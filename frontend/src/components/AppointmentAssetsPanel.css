@@ -23,10 +23,15 @@
   .appointment-assets__message { margin: 0; padding: 9px 11px; border-radius: 8px; background: #eaf7f0; color: #166534; font-size: .82rem; }
   .appointment-assets__message--error { background: #fef2f2; color: #b42318; }
   .appointment-assets__hint { margin-top: 8px !important; }
+  .appointment-assets__cancel { min-height: 42px; margin-top: 10px; }
+  .appointment-assets__cancel-confirm { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 10px; padding: 12px; border: 1px solid var(--border-color); border-radius: 8px; background: var(--bg-primary); }
+  .appointment-assets__cancel-confirm p { flex: 1 1 100%; margin: 0; color: var(--text-secondary); font-size: .82rem; }
+  .appointment-assets__cancel-confirm .btn { min-height: 42px; }
   @media (max-width: 520px) {
     .appointment-assets__list li { align-items: flex-start; flex-direction: column; }
     .appointment-assets__vehicle-form { grid-template-columns: minmax(0, 1fr); }
     .appointment-assets__vehicle-form > label:has(textarea), .appointment-assets__file, .appointment-assets__form-actions { grid-column: auto; }
     .appointment-assets__inline-form .btn, .appointment-assets__list .btn { width: 100%; justify-content: center; }
+    .appointment-assets__cancel-confirm .btn { flex: 1 1 100%; }
   }
 }

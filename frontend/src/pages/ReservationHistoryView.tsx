@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   Box,
   Calendar,
+  CarFront,
   CheckCircle2,
   Clock,
   Cpu,
@@ -17,6 +18,7 @@ import {
   Users
 } from 'lucide-react';
 import { safeFetchJson } from '../lib/api';
+import { FleetHistoryPanel } from '../components/FleetHistoryPanel';
 import './ReservationHistoryView.css';
 
 interface ReservationHistoryViewProps {
@@ -62,7 +64,7 @@ export const ReservationHistoryView: React.FC<ReservationHistoryViewProps> = ({
   technicians,
   onRefresh
 }) => {
-  const [mode, setMode] = useState<'equipment' | 'technician'>('equipment');
+  const [mode, setMode] = useState<'equipment' | 'technician' | 'fleet'>('equipment');
   const [selectedEquipmentId, setSelectedEquipmentId] = useState<string>('all');
   const [selectedTechnicianId, setSelectedTechnicianId] = useState<string>('all');
   const [statusFilter, setStatusFilter] = useState<string>('all');
@@ -185,9 +187,9 @@ export const ReservationHistoryView: React.FC<ReservationHistoryViewProps> = ({
       <header className="field-page-heading">
         <div>
           <span className="field-overline">Rastreabilidade & Auditoria</span>
-          <h1>Histórico de reservas.</h1>
+          <h1>Histórico de movimentações.</h1>
           <p>
-            Registro cronológico completo de saídas, devoluções e posse dos analisadores em campo.
+            Consulte reservas, retiradas e devoluções de padrões e carros.
           </p>
         </div>
 
@@ -218,8 +220,13 @@ export const ReservationHistoryView: React.FC<ReservationHistoryViewProps> = ({
           >
             <Users size={16} /> Por Técnico
           </button>
+          <button type="button" role="tab" aria-selected={mode === 'fleet'} className={`history-mode-btn ${mode === 'fleet' ? 'is-active' : ''}`} onClick={() => setMode('fleet')}>
+            <CarFront size={16} /> Frota
+          </button>
         </div>
       </header>
+
+      {mode === 'fleet' ? <FleetHistoryPanel /> : <>
 
       {/* Metrics Summary Strip */}
       <section className="field-metrics" aria-label="Métricas do histórico">
@@ -518,6 +525,7 @@ export const ReservationHistoryView: React.FC<ReservationHistoryViewProps> = ({
           </div>
         )}
       </section>
+      </>}
     </div>
   );
 };

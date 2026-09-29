@@ -1,0 +1,25 @@
+@media screen {
+  .fleet-audit { display: grid; gap: 16px; }
+  .fleet-audit__heading { display: flex; align-items: start; justify-content: space-between; gap: 16px; }
+  .fleet-audit__heading h2 { margin: 0; color: var(--text-main); font-size: 1.2rem; }
+  .fleet-audit__heading p { margin: 5px 0 0; color: var(--text-muted); font-size: .86rem; }
+  .fleet-audit__filters { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; padding: 16px; border: 1px solid var(--border-color); border-radius: 12px; background: #fff; }
+  .fleet-audit__filters label { display: grid; gap: 6px; color: var(--text-secondary); font-size: .8rem; font-weight: 600; }
+  .fleet-audit__filters select, .fleet-audit__filters input { min-width: 0; width: 100%; min-height: 42px; box-sizing: border-box; padding: 8px 10px; border: 1px solid var(--border-color); border-radius: 8px; background: #fff; color: var(--text-main); font: inherit; }
+  .fleet-audit__search { position: relative; display: block; }
+  .fleet-audit__search svg { position: absolute; left: 11px; top: 13px; color: var(--text-muted); }
+  .fleet-audit__search input { padding-left: 36px; }
+  .fleet-audit__count { margin: 0; color: var(--text-muted); font-size: .82rem; }
+  .fleet-audit__state { display: flex; align-items: center; gap: 12px; min-height: 100px; margin: 0; padding: 20px; border: 1px solid var(--border-color); border-radius: 12px; background: #fff; color: var(--text-secondary); }
+  .fleet-audit__table-wrap { overflow-x: auto; border: 1px solid var(--border-color); border-radius: 12px; background: #fff; }
+  .fleet-audit__table { min-width: 850px; }
+  .fleet-audit__vehicle { display: flex; align-items: center; gap: 9px; }
+  .fleet-audit__vehicle strong, .fleet-audit__vehicle small, .fleet-audit__secondary { display: block; }
+  .fleet-audit__vehicle small, .fleet-audit__secondary { margin-top: 3px; color: var(--text-muted); font-size: .73rem; }
+  .fleet-audit__status { display: inline-block; padding: 4px 7px; border-radius: 5px; background: var(--bg-primary); color: var(--text-main); font-size: .76rem; font-weight: 600; white-space: nowrap; }
+  .fleet-audit__more { justify-self: center; min-height: 42px; }
+  .fleet-audit__error { margin: 0; color: #b42318; font-size: .82rem; }
+  .fleet-audit__filters :is(select,input):focus-visible, .fleet-audit button:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+  @media (max-width: 1024px) { .fleet-audit__filters { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  @media (max-width: 760px) { .fleet-audit__filters { grid-template-columns: 1fr; } .fleet-audit__heading { align-items: stretch; flex-direction: column; } }
+}

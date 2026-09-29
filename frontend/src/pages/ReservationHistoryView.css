@@ -31,6 +31,7 @@
 /* Mode Selector Switcher */
 .history-mode-switcher {
   display: flex;
+  flex-wrap: wrap;
   background: #e2e8f0;
   padding: 4px;
   border-radius: 12px;
@@ -370,7 +371,7 @@
     width: 100%;
   }
   .history-mode-btn {
-    flex: 1;
+    flex: 1 1 130px;
     justify-content: center;
   }
   .history-card__header {

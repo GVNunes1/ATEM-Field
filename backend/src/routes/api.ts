@@ -1676,6 +1676,16 @@ router.patch('/appointments/:id/workflow', requireAuthentication, requireRole([.
     if (vehicle_id !== undefined && vehicle_id !== null && vehicle_id !== '' && !nextVehicleId) {
       return res.status(400).json({ success: false, error: 'Veículo inválido.' });
     }
+    if (vehicle_id === null || vehicle_id === '') {
+      if (!appointment.vehicle_id) return res.status(409).json({ success: false, error: 'Este atendimento não possui carro reservado.' });
+      const { data: vehicleUsages, error: activeVehicleError } = await supabaseAdmin.from('fleet_usage')
+        .select('id,status').eq('appointment_id', appointmentId).eq('vehicle_id', appointment.vehicle_id)
+        .in('status', ['Em Uso', 'Devolvido', 'Devolvido com pendência']).limit(1);
+      if (activeVehicleError) throw activeVehicleError;
+      if (vehicleUsages?.length) return res.status(409).json({ success: false, error: vehicleUsages[0].status === 'Em Uso'
+        ? 'O carro já foi retirado. Registre a devolução; esta reserva não pode ser cancelada durante o uso.'
+        : 'O carro já foi utilizado neste atendimento. Seu vínculo histórico não pode ser cancelado.' });
+    }
 
     if (nextVehicleId) {
       const { data: vehicle, error: vehicleError } = await supabaseAdmin
@@ -1742,9 +1752,12 @@ router.patch('/appointments/:id/workflow', requireAuthentication, requireRole([.
       .from('appointments')
       .update(update)
       .eq('id', appointmentId);
-    const { data: updated, error: updateError } = await (appointment.workflow_status == null
+    const statusGuard = appointment.workflow_status == null
       ? guardedUpdate.is('workflow_status', null)
-      : guardedUpdate.eq('workflow_status', appointment.workflow_status))
+      : guardedUpdate.eq('workflow_status', appointment.workflow_status);
+    const vehicleGuard = vehicle_id === undefined ? statusGuard : appointment.vehicle_id == null
+      ? statusGuard.is('vehicle_id', null) : statusGuard.eq('vehicle_id', appointment.vehicle_id);
+    const { data: updated, error: updateError } = await vehicleGuard
       .select('*')
       .maybeSingle();
     if (updateError) throw updateError;
@@ -1838,6 +1851,70 @@ router.get('/reservations', async (req: Request, res: Response) => {
 // ==========================================
 // 7.1 FROTA / RETIRADA E DEVOLUÇÃO DE VEÍCULOS
 // ==========================================
+router.get('/fleet/history', requireAuthentication, async (req: Request, res: Response) => {
+  try {
+    const offset = Number(req.query.offset || 0);
+    if (!Number.isSafeInteger(offset) || offset < 0 || offset > 100_000) return res.status(400).json({ success: false, error: 'Página inválida.' });
+    const pageSize = 100;
+    const [{ data: usages, error: usageError }, { data: reservations, error: reservationError }] = await Promise.all([
+      supabaseAdmin.from('fleet_usage')
+        .select('id,vehicle_id,appointment_id,withdrawn_by_name,returned_by_name,status,checkout_at,checkin_at,km_initial,km_final,notes')
+        .order('checkout_at', { ascending: false }).range(offset, offset + pageSize - 1),
+      supabaseAdmin.from('appointment_audit')
+        .select('id,appointment_id,actor_id,actor_name,details,occurred_at')
+        .eq('event_type', 'vehicle').order('occurred_at', { ascending: false }).range(offset, offset + pageSize - 1)
+    ]);
+    if (usageError || reservationError) throw usageError || reservationError;
+    const vehicleIds = [...new Set([...(usages || []).map(item => Number(item.vehicle_id)),
+      ...(reservations || []).flatMap(item => [Number(item.details?.from_vehicle_id), Number(item.details?.to_vehicle_id)])]
+      .filter(id => Number.isSafeInteger(id) && id > 0))];
+    const appointmentIds = [...new Set([...(usages || []), ...(reservations || [])]
+      .map(item => Number(item.appointment_id)).filter(id => Number.isSafeInteger(id) && id > 0))];
+    const actorIds = [...new Set((reservations || []).map(item => Number(item.actor_id))
+      .filter(id => Number.isSafeInteger(id) && id > 0))];
+    const [{ data: vehicles, error: vehicleError }, { data: appointments, error: appointmentError }, { data: actors, error: actorError }] = await Promise.all([
+      vehicleIds.length ? supabaseAdmin.from('fleet_vehicles').select('id,name,plate').in('id', vehicleIds) : Promise.resolve({ data: [], error: null }),
+      appointmentIds.length ? supabaseAdmin.from('appointments').select('id,client_name,title').in('id', appointmentIds) : Promise.resolve({ data: [], error: null }),
+      actorIds.length ? supabaseAdmin.from('technicians').select('id,name').in('id', actorIds) : Promise.resolve({ data: [], error: null })
+    ]);
+    if (vehicleError || appointmentError || actorError) throw vehicleError || appointmentError || actorError;
+    const vehicleById = new Map((vehicles || []).map(item => [Number(item.id), item]));
+    const appointmentById = new Map((appointments || []).map(item => [Number(item.id), item]));
+    const actorById = new Map((actors || []).map(item => [Number(item.id), item.name]));
+    const movements = [
+      ...(usages || []).map(item => ({
+        id: `usage-${item.id}`, kind: 'usage', vehicle_id: item.vehicle_id,
+        vehicle_name: vehicleById.get(Number(item.vehicle_id))?.name || `Carro #${item.vehicle_id}`,
+        plate: vehicleById.get(Number(item.vehicle_id))?.plate || '',
+        appointment_id: item.appointment_id,
+        client_name: appointmentById.get(Number(item.appointment_id))?.client_name || appointmentById.get(Number(item.appointment_id))?.title || '',
+        responsible_name: item.withdrawn_by_name || 'Usuário não informado', returned_by_name: item.returned_by_name,
+        status: item.status, occurred_at: item.checkout_at, checkout_at: item.checkout_at, checkin_at: item.checkin_at,
+        km_initial: item.km_initial, km_final: item.km_final, notes: item.notes
+      })),
+      ...(reservations || []).map(item => {
+        const fromId = Number(item.details?.from_vehicle_id) || null;
+        const toId = Number(item.details?.to_vehicle_id) || null;
+        const vehicleId = toId || fromId;
+        const vehicle = vehicleById.get(Number(vehicleId));
+        return {
+          id: `reservation-${item.id}`, kind: 'reservation', vehicle_id: vehicleId,
+          vehicle_name: vehicle?.name || `Carro #${vehicleId}`, plate: vehicle?.plate || '',
+          appointment_id: item.appointment_id,
+          client_name: appointmentById.get(Number(item.appointment_id))?.client_name || appointmentById.get(Number(item.appointment_id))?.title || '',
+          responsible_name: item.actor_name || actorById.get(Number(item.actor_id)) || 'Sistema',
+          status: !toId ? 'Reserva cancelada' : fromId ? 'Reserva alterada' : 'Reservado',
+          occurred_at: item.occurred_at, from_vehicle_id: fromId, to_vehicle_id: toId
+        };
+      })
+    ].sort((a, b) => String(b.occurred_at || '').localeCompare(String(a.occurred_at || '')));
+    res.set('Cache-Control', 'private, no-store');
+    res.json({ success: true, movements, has_more: (usages || []).length === pageSize || (reservations || []).length === pageSize });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message || 'Não foi possível carregar o histórico da frota.' });
+  }
+});
+
 router.get('/fleet/vehicles', requireAuthentication, async (_req: Request, res: Response) => {
   try {
     const [{ data: vehicles, error: vehiclesError }, { data: usages, error: usagesError }, { data: appointments, error: appointmentsError }] = await Promise.all([
@@ -1981,7 +2058,8 @@ router.post('/fleet/vehicles/:id/checkout', requireAuthentication, async (req: R
       revision_status: revisionStatus,
       fluids_checked: fluidsChecked,
       manager_override: hasReservationConflict,
-      ...(typeof req.body?.damage_inspection === 'object' ? req.body.damage_inspection : {})
+      ...(typeof req.body?.damage_inspection === 'object' ? req.body.damage_inspection : {}),
+      actor_role: actor.role
     };
 
     const { data: usage, error: insertError } = await supabaseAdmin.from('fleet_usage').insert({
@@ -2021,6 +2099,23 @@ router.post('/fleet/usage/:id/checkin', requireAuthentication, async (req: Reque
     if (usageError) throw usageError;
     if (!usage) return res.status(404).json({ success: false, error: 'Registro de retirada não encontrado.' });
     if (usage.status !== 'Em Uso') return res.status(409).json({ success: false, error: 'Este veículo já foi devolvido ou cancelado.' });
+    const isHolder = Boolean(usage.withdrawn_by_user_id && String(usage.withdrawn_by_user_id) === String(actor.sub));
+    if (actor.role !== 'admin' && !isHolder) {
+      if (!['manager', 'supervisor'].includes(actor.role) || !usage.withdrawn_by_user_id) {
+        return res.status(403).json({ success: false, error: 'Somente o responsável pela retirada ou um perfil autorizado pode registrar a devolução.' });
+      }
+      if (usage.checkout_inspection?.actor_role && usage.checkout_inspection.actor_role !== 'technician') {
+        return res.status(403).json({ success: false, error: 'Supervisores e gerentes só podem encerrar retiradas de técnicos. Administradores podem encerrar todas.' });
+      }
+      const holderId = parsePositiveId(usage.withdrawn_by_user_id);
+      if (!holderId) return res.status(403).json({ success: false, error: 'O responsável não pôde ser identificado. Solicite a devolução a um administrador.' });
+      const { data: holder, error: holderError } = await supabaseAdmin.from('technicians')
+        .select('role').eq('id', holderId).maybeSingle();
+      if (holderError) throw holderError;
+      if (!holder || roleFromSpecialty(holder.role) !== 'technician') {
+        return res.status(403).json({ success: false, error: 'Supervisores e gerentes só podem encerrar retiradas de técnicos. Administradores podem encerrar todas.' });
+      }
+    }
     if (kmFinal < Number(usage.km_initial)) return res.status(400).json({ success: false, error: 'O KM de retorno não pode ser menor que o KM de saída.' });
 
     const hasNewDamage = Boolean(req.body?.has_new_damage || req.body?.damage_inspection?.has_new_damage);
@@ -2053,8 +2148,9 @@ router.post('/fleet/usage/:id/checkin', requireAuthentication, async (req: Reque
       tires_calibrated: tiresCalibrated,
       notes: notesInput || usage.notes || '',
       updated_at: new Date().toISOString()
-    }).eq('id', usageId).select('*').single();
+    }).eq('id', usageId).eq('status', 'Em Uso').select('*').maybeSingle();
     if (updateError) throw updateError;
+    if (!updatedUsage) return res.status(409).json({ success: false, error: 'A retirada foi alterada. Atualize a frota antes de devolver.' });
 
     // Regra: "Qualquer problema ou avaria não deve travar o uso do veiculo"
     // O veículo SEMPRE permanece com status "Disponível".

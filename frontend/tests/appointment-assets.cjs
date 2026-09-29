@@ -12,6 +12,7 @@ if (!['localhost', '127.0.0.1'].includes(new URL(baseUrl).hostname)) throw new E
       const appointment = { id: 901, title: 'Visita técnica', client_name: 'Hospital Central', client_address: 'Rua A, 100', appointment_date: '2026-09-28', appointment_time: '08:00', appointment_end_date: '2026-09-28', appointment_end_time: '17:00', workflow_status: 'Confirmado com cliente', technician_id: 4, technician_ids: [4], technician_names: 'Ana Técnica', vehicle_id: 11, reservations: [] };
       const requests = [];
       let authUser = { id: 4, name: 'Ana Técnica', role: 'technician' };
+      let fleetActiveUsage = null;
       await context.addInitScript(() => {
         if (!localStorage.getItem('atem.auth.user')) localStorage.setItem('atem.auth.user', JSON.stringify({ id: 4, name: 'Ana Técnica', role: 'technician' }));
         localStorage.setItem('atem.auth.token', 'isolated-fixture');
@@ -48,7 +49,15 @@ if (!['localhost', '127.0.0.1'].includes(new URL(baseUrl).hostname)) throw new E
         if (url.pathname === '/api/appointments') return route.fulfill({ json: { success: true, appointments: [appointment] } });
         if (url.pathname === '/api/technicians') return route.fulfill({ json: { success: true, technicians: [{ id: 4, name: 'Ana Técnica', role: 'Técnico de Campo', status: 'Ativo' }, { id: 8, name: 'Bruno Técnico', role: 'Técnico de Campo', status: 'Ativo' }] } });
         if (url.pathname === '/api/analyzers') return route.fulfill({ json: { success: true, analyzers: [{ id: 31, asset_tag: 'QA-31', name: 'Simulador', status: 'Disponível' }] } });
-        if (url.pathname === '/api/fleet/vehicles') return route.fulfill({ json: { success: true, vehicles: [{ id: 11, name: 'Carro 11', plate: 'ABC-1234', status: 'Disponível' }] } });
+        if (url.pathname === '/api/fleet/vehicles') return route.fulfill({ json: { success: true, vehicles: [{ id: 11, name: 'Carro 11', plate: 'ABC-1234', status: fleetActiveUsage ? 'Em Uso' : 'Disponível', active_usage: fleetActiveUsage }], usage: fleetActiveUsage ? [fleetActiveUsage] : [] } });
+        if (url.pathname === '/api/fleet/history' && url.searchParams.get('offset') === '100') return route.fulfill({ json: { success: true, has_more: false, movements: [
+          { id: 'usage-2', kind: 'usage', vehicle_id: 11, vehicle_name: 'Carro 11', plate: 'ABC-1234', appointment_id: 901, client_name: 'Hospital Central', responsible_name: 'Ana Técnica', status: 'Cancelado', occurred_at: '2026-09-27T11:00:00Z', checkout_at: '2026-09-27T11:00:00Z', km_initial: 11900 }
+        ] } });
+        if (url.pathname === '/api/fleet/history') return route.fulfill({ json: { success: true, has_more: true, movements: [
+          { id: 'reservation-1', kind: 'reservation', vehicle_id: 11, vehicle_name: 'Carro 11', plate: 'ABC-1234', appointment_id: 901, client_name: 'Hospital Central', responsible_name: 'Gerente', status: 'Reserva cancelada', occurred_at: '2026-09-28T10:00:00Z' },
+          { id: 'usage-1', kind: 'usage', vehicle_id: 11, vehicle_name: 'Carro 11', plate: 'ABC-1234', appointment_id: 901, client_name: 'Hospital Central', responsible_name: 'Bruno Técnico', returned_by_name: 'Supervisor', status: 'Devolvido', occurred_at: '2026-09-28T11:00:00Z', checkout_at: '2026-09-28T11:00:00Z', checkin_at: '2026-09-28T14:00:00Z', km_initial: 12000, km_final: 12042 }
+        ] } });
+        if (url.pathname === '/api/reservations') return route.fulfill({ json: { success: true, reservations: [] } });
         return route.fulfill({ json: { success: true, stats: {}, recentReservations: [], categories: [] } });
       });
       const page = await context.newPage();
@@ -98,6 +107,11 @@ if (!['localhost', '127.0.0.1'].includes(new URL(baseUrl).hostname)) throw new E
       await managerDialog.getByText('Carro reservado para a equipe deste atendimento.').waitFor();
       assert.equal(requests.at(-1).path, '/api/appointments/901/workflow');
       assert.deepEqual(requests.at(-1).body, { vehicle_id: 11 });
+      await managerDialog.getByRole('button', { name: 'Cancelar reserva do carro' }).click();
+      await managerDialog.getByRole('button', { name: 'Confirmar cancelamento' }).click();
+      await managerDialog.getByText('Reserva do carro cancelada. O atendimento permanece agendado.').waitFor();
+      assert.deepEqual(requests.at(-1).body, { vehicle_id: null });
+      assert.equal(appointment.vehicle_id, null);
       appointment.technician_ids = [4, 8];
       appointment.reservations.push({ id: 78, analyzer_id: 32, technician_id: 4, status: 'Reservado', asset_tag: 'QA-32', analyzer_name: 'Segundo padrão' });
       authUser = { id: 8, name: 'Bruno Técnico', role: 'technician' };
@@ -110,6 +124,26 @@ if (!['localhost', '127.0.0.1'].includes(new URL(baseUrl).hostname)) throw new E
       await teammateDialog.locator('li').filter({ hasText: 'QA-32' }).getByRole('button', { name: 'Registrar retirada' }).click();
       await teammateDialog.getByText('Retirada pela equipe registrada.').waitFor();
       assert.equal(requests.at(-1).path, '/api/reservations/78/checkout');
+      await page.goto(`${baseUrl}/historico`);
+      await page.getByRole('tab', { name: 'Frota' }).click();
+      await page.getByRole('heading', { name: 'Histórico da frota' }).waitFor();
+      await page.getByRole('table').getByText('Reserva cancelada', { exact: true }).waitFor();
+      await page.getByText('12.000 / 12.042').waitFor();
+      await page.getByRole('button', { name: 'Carregar mais movimentações' }).click();
+      await page.getByRole('table').getByText('Cancelado', { exact: true }).waitFor();
+      fleetActiveUsage = { id: 52, vehicle_id: 11, withdrawn_by_user_id: '4', withdrawn_by_name: 'Ana Técnica', status: 'Em Uso', checkout_inspection: { actor_role: 'technician' }, km_initial: 12000, checkout_at: '2026-09-28T11:00:00Z' };
+      await page.goto(`${baseUrl}/frota`);
+      await page.getByText('Em uso por').waitFor();
+      assert.equal(await page.getByRole('button', { name: 'Registrar devolução' }).count(), 0);
+      authUser = { id: 99, name: 'Gerente', role: 'manager' };
+      await page.evaluate(() => localStorage.setItem('atem.auth.user', JSON.stringify({ id: 99, name: 'Gerente', role: 'manager' })));
+      await page.reload();
+      await page.getByRole('button', { name: 'Registrar devolução' }).waitFor();
+      fleetActiveUsage = { ...fleetActiveUsage, withdrawn_by_user_id: '99', withdrawn_by_name: 'Gerente', checkout_inspection: { actor_role: 'manager' } };
+      authUser = { id: 100, name: 'Administrador', role: 'admin' };
+      await page.evaluate(() => localStorage.setItem('atem.auth.user', JSON.stringify({ id: 100, name: 'Administrador', role: 'admin' })));
+      await page.reload();
+      await page.getByRole('button', { name: 'Registrar devolução' }).waitFor();
       console.log(`PASS appointment assets ${width}`);
       await context.close();
     }

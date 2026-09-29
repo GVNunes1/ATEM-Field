@@ -97,6 +97,16 @@ export function FleetView({ appointments, currentUser, onRefresh }: FleetViewPro
     const role = String(currentUser?.role || '').toLowerCase();
     return ['admin', 'manager', 'gerente', 'supervisor'].includes(role);
   }, [currentUser?.role]);
+  const canRegisterReturn = (activeUsage: { withdrawn_by_user_id?: string | number | null; checkout_inspection?: { actor_role?: string } | null }) => {
+    const actorRole = String(currentUser?.role || '').toLowerCase();
+    if (actorRole === 'admin') return true;
+    if (activeUsage.withdrawn_by_user_id && String(activeUsage.withdrawn_by_user_id) === String(currentUser?.id)) return true;
+    if (!['manager', 'supervisor'].includes(actorRole) || !activeUsage.withdrawn_by_user_id) return false;
+    if (activeUsage.checkout_inspection?.actor_role && activeUsage.checkout_inspection.actor_role !== 'technician') return false;
+    const holder = technicians.find(person => String(person.id) === String(activeUsage.withdrawn_by_user_id));
+    const specialty = String(holder?.role || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim().toLowerCase();
+    return Boolean(holder && !/^(gerente|manager|supervisor|supervisora|comercial|commercial|vendas|sales)\b/.test(specialty));
+  };
 
   const loadFleet = async () => {
     setLoading(true);
@@ -357,9 +367,9 @@ export function FleetView({ appointments, currentUser, onRefresh }: FleetViewPro
                 <div className="fleet-active">
                   <span><TimerReset size={15} /> Em uso por <strong>{activeUsage.withdrawn_by_name || 'usuário'}</strong></span>
                   <div className="fleet-actions-group">
-                    <button className="btn btn-secondary btn-sm" onClick={() => openCheckin({ ...activeUsage, vehicle })}>
+                    {canRegisterReturn(activeUsage) && <button className="btn btn-secondary btn-sm" onClick={() => openCheckin({ ...activeUsage, vehicle })}>
                       <RotateCcw size={14} /> Registrar devolução
-                    </button>
+                    </button>}
                     {isManager && (
                       <>
                         <button className="btn btn-outline-secondary btn-sm" onClick={() => openReassign({ ...activeUsage, vehicle })} title="Tirar do nome / Trocar responsável">

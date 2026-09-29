@@ -11,8 +11,9 @@ interface Props {
   onRefresh?: () => Promise<void>;
 }
 interface Analyzer { id: number; name: string; asset_tag: string; status: string; calibration_expiry?: string }
-interface Vehicle { id: number; name: string; plate: string; status: string; current_km?: number; active_usage?: { id: number } | null; scheduled_appointments?: { id: number; appointment_date: string; appointment_time?: string; status?: string; workflow_status?: string }[] }
+interface Vehicle { id: number; name: string; plate: string; status: string; current_km?: number; active_usage?: { id: number; appointment_id?: number | null } | null; scheduled_appointments?: { id: number; appointment_date: string; appointment_time?: string; status?: string; workflow_status?: string }[] }
 interface Reservation { id: number; analyzer_id: number; technician_id: number; status: string; asset_tag?: string; analyzer_name?: string; operation_type?: string }
+interface VehicleUsage { vehicle_id: number; appointment_id?: number | null; status: string }
 
 const managementRoles = new Set(['admin', 'manager', 'supervisor']);
 
@@ -31,6 +32,7 @@ async function photoData(file: File | null) {
 export function AppointmentAssetsPanel({ appointment, technicians, currentUser, onRefresh }: Props) {
   const [analyzers, setAnalyzers] = useState<Analyzer[]>([]);
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
+  const [vehicleUsages, setVehicleUsages] = useState<VehicleUsage[]>([]);
   const [patternId, setPatternId] = useState('');
   const [vehicleId, setVehicleId] = useState(appointment.vehicle_id ? String(appointment.vehicle_id) : '');
   const [technicianId, setTechnicianId] = useState(() => {
@@ -53,6 +55,8 @@ export function AppointmentAssetsPanel({ appointment, technicians, currentUser, 
   const [vehicleError, setVehicleError] = useState('');
   const [vehicleNotice, setVehicleNotice] = useState('');
   const [confirmedVehicleId, setConfirmedVehicleId] = useState<number | null>(null);
+  const [vehicleCancelled, setVehicleCancelled] = useState(false);
+  const [confirmVehicleCancellation, setConfirmVehicleCancellation] = useState(false);
   const [confirmedReservations, setConfirmedReservations] = useState<Reservation[]>([]);
   const teamIds = useMemo(() => [...new Set([...(appointment.technician_ids || []), appointment.technician_id].filter(Boolean).map(Number))], [appointment.technician_ids, appointment.technician_id]);
   const team = technicians.filter(person => teamIds.includes(Number(person.id)) && person.status !== 'Inativo');
@@ -60,7 +64,12 @@ export function AppointmentAssetsPanel({ appointment, technicians, currentUser, 
   const isTeamMember = teamIds.includes(Number(currentUser?.id));
   const canOperate = isManager || isTeamMember;
   const canWithdrawVehicle = isManager || currentUser?.role === 'technician';
-  const linkedVehicle = vehicles.find(vehicle => Number(vehicle.id) === Number(confirmedVehicleId || appointment.vehicle_id));
+  const linkedVehicleId = vehicleCancelled ? null : confirmedVehicleId || appointment.vehicle_id;
+  const linkedVehicle = vehicles.find(vehicle => Number(vehicle.id) === Number(linkedVehicleId));
+  const vehicleWithdrawnForAppointment = Boolean(linkedVehicle?.active_usage && Number(linkedVehicle.active_usage.appointment_id) === Number(appointment.id));
+  const vehicleUsedForAppointment = vehicleUsages.some(item => Number(item.vehicle_id) === Number(linkedVehicleId)
+    && Number(item.appointment_id) === Number(appointment.id)
+    && ['Em Uso', 'Devolvido', 'Devolvido com pendência'].includes(item.status));
   const availableVehicles = vehicles.filter(vehicle => !vehicle.active_usage && !/baixado|manuten|indispon|revis/i.test(vehicle.status)
     && !(vehicle.scheduled_appointments || []).some(other => Number(other.id) !== Number(appointment.id)
       && other.appointment_date === appointment.appointment_date
@@ -79,7 +88,7 @@ export function AppointmentAssetsPanel({ appointment, technicians, currentUser, 
       .then(patterns => { if (alive) setAnalyzers(patterns.analyzers || []); })
       .catch(() => { if (alive) setError('Não foi possível carregar os padrões. Tente reabrir o atendimento.'); });
     void safeFetchJson('/api/fleet/vehicles', { cache: 'no-store' })
-      .then(fleet => { if (alive) setVehicles(fleet.vehicles || []); })
+      .then(fleet => { if (alive) { setVehicles(fleet.vehicles || []); setVehicleUsages(fleet.usage || []); } })
       .catch(() => { if (alive) setVehicleError('Não foi possível carregar os veículos. As reservas de padrões continuam disponíveis.'); });
     return () => { alive = false; };
   }, []);
@@ -126,9 +135,27 @@ export function AppointmentAssetsPanel({ appointment, technicians, currentUser, 
       const result = await safeFetchJson(`/api/appointments/${appointment.id}/workflow`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ vehicle_id: Number(vehicleId) }) });
       if (!result.success) throw new Error(result.error || 'Não foi possível vincular o veículo.');
       setConfirmedVehicleId(Number(vehicleId));
+      setVehicleCancelled(false);
       setVehicleNotice('Carro reservado para a equipe deste atendimento.');
-      await onRefresh?.();
+      await onRefresh?.().catch(() => undefined);
     } catch (cause) { setVehicleError(cause instanceof Error ? cause.message : 'Falha na reserva do veículo.'); }
+    finally { setBusy(false); }
+  };
+
+  const cancelVehicleReservation = async () => {
+    setBusy(true); setVehicleError(''); setVehicleNotice('');
+    try {
+      const result = await safeFetchJson(`/api/appointments/${appointment.id}/workflow`, {
+        method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ vehicle_id: null })
+      });
+      if (!result.success) throw new Error(result.error || 'Não foi possível cancelar a reserva do carro.');
+      setVehicleCancelled(true);
+      setConfirmedVehicleId(null);
+      setVehicleId('');
+      setConfirmVehicleCancellation(false);
+      setVehicleNotice('Reserva do carro cancelada. O atendimento permanece agendado.');
+      await onRefresh?.().catch(() => undefined);
+    } catch (cause) { setVehicleError(cause instanceof Error ? cause.message : 'Falha ao cancelar a reserva do carro.'); }
     finally { setBusy(false); }
   };
 
@@ -143,6 +170,7 @@ export function AppointmentAssetsPanel({ appointment, technicians, currentUser, 
       setShowVehicleForm(false); setPhoto(null); setKm('');
       const fleet = await safeFetchJson('/api/fleet/vehicles', { cache: 'no-store' });
       setVehicles(fleet.vehicles || []);
+      setVehicleUsages(fleet.usage || []);
       await onRefresh?.();
     } catch (cause) { setError(cause instanceof Error ? cause.message : 'Falha na retirada do carro.'); }
     finally { setBusy(false); }
@@ -162,6 +190,10 @@ export function AppointmentAssetsPanel({ appointment, technicians, currentUser, 
       {vehicleError && <p className="appointment-assets__message appointment-assets__message--error" role="alert">{vehicleError}</p>}
       {vehicleNotice && <p className="appointment-assets__message" role="status">{vehicleNotice}</p>}
       {linkedVehicle ? <div className="appointment-assets__vehicle"><strong>{linkedVehicle.name} · {linkedVehicle.plate}</strong><span>{linkedVehicle.active_usage ? 'Em uso' : 'Reservado para a equipe'}</span></div> : <p>Nenhum carro vinculado a este atendimento.</p>}
+      {linkedVehicle && canOperate && !vehicleUsedForAppointment && (confirmVehicleCancellation
+        ? <div className="appointment-assets__cancel-confirm"><p>Remover a reserva de {linkedVehicle.plate}? O atendimento e as reservas de padrões serão mantidos.</p><button type="button" className="btn btn-secondary" disabled={busy} onClick={() => setConfirmVehicleCancellation(false)}>Manter reserva</button><button type="button" className="btn btn-outline-danger" disabled={busy} onClick={() => void cancelVehicleReservation()}>{busy ? 'Cancelando…' : 'Confirmar cancelamento'}</button></div>
+        : <button type="button" className="btn btn-outline-danger appointment-assets__cancel" disabled={busy} onClick={() => setConfirmVehicleCancellation(true)}>Cancelar reserva do carro</button>)}
+      {linkedVehicle && vehicleUsedForAppointment && <p className="appointment-assets__hint">{vehicleWithdrawnForAppointment ? 'O carro está em uso neste atendimento. Registre a devolução.' : 'O carro já foi utilizado neste atendimento. Seu vínculo histórico será mantido.'}</p>}
       {canOperate && !linkedVehicle && <div className="appointment-assets__inline-form"><label>Carro disponível<select value={vehicleId} onChange={event => setVehicleId(event.target.value)}><option value="">Selecione o carro</option>{availableVehicles.map(item => <option key={item.id} value={item.id}>{item.name} · {item.plate}</option>)}</select></label><button type="button" className="btn btn-secondary" disabled={busy || !vehicleId} onClick={() => void reserveVehicle()}>Reservar carro</button>{availableVehicles.length === 0 && <p className="appointment-assets__hint">Nenhum carro está livre para este horário. Confira as reservas ou a frota.</p>}</div>}
       {linkedVehicle && !linkedVehicle.active_usage && canWithdrawVehicle && <>{!showVehicleForm ? <button type="button" className="btn btn-secondary" onClick={() => setShowVehicleForm(true)}>Registrar retirada do carro</button> : <form className="appointment-assets__vehicle-form" onSubmit={checkoutVehicle}><label>KM atual<input type="number" min="0" step="0.1" required value={km} onChange={event => setKm(event.target.value)} /></label><label className="appointment-assets__file"><Camera size={16} />Foto do hodômetro<input type="file" accept="image/jpeg,image/png,image/webp" required onChange={event => setPhoto(event.target.files?.[0] || null)} /></label><label>Tipo de deslocamento<select value={usageType} onChange={event => setUsageType(event.target.value)}><option>Empresa (Trabalho e deslocamento residência)</option><option>Particular</option></select></label><label>Status da revisão<select value={revisionStatus} onChange={event => setRevisionStatus(event.target.value)}><option>Em dia</option><option>Próxima</option><option>Pendente</option></select></label><label className="appointment-assets__check"><input type="checkbox" checked={cleanlinessOk} onChange={event => setCleanlinessOk(event.target.checked)} />Veículo limpo</label><label className="appointment-assets__check"><input type="checkbox" checked={fluidsChecked} onChange={event => setFluidsChecked(event.target.checked)} />Água e óleo verificados</label><label className="appointment-assets__check"><input type="checkbox" checked={hasDamage} onChange={event => setHasDamage(event.target.checked)} />Há danos ou avarias na retirada</label><label>Observações{hasDamage ? ' sobre as avarias' : ''}<textarea rows={2} required={hasDamage} value={notes} onChange={event => setNotes(event.target.value)} /></label><div className="appointment-assets__form-actions"><button type="button" className="btn btn-secondary" disabled={busy} onClick={() => setShowVehicleForm(false)}>Cancelar</button><button type="submit" className="btn btn-primary" disabled={busy || !photo || (hasDamage && !notes.trim())}>{busy ? 'Registrando…' : 'Confirmar retirada'}</button></div></form>}</>}
       {!linkedVehicle && !canOperate && <p className="appointment-assets__hint">A equipe escalada ou a gestão pode reservar o carro nesta agenda.</p>}
