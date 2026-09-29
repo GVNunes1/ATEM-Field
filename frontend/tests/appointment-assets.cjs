@@ -11,8 +11,9 @@ if (!['localhost', '127.0.0.1'].includes(new URL(baseUrl).hostname)) throw new E
       const context = await browser.newContext({ viewport: { width, height: 900 }, reducedMotion: 'reduce' });
       const appointment = { id: 901, title: 'Visita técnica', client_name: 'Hospital Central', client_address: 'Rua A, 100', appointment_date: '2026-09-28', appointment_time: '08:00', appointment_end_date: '2026-09-28', appointment_end_time: '17:00', workflow_status: 'Confirmado com cliente', technician_id: 4, technician_ids: [4], technician_names: 'Ana Técnica', vehicle_id: 11, reservations: [] };
       const requests = [];
+      let authUser = { id: 4, name: 'Ana Técnica', role: 'technician' };
       await context.addInitScript(() => {
-        localStorage.setItem('atem.auth.user', JSON.stringify({ id: 4, name: 'Ana Técnica', role: 'technician' }));
+        if (!localStorage.getItem('atem.auth.user')) localStorage.setItem('atem.auth.user', JSON.stringify({ id: 4, name: 'Ana Técnica', role: 'technician' }));
         localStorage.setItem('atem.auth.token', 'isolated-fixture');
         localStorage.setItem('atem_agenda_view_mode', 'spreadsheet');
       });
@@ -21,7 +22,13 @@ if (!['localhost', '127.0.0.1'].includes(new URL(baseUrl).hostname)) throw new E
         const url = new URL(request.url());
         if (!['localhost', '127.0.0.1'].includes(url.hostname)) return route.abort();
         if (!url.pathname.startsWith('/api/')) return route.continue();
-        if (url.pathname === '/api/auth/session') return route.fulfill({ json: { success: true, user: { id: 4, name: 'Ana Técnica', role: 'technician' } } });
+        if (url.pathname === '/api/auth/session') return route.fulfill({ json: { success: true, user: authUser } });
+        if (request.method() === 'PATCH' && url.pathname === '/api/appointments/901/workflow') {
+          const body = request.postDataJSON();
+          requests.push({ path: url.pathname, body });
+          appointment.vehicle_id = body.vehicle_id;
+          return route.fulfill({ json: { success: true, appointment } });
+        }
         if (request.method() === 'POST') {
           const body = request.postDataJSON();
           requests.push({ path: url.pathname, body });
@@ -34,11 +41,12 @@ if (!['localhost', '127.0.0.1'].includes(new URL(baseUrl).hostname)) throw new E
             appointment.workflow_status = 'Em execução';
             return route.fulfill({ json: { success: true, workflow_started: true, message: 'Padrão retirado. Atendimento em execução.' } });
           }
+          if (url.pathname === '/api/reservations/78/checkout') return route.fulfill({ json: { success: true, message: 'Retirada pela equipe registrada.' } });
           if (url.pathname === '/api/fleet/vehicles/11/checkout') return route.fulfill({ status: 201, json: { success: true, usage: { id: 51 } } });
         }
         if (request.method() !== 'GET') return route.fulfill({ status: 403, json: { success: false } });
         if (url.pathname === '/api/appointments') return route.fulfill({ json: { success: true, appointments: [appointment] } });
-        if (url.pathname === '/api/technicians') return route.fulfill({ json: { success: true, technicians: [{ id: 4, name: 'Ana Técnica', role: 'Técnico de Campo', status: 'Ativo' }] } });
+        if (url.pathname === '/api/technicians') return route.fulfill({ json: { success: true, technicians: [{ id: 4, name: 'Ana Técnica', role: 'Técnico de Campo', status: 'Ativo' }, { id: 8, name: 'Bruno Técnico', role: 'Técnico de Campo', status: 'Ativo' }] } });
         if (url.pathname === '/api/analyzers') return route.fulfill({ json: { success: true, analyzers: [{ id: 31, asset_tag: 'QA-31', name: 'Simulador', status: 'Disponível' }] } });
         if (url.pathname === '/api/fleet/vehicles') return route.fulfill({ json: { success: true, vehicles: [{ id: 11, name: 'Carro 11', plate: 'ABC-1234', status: 'Disponível' }] } });
         return route.fulfill({ json: { success: true, stats: {}, recentReservations: [], categories: [] } });
@@ -46,6 +54,7 @@ if (!['localhost', '127.0.0.1'].includes(new URL(baseUrl).hostname)) throw new E
       const page = await context.newPage();
       await page.goto(`${baseUrl}/agenda`);
       await page.getByLabel('Selecionar mês').fill('2026-09');
+      if (width < 960) await page.locator('.month-cell[data-date="2026-09-28"] .month-date').click();
       const selector = width < 960 ? '.month-calendar__mobile-agenda .month-day-event' : '.framework-event';
       await page.locator(selector).filter({ hasText: 'Hospital Central' }).first().click();
       const dialog = page.getByRole('dialog', { name: 'Hospital Central' });
@@ -71,10 +80,36 @@ if (!['localhost', '127.0.0.1'].includes(new URL(baseUrl).hostname)) throw new E
       appointment.technician_ids = [8];
       await page.reload();
       await page.getByLabel('Selecionar mês').fill('2026-09');
+      if (width < 960) await page.locator('.month-cell[data-date="2026-09-28"] .month-date').click();
       await page.locator(selector).filter({ hasText: 'Hospital Central' }).first().click();
       const unassignedDialog = page.getByRole('dialog', { name: 'Hospital Central' });
       await unassignedDialog.getByRole('button', { name: 'Registrar retirada do carro' }).waitFor();
       assert.equal(await unassignedDialog.getByRole('button', { name: 'Reservar padrão' }).count(), 0);
+      appointment.vehicle_id = null;
+      authUser = { id: 99, name: 'Gerente', role: 'manager' };
+      await page.evaluate(() => localStorage.setItem('atem.auth.user', JSON.stringify({ id: 99, name: 'Gerente', role: 'manager' })));
+      await page.reload();
+      await page.getByLabel('Selecionar mês').fill('2026-09');
+      if (width < 960) await page.locator('.month-cell[data-date="2026-09-28"] .month-date').click();
+      await page.locator(selector).filter({ hasText: 'Hospital Central' }).first().click();
+      const managerDialog = page.getByRole('dialog', { name: 'Hospital Central' });
+      await managerDialog.getByLabel('Carro disponível').selectOption('11');
+      await managerDialog.getByRole('button', { name: 'Reservar carro' }).click();
+      await managerDialog.getByText('Carro reservado para a equipe deste atendimento.').waitFor();
+      assert.equal(requests.at(-1).path, '/api/appointments/901/workflow');
+      assert.deepEqual(requests.at(-1).body, { vehicle_id: 11 });
+      appointment.technician_ids = [4, 8];
+      appointment.reservations.push({ id: 78, analyzer_id: 32, technician_id: 4, status: 'Reservado', asset_tag: 'QA-32', analyzer_name: 'Segundo padrão' });
+      authUser = { id: 8, name: 'Bruno Técnico', role: 'technician' };
+      await page.evaluate(() => localStorage.setItem('atem.auth.user', JSON.stringify({ id: 8, name: 'Bruno Técnico', role: 'technician' })));
+      await page.reload();
+      await page.getByLabel('Selecionar mês').fill('2026-09');
+      if (width < 960) await page.locator('.month-cell[data-date="2026-09-28"] .month-date').click();
+      await page.locator(selector).filter({ hasText: 'Hospital Central' }).first().click();
+      const teammateDialog = page.getByRole('dialog', { name: 'Hospital Central' });
+      await teammateDialog.locator('li').filter({ hasText: 'QA-32' }).getByRole('button', { name: 'Registrar retirada' }).click();
+      await teammateDialog.getByText('Retirada pela equipe registrada.').waitFor();
+      assert.equal(requests.at(-1).path, '/api/reservations/78/checkout');
       console.log(`PASS appointment assets ${width}`);
       await context.close();
     }

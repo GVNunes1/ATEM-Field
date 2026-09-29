@@ -21,6 +21,7 @@ export function canAdvanceWorkflow(role: string | undefined, from: WorkflowStage
   if (!nextWorkflowStatus(from)) return false;
   if (role === 'admin' || role === 'manager') return true;
   if (role === 'commercial') return from === 'Data provisória' || from === 'Validado pelo supervisor';
+  if (role === 'technician') return from === 'Em execução';
   return role === 'supervisor' && (from === 'Aguardando validação do supervisor' || from === 'Confirmado com cliente' || from === 'Em execução');
 }
 

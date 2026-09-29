@@ -27,6 +27,8 @@ const teamText = (appointment: CalendarAppointment) => {
   const names = String(appointment.technician_names || appointment.technician_name || '').trim();
   return names && names !== 'Equipe de Campo' ? names : 'Equipe a definir';
 };
+const isAssignedTechnician = (appointment: CalendarAppointment, userId: number | string) =>
+  [...(appointment.technician_ids || []), appointment.technician_id].filter(Boolean).map(Number).includes(Number(userId));
 
 const profileRole = (value: string | undefined) => {
   const normalized = String(value || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim().toLowerCase();
@@ -59,20 +61,22 @@ export function WorkflowView({ appointments, insights, technicians, role, curren
   const filtered = useMemo(() => appointments.filter(appointment => {
     if (/cancelad/i.test(`${appointment.status || ''} ${appointment.workflow_status || ''}`)) return false;
     if (!workflowStatus(appointment)) return false;
-    if (mineOnly && (appointment.workflow_assignee_id == null || String(appointment.workflow_assignee_id) !== String(currentUserId))) return false;
+    if (mineOnly && !((role === 'technician' && isAssignedTechnician(appointment, currentUserId))
+      || String(appointment.workflow_assignee_id) === String(currentUserId))) return false;
     if (!allMonths && !String(appointment.appointment_date || '').startsWith(month)) return false;
     const search = query.trim().toLocaleLowerCase('pt-BR');
     return !search || [appointment.title, appointment.client_name, appointment.client_address, appointment.technician_names]
       .some(value => String(value || '').toLocaleLowerCase('pt-BR').includes(search));
   }).sort((a, b) => String(a.appointment_date || '').localeCompare(String(b.appointment_date || ''))
-    || String(a.appointment_time || '').localeCompare(String(b.appointment_time || ''))), [appointments, allMonths, month, query, mineOnly, currentUserId]);
+    || String(a.appointment_time || '').localeCompare(String(b.appointment_time || ''))), [appointments, allMonths, month, query, mineOnly, currentUserId, role]);
 
   const shownStages = level === 'all' ? workflowStages : workflowStages.filter((stage, index) =>
     stage.id === level || workflowStages[index - 1]?.id === level);
   const moving = appointments.find(item => item.id === dragVisual?.id);
   const assetsAppointment = appointments.find(item => item.id === assetsAppointmentId);
   const operationsAppointment = appointments.find(item => item.id === operationsAppointmentId);
-  const canDrop = (stage: WorkflowStage) => Boolean(moving && workflowStatus(moving) && nextWorkflowStatus(workflowStatus(moving)!) === stage && canAdvanceWorkflow(role, workflowStatus(moving)!));
+  const canDrop = (stage: WorkflowStage) => Boolean(moving && workflowStatus(moving) && nextWorkflowStatus(workflowStatus(moving)!) === stage && canAdvanceWorkflow(role, workflowStatus(moving)!)
+    && (role !== 'technician' || isAssignedTechnician(moving!, currentUserId)));
   const handoffCandidates = useMemo(() => {
     if (!handoff) return [];
     const target = handoff.target;
@@ -116,11 +120,24 @@ export function WorkflowView({ appointments, insights, technicians, role, curren
 
   const requestAdvance = (appointment: CalendarAppointment, target: WorkflowStage) => {
     const current = workflowStatus(appointment);
-    if (!current || nextWorkflowStatus(current) !== target || !canAdvanceWorkflow(role, current)) return;
+    if (!current || nextWorkflowStatus(current) !== target || !canAdvanceWorkflow(role, current)
+      || (role === 'technician' && !isAssignedTechnician(appointment, currentUserId))) return;
     const missing = missingWorkflowFields(appointment, target);
     if (missing.length) {
       setError(`Para avançar “${appointment.client_name || appointment.title || 'atendimento'}”, preencha: ${missing.join(', ')}.`);
       setEditing(appointment);
+      return;
+    }
+    if (role === 'technician' && target === 'Concluído') {
+      setBusyId(appointment.id); setError(''); setNotice('');
+      void safeFetchJson(`/api/appointments/${appointment.id}/workflow`, {
+        method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ workflow_status: target })
+      }).then(async result => {
+        if (!result.success) throw new Error(result.error || 'Não foi possível concluir o atendimento.');
+        await onRefresh();
+        setNotice('Atendimento concluído.');
+      }).catch(failure => setError(failure instanceof Error ? failure.message : 'Não foi possível concluir o atendimento.'))
+        .finally(() => { setBusyId(null); setDropStage(null); });
       return;
     }
     setError(''); setNotice(''); setAssigneeId(''); setHandoff({ appointment, target });
@@ -164,7 +181,7 @@ export function WorkflowView({ appointments, insights, technicians, role, curren
           <header className="workflow-column__heading"><div><span className="workflow-column__marker" /><div><h2>{stage.short}</h2><small>{stage.owner}</small></div></div><strong aria-label={`${items.length} atendimentos`}>{items.length}</strong></header>
           <div className="workflow-column__cards">{items.slice(0, limit).map(appointment => {
             const next = nextWorkflowStatus(stage.id);
-            const allowed = canAdvanceWorkflow(role, stage.id);
+            const allowed = canAdvanceWorkflow(role, stage.id) && (role !== 'technician' || isAssignedTechnician(appointment, currentUserId));
             const canEdit = ['admin', 'manager', 'supervisor'].includes(role) || (role === 'commercial' && ['Data provisória', 'Validado pelo supervisor'].includes(stage.id));
             const missing = next ? missingWorkflowFields(appointment, next) : [];
             return <article key={appointment.id} className={`workflow-card${busyId === appointment.id ? ' workflow-card--busy' : ''}${dragVisual?.id === appointment.id ? ' workflow-card--dragging' : ''}`} onPointerDown={event => startDrag(event, appointment, Boolean(next && allowed))} onPointerMove={moveDrag} onPointerUp={endDrag} onPointerCancel={() => { dragStart.current = null; setDragVisual(null); setDropStage(null); }} aria-label={`${appointment.client_name || appointment.title}, ${stage.id}`}>
@@ -173,7 +190,7 @@ export function WorkflowView({ appointments, insights, technicians, role, curren
               <div className="workflow-card__facts"><span><MapPin size={14} />{appointment.client_address || 'Local a preencher'}</span><span><UsersRound size={14} />{teamText(appointment)}</span><span className="workflow-card__owner">Responsável: {appointment.workflow_assignee_name || technicians.find(person => Number(person.id) === Number(appointment.workflow_assignee_id))?.name || 'Não atribuído'}</span></div>
               {insights.readiness.find(item => item.appointment_id === appointment.id)?.state === 'attention' && <p className="workflow-card__missing"><AlertCircle size={14} />Preparação pendente</p>}
               {missing.length > 0 && allowed && <p className="workflow-card__missing"><AlertCircle size={14} />Falta: {missing.join(', ')}</p>}
-              <div className="workflow-card__actions"><button type="button" onClick={() => setOperationsAppointmentId(appointment.id)} aria-label={`Prontidão e histórico de ${appointment.client_name || appointment.title}`}><ClipboardList size={14} />Prontidão e histórico</button><button type="button" onClick={() => setAssetsAppointmentId(appointment.id)} aria-label={`Carros e padrões de ${appointment.client_name || appointment.title}`}><PackageCheck size={14} />Carros e padrões</button>{canEdit && <button type="button" onClick={() => { setError(''); setEditing(appointment); }} aria-label={`Editar dados de ${appointment.client_name || appointment.title}`}><Pencil size={14} />Editar dados</button>}{next && allowed && <button type="button" onClick={() => requestAdvance(appointment, next)} disabled={busyId !== null} aria-label={`Avançar ${appointment.client_name || appointment.title} para ${next}`}>{busyId === appointment.id ? 'Salvando…' : 'Encaminhar'}<ArrowRight size={14} /></button>}</div>
+              <div className="workflow-card__actions"><button type="button" onClick={() => setOperationsAppointmentId(appointment.id)} aria-label={`Prontidão e histórico de ${appointment.client_name || appointment.title}`}><ClipboardList size={14} />Prontidão e histórico</button><button type="button" onClick={() => setAssetsAppointmentId(appointment.id)} aria-label={`Carros e padrões de ${appointment.client_name || appointment.title}`}><PackageCheck size={14} />Carros e padrões</button>{canEdit && <button type="button" onClick={() => { setError(''); setEditing(appointment); }} aria-label={`Editar dados de ${appointment.client_name || appointment.title}`}><Pencil size={14} />Editar dados</button>}{next && allowed && <button type="button" onClick={() => requestAdvance(appointment, next)} disabled={busyId !== null} aria-label={`Avançar ${appointment.client_name || appointment.title} para ${next}`}>{busyId === appointment.id ? 'Salvando…' : role === 'technician' ? 'Concluir' : 'Encaminhar'}<ArrowRight size={14} /></button>}</div>
             </article>;
           })}{items.length === 0 && <p className="workflow-column__empty">Nenhum atendimento nesta etapa.</p>}{items.length > limit && <button type="button" className="workflow-column__more" onClick={() => setLimits(previous => ({ ...previous, [stage.id]: limit + 30 }))}>Mostrar mais {Math.min(30, items.length - limit)} de {items.length - limit}</button>}</div>
         </section>;

@@ -246,7 +246,7 @@ export async function getTechnicianPortalData(technician: any, days = 45) {
       .map(reservation => ({
         ...reservation,
         analyzer: reservation.analyzer_id ? analyzerById.get(reservation.analyzer_id) || null : null,
-        canReturn: reservation.technician_id === technician.id
+        canReturn: true
       }));
     activeReservations += reservations.filter(reservation => reservation.canReturn).length;
 
@@ -487,9 +487,6 @@ export async function rescheduleAnalyzerFromTechnicianPortal(technician: any, re
       .maybeSingle();
     if (reservationError) throw reservationError;
     if (!reservation) throw new TechnicianPortalAuthError('Reserva não encontrada.', 404);
-    if (reservation.technician_id !== technician.id) {
-      throw new TechnicianPortalAuthError('Você só pode reagendar patrimônios reservados no seu cadastro.', 403);
-    }
     if (!ACTIVE_RESERVATION_STATUSES.includes(reservation.status)) {
       throw new TechnicianPortalAuthError('Esta reserva não está ativa para reagendamento.', 409);
     }
@@ -508,6 +505,9 @@ export async function rescheduleAnalyzerFromTechnicianPortal(technician: any, re
     if (!analyzer) throw new TechnicianPortalAuthError('Patrimônio não encontrado.', 404);
     if (!sourceAppointment) throw new TechnicianPortalAuthError('Atendimento atual não encontrado.', 404);
     if (!targetAppointment) throw new TechnicianPortalAuthError('Atendimento de destino não encontrado.', 404);
+    if (!await technicianCanAccessAppointment(technician.id, sourceAppointment.id, sourceAppointment.technician_id)) {
+      throw new TechnicianPortalAuthError('O atendimento atual não pertence à sua equipe.', 403);
+    }
 
     if (reservation.appointment_id === targetAppointment.id) {
       return {
@@ -556,7 +556,7 @@ export async function rescheduleAnalyzerFromTechnicianPortal(technician: any, re
         notes
       })
       .eq('id', reservation.id)
-      .eq('technician_id', technician.id)
+      .eq('technician_id', reservation.technician_id)
       .eq('appointment_id', sourceAppointment.id)
       .in('status', ACTIVE_RESERVATION_STATUSES)
       .select('id, appointment_id, reserved_date, status')
@@ -623,8 +623,12 @@ export async function returnAnalyzerFromTechnicianPortal(technician: any, reserv
       .maybeSingle();
     if (error) throw error;
     if (!reservation) throw new TechnicianPortalAuthError('Reserva não encontrada.', 404);
-    if (reservation.technician_id !== technician.id) {
-      throw new TechnicianPortalAuthError('Você só pode devolver patrimônios reservados no seu cadastro.', 403);
+    const { data: appointment, error: appointmentError } = reservation.appointment_id
+      ? await supabaseAdmin.from('appointments').select('id, technician_id').eq('id', reservation.appointment_id).maybeSingle()
+      : { data: null, error: null };
+    if (appointmentError) throw appointmentError;
+    if (!appointment || !await technicianCanAccessAppointment(technician.id, appointment.id, appointment.technician_id)) {
+      throw new TechnicianPortalAuthError('Somente técnicos escalados podem devolver padrões deste atendimento.', 403);
     }
     if (reservation.status === 'Devolvido') {
       return {
@@ -643,9 +647,9 @@ export async function returnAnalyzerFromTechnicianPortal(technician: any, reserv
     const returnedAt = new Date().toISOString();
     const { data: updated, error: updateError } = await supabaseAdmin
       .from('reservations')
-      .update({ status: 'Devolvido', checkin_at: returnedAt, checkin_date: returnedAt })
+      .update({ status: 'Devolvido', checkin_at: returnedAt, checkin_date: returnedAt, audit_actor_id: String(technician.id) })
       .eq('id', reservation.id)
-      .eq('technician_id', technician.id)
+      .eq('technician_id', reservation.technician_id)
       .eq('appointment_id', reservation.appointment_id)
       .in('status', ACTIVE_RESERVATION_STATUSES)
       .select('id')

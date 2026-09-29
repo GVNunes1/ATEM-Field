@@ -105,10 +105,12 @@ function appointmentTimeMinutes(value: unknown) {
 }
 
 async function getAppointmentTeamIds(appointmentId: number) {
-  const [{ data: appointment }, { data: links }] = await Promise.all([
+  const [{ data: appointment, error: appointmentError }, { data: links, error: linksError }] = await Promise.all([
     supabaseAdmin.from('appointments').select('technician_id').eq('id', appointmentId).maybeSingle(),
     supabaseAdmin.from('appointment_technicians').select('technician_id').eq('appointment_id', appointmentId)
   ]);
+  if (appointmentError) throw appointmentError;
+  if (linksError) throw linksError;
   return [...new Set([
     ...(appointment?.technician_id ? [Number(appointment.technician_id)] : []),
     ...((links || []).map((link: any) => Number(link.technician_id)).filter(Boolean))
@@ -1592,7 +1594,7 @@ router.get('/appointments/:id/checklist', async (req: Request, res: Response) =>
 
 // Atualiza apenas o estado operacional do agendamento. O carro é opcional:
 // a agenda pode ser validada e confirmada antes de uma viatura ser vinculada.
-router.patch('/appointments/:id/workflow', requireAuthentication, requireRole(schedulingRoles), async (req: Request, res: Response) => {
+router.patch('/appointments/:id/workflow', requireAuthentication, requireRole([...schedulingRoles, 'technician']), async (req: Request, res: Response) => {
   try {
     const appointmentId = parsePositiveId(req.params.id);
     if (!appointmentId) return res.status(400).json({ success: false, error: 'Agendamento inválido.' });
@@ -1619,13 +1621,35 @@ router.patch('/appointments/:id/workflow', requireAuthentication, requireRole(sc
     if (!appointment) return res.status(404).json({ success: false, error: 'Agendamento não encontrado.' });
 
     const actorRole = (req as any).user.role;
+    const isAssignedTechnicianActor = actorRole === 'technician'
+      && (await getAppointmentTeamIds(appointmentId)).includes(Number((req as any).user.sub));
     const currentStatus = appointment.workflow_status || 'Data provisória';
-    if ((workflow_status !== undefined && !canTransitionWorkflow(actorRole, currentStatus, workflow_status))
+    if ((actorRole === 'technician' && (!isAssignedTechnicianActor
+      || (workflow_status !== undefined && !(currentStatus === 'Em execução' && workflow_status === 'Concluído'))))
+      || (workflow_status !== undefined && actorRole !== 'technician' && !canTransitionWorkflow(actorRole, currentStatus, workflow_status))
       || (vehicle_id !== undefined && actorRole === 'commercial')) {
       return res.status(403).json({ success: false, error: 'Esta etapa ou atribuição de veículo pertence a outro perfil.' });
     }
 
-    if (workflow_status !== undefined) {
+    if (workflow_status === 'Concluído' && actorRole === 'technician') {
+      const teamIds = await getAppointmentTeamIds(appointmentId);
+      const missing = missingWorkflowFields(appointment, 'Concluído', teamIds.length > 0);
+      if (missing.length) return res.status(422).json({ success: false, error: `Preencha antes de concluir: ${missing.join(', ')}.`, missing_fields: missing });
+      const [{ data: reservations, error: reservationsError }, { data: usages, error: usagesError }] = await Promise.all([
+        supabaseAdmin.from('reservations').select('status').eq('appointment_id', appointmentId),
+        supabaseAdmin.from('fleet_usage').select('status').eq('appointment_id', appointmentId)
+      ]);
+      if (reservationsError) throw reservationsError;
+      if (usagesError) throw usagesError;
+      const hasPendingPattern = (reservations || []).some(item => !['Devolvido', 'Cancelado'].includes(item.status));
+      const hasPendingVehicle = (usages || []).some(item => !['Devolvido', 'Devolvido com pendência', 'Cancelado'].includes(item.status));
+      const carWasReturned = (usages || []).some(item => ['Devolvido', 'Devolvido com pendência'].includes(item.status));
+      if (hasPendingPattern || hasPendingVehicle || (appointment.vehicle_id && !carWasReturned)) {
+        return res.status(409).json({ success: false, error: 'Devolva todos os padrões e o carro vinculado antes de concluir o atendimento.' });
+      }
+    }
+
+    if (workflow_status !== undefined && !(actorRole === 'technician' && workflow_status === 'Concluído')) {
       const assigneeId = parsePositiveId(workflow_assignee_id);
       if (!assigneeId) return res.status(422).json({ success: false, error: 'Escolha o colaborador responsável pela próxima etapa.' });
       const { data: assigned, error: assignedError } = await supabaseAdmin
@@ -1707,7 +1731,7 @@ router.patch('/appointments/:id/workflow', requireAuthentication, requireRole(sc
     if (workflow_status === 'Validado pelo supervisor') update.workflow_validated_at = now;
     if (workflow_status === 'Confirmado com cliente') update.commercial_confirmed_at = now;
     if (workflow_status !== undefined) {
-      update.workflow_assignee_id = Number(workflow_assignee_id);
+      update.workflow_assignee_id = actorRole === 'technician' && workflow_status === 'Concluído' ? null : Number(workflow_assignee_id);
       update.workflow_assigned_at = now;
       update.workflow_assigned_by = String((req as any).user.sub);
     }
@@ -2174,6 +2198,9 @@ router.post('/reservations', requireAuthentication, requireRole(['admin', 'manag
     }
 
     const reservationActor = (req as any).user;
+    if (appointment_id && effectiveTechnicianId && !(await getAppointmentTeamIds(Number(appointment_id))).includes(effectiveTechnicianId)) {
+      return res.status(422).json({ success: false, error: 'Escolha um técnico escalado neste atendimento para a reserva.' });
+    }
     if (reservationActor.role === 'technician') {
       if (Number(reservationActor.sub) !== effectiveTechnicianId) {
         return res.status(403).json({ success: false, error: 'O técnico só pode reservar padrões em seu próprio nome.' });
@@ -2461,8 +2488,11 @@ router.post('/reservations/:id/checkout', requireAuthentication, requireRole(['a
     }
 
     const actor = (req as any).user;
-    if (actor.role === 'technician' && Number(actor.sub) !== Number(reservation.technician_id)) {
-      return res.status(403).json({ success: false, error: 'Somente o técnico responsável pela reserva pode retirar este padrão.' });
+    if (actor.role === 'technician') {
+      const isAssigned = reservation.appointment_id
+        ? (await getAppointmentTeamIds(Number(reservation.appointment_id))).includes(Number(actor.sub))
+        : Number(actor.sub) === Number(reservation.technician_id);
+      if (!isAssigned) return res.status(403).json({ success: false, error: 'Somente um técnico escalado neste atendimento pode retirar este padrão.' });
     }
     const { data: linkedAppointment, error: linkedAppointmentError } = reservation.appointment_id
       ? await supabaseAdmin.from('appointments').select('workflow_status').eq('id', reservation.appointment_id).maybeSingle()
@@ -2494,7 +2524,8 @@ router.post('/reservations/:id/checkout', requireAuthentication, requireRole(['a
 
     const { data: checkedOut, error: updateErr } = await supabaseAdmin
       .from('reservations')
-      .update({ status: 'Em Uso', checkout_at: new Date().toISOString(), audit_actor_id: String((req as any).user?.sub || '') })
+      .update({ status: 'Em Uso', checkout_at: new Date().toISOString(), audit_actor_id: String(actor.sub || ''),
+        ...(actor.role === 'technician' ? { technician_id: Number(actor.sub) } : {}) })
       .eq('id', resId)
       .eq('status', 'Reservado')
       .select('id')
@@ -2519,7 +2550,7 @@ router.post('/reservations/:id/checkout', requireAuthentication, requireRole(['a
   }
 });
 
-router.post('/reservations/:id/checkin', async (req: Request, res: Response) => {
+router.post('/reservations/:id/checkin', requireAuthentication, requireRole(['admin', 'manager', 'supervisor', 'technician']), async (req: Request, res: Response) => {
   try {
     const resId = Number(req.params.id);
 
@@ -2532,13 +2563,28 @@ router.post('/reservations/:id/checkin', async (req: Request, res: Response) => 
     if (!reservation) {
       return res.status(404).json({ success: false, error: 'Reserva não encontrada.' });
     }
+    const actor = (req as any).user;
+    if (actor.role === 'technician') {
+      const isAssigned = reservation.appointment_id
+        ? (await getAppointmentTeamIds(Number(reservation.appointment_id))).includes(Number(actor.sub))
+        : Number(actor.sub) === Number(reservation.technician_id);
+      if (!isAssigned) return res.status(403).json({ success: false, error: 'Somente um técnico escalado neste atendimento pode devolver este padrão.' });
+    }
+    if (reservation.status === 'Devolvido') return res.json({ success: true, message: 'Este padrão já foi devolvido.' });
+    if (!['Reservado', 'Em Uso'].includes(reservation.status)) {
+      return res.status(409).json({ success: false, error: `A reserva está em “${reservation.status}” e não pode ser devolvida.` });
+    }
 
-    const { error: updateErr } = await supabaseAdmin
+    const { data: returned, error: updateErr } = await supabaseAdmin
       .from('reservations')
-      .update({ status: 'Devolvido', checkin_at: new Date().toISOString() })
-      .eq('id', resId);
+      .update({ status: 'Devolvido', checkin_at: new Date().toISOString(), audit_actor_id: String(actor.sub || '') })
+      .eq('id', resId)
+      .eq('status', reservation.status)
+      .select('id')
+      .maybeSingle();
 
     if (updateErr) throw updateErr;
+    if (!returned) return res.status(409).json({ success: false, error: 'A reserva mudou. Atualize os dados antes de devolver.' });
 
     if (reservation.analyzer_id) {
       // Verificar se há outra reserva em posse ativa ('Em Uso')

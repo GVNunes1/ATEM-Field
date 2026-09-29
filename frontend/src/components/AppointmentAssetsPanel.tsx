@@ -11,7 +11,7 @@ interface Props {
   onRefresh?: () => Promise<void>;
 }
 interface Analyzer { id: number; name: string; asset_tag: string; status: string; calibration_expiry?: string }
-interface Vehicle { id: number; name: string; plate: string; status: string; current_km?: number; active_usage?: { id: number } | null }
+interface Vehicle { id: number; name: string; plate: string; status: string; current_km?: number; active_usage?: { id: number } | null; scheduled_appointments?: { id: number; appointment_date: string; appointment_time?: string; status?: string; workflow_status?: string }[] }
 interface Reservation { id: number; analyzer_id: number; technician_id: number; status: string; asset_tag?: string; analyzer_name?: string; operation_type?: string }
 
 const managementRoles = new Set(['admin', 'manager', 'supervisor']);
@@ -32,8 +32,12 @@ export function AppointmentAssetsPanel({ appointment, technicians, currentUser, 
   const [analyzers, setAnalyzers] = useState<Analyzer[]>([]);
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [patternId, setPatternId] = useState('');
-  const [vehicleId, setVehicleId] = useState('');
-  const [technicianId, setTechnicianId] = useState('');
+  const [vehicleId, setVehicleId] = useState(appointment.vehicle_id ? String(appointment.vehicle_id) : '');
+  const [technicianId, setTechnicianId] = useState(() => {
+    const assignedIds = [...new Set([...(appointment.technician_ids || []), appointment.technician_id].filter(Boolean).map(Number))];
+    const preferred = assignedIds.includes(Number(currentUser?.id)) ? Number(currentUser?.id) : assignedIds[0];
+    return preferred ? String(preferred) : '';
+  });
   const [showVehicleForm, setShowVehicleForm] = useState(false);
   const [km, setKm] = useState('');
   const [photo, setPhoto] = useState<File | null>(null);
@@ -46,6 +50,9 @@ export function AppointmentAssetsPanel({ appointment, technicians, currentUser, 
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
+  const [vehicleError, setVehicleError] = useState('');
+  const [vehicleNotice, setVehicleNotice] = useState('');
+  const [confirmedVehicleId, setConfirmedVehicleId] = useState<number | null>(null);
   const [confirmedReservations, setConfirmedReservations] = useState<Reservation[]>([]);
   const teamIds = useMemo(() => [...new Set([...(appointment.technician_ids || []), appointment.technician_id].filter(Boolean).map(Number))], [appointment.technician_ids, appointment.technician_id]);
   const team = technicians.filter(person => teamIds.includes(Number(person.id)) && person.status !== 'Inativo');
@@ -53,7 +60,12 @@ export function AppointmentAssetsPanel({ appointment, technicians, currentUser, 
   const isTeamMember = teamIds.includes(Number(currentUser?.id));
   const canOperate = isManager || isTeamMember;
   const canWithdrawVehicle = isManager || currentUser?.role === 'technician';
-  const linkedVehicle = vehicles.find(vehicle => Number(vehicle.id) === Number(appointment.vehicle_id));
+  const linkedVehicle = vehicles.find(vehicle => Number(vehicle.id) === Number(confirmedVehicleId || appointment.vehicle_id));
+  const availableVehicles = vehicles.filter(vehicle => !vehicle.active_usage && !/baixado|manuten|indispon|revis/i.test(vehicle.status)
+    && !(vehicle.scheduled_appointments || []).some(other => Number(other.id) !== Number(appointment.id)
+      && other.appointment_date === appointment.appointment_date
+      && !/cancelado/i.test(`${other.status || ''} ${other.workflow_status || ''}`)
+      && (!other.appointment_time || !appointment.appointment_time || other.appointment_time.slice(0, 5) === appointment.appointment_time.slice(0, 5))));
   const reservations = useMemo(() => {
     const fromAgenda = (appointment.reservations || []) as Reservation[];
     const knownIds = new Set(fromAgenda.map(item => Number(item.id)));
@@ -68,15 +80,9 @@ export function AppointmentAssetsPanel({ appointment, technicians, currentUser, 
       .catch(() => { if (alive) setError('Não foi possível carregar os padrões. Tente reabrir o atendimento.'); });
     void safeFetchJson('/api/fleet/vehicles', { cache: 'no-store' })
       .then(fleet => { if (alive) setVehicles(fleet.vehicles || []); })
-      .catch(() => { if (alive) setError(previous => previous || 'Não foi possível carregar os veículos. As reservas de padrões continuam disponíveis.'); });
+      .catch(() => { if (alive) setVehicleError('Não foi possível carregar os veículos. As reservas de padrões continuam disponíveis.'); });
     return () => { alive = false; };
   }, []);
-
-  useEffect(() => {
-    const preferred = teamIds.includes(Number(currentUser?.id)) ? Number(currentUser?.id) : teamIds[0];
-    setTechnicianId(preferred ? String(preferred) : '');
-  }, [appointment.id, currentUser?.id, teamIds.join(',')]);
-  useEffect(() => { setVehicleId(appointment.vehicle_id ? String(appointment.vehicle_id) : ''); }, [appointment.vehicle_id]);
 
   const reservePattern = async (event: FormEvent) => {
     event.preventDefault();
@@ -115,13 +121,14 @@ export function AppointmentAssetsPanel({ appointment, technicians, currentUser, 
 
   const reserveVehicle = async () => {
     if (!vehicleId) return;
-    setBusy(true); setError(''); setNotice('');
+    setBusy(true); setVehicleError(''); setVehicleNotice('');
     try {
       const result = await safeFetchJson(`/api/appointments/${appointment.id}/workflow`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ vehicle_id: Number(vehicleId) }) });
       if (!result.success) throw new Error(result.error || 'Não foi possível vincular o veículo.');
-      setNotice('Veículo reservado para este atendimento.');
+      setConfirmedVehicleId(Number(vehicleId));
+      setVehicleNotice('Carro reservado para a equipe deste atendimento.');
       await onRefresh?.();
-    } catch (cause) { setError(cause instanceof Error ? cause.message : 'Falha na reserva do veículo.'); }
+    } catch (cause) { setVehicleError(cause instanceof Error ? cause.message : 'Falha na reserva do veículo.'); }
     finally { setBusy(false); }
   };
 
@@ -146,16 +153,18 @@ export function AppointmentAssetsPanel({ appointment, technicians, currentUser, 
     {notice && <p className="appointment-assets__message" role="status">{notice}</p>}
     <section className="appointment-assets__section" aria-label="Padrões deste atendimento">
       <h3><PackageCheck size={18} />Padrões e analisadores</h3>
-      {reservations.length ? <ul className="appointment-assets__list">{reservations.map(item => <li key={item.id}><span><strong>{[item.asset_tag, item.analyzer_name].filter(Boolean).join(' · ') || `Padrão ${item.analyzer_id}`}</strong><small>{item.status}</small></span>{item.status === 'Reservado' && canOperate && (isManager || Number(item.technician_id) === Number(currentUser?.id)) && <button type="button" className="btn btn-secondary" disabled={busy} onClick={() => void checkoutPattern(item.id)}>Registrar retirada</button>}</li>)}</ul> : <p>Nenhum padrão reservado para este atendimento.</p>}
+      {reservations.length ? <ul className="appointment-assets__list">{reservations.map(item => <li key={item.id}><span><strong>{[item.asset_tag, item.analyzer_name].filter(Boolean).join(' · ') || `Padrão ${item.analyzer_id}`}</strong><small>{item.status}</small></span>{item.status === 'Reservado' && canOperate && <button type="button" className="btn btn-secondary" disabled={busy} onClick={() => void checkoutPattern(item.id)}>Registrar retirada</button>}</li>)}</ul> : <p>Nenhum padrão reservado para este atendimento.</p>}
       {canOperate && team.length > 0 && <form className="appointment-assets__inline-form" onSubmit={reservePattern}><label>Padrão disponível<select value={patternId} onChange={event => setPatternId(event.target.value)} required><option value="">Selecione o padrão</option>{availablePatterns.map(item => <option key={item.id} value={item.id}>{item.asset_tag} · {item.name}</option>)}</select></label>{isManager && team.length > 1 && <label>Técnico responsável<select value={technicianId} onChange={event => setTechnicianId(event.target.value)}>{team.map(person => <option key={person.id} value={person.id}>{person.name}</option>)}</select></label>}<button type="submit" className="btn btn-secondary" disabled={busy || !patternId || !technicianId}><ClipboardCheck size={16} />Reservar padrão</button></form>}
       {team.length === 0 && <p className="appointment-assets__hint">Escalone um técnico antes de reservar padrões.</p>}
     </section>
     <section className="appointment-assets__section" aria-label="Carro deste atendimento">
       <h3><CarFront size={18} />Carro da agenda</h3>
-      {linkedVehicle ? <div className="appointment-assets__vehicle"><strong>{linkedVehicle.name} · {linkedVehicle.plate}</strong><span>{linkedVehicle.active_usage ? 'Em uso' : 'Reservado para este atendimento'}</span></div> : <p>Nenhum carro vinculado a este atendimento.</p>}
-      {isManager && !linkedVehicle && <div className="appointment-assets__inline-form"><label>Carro disponível<select value={vehicleId} onChange={event => setVehicleId(event.target.value)}><option value="">Selecione o carro</option>{vehicles.filter(item => !item.active_usage && !/baixado/i.test(item.status)).map(item => <option key={item.id} value={item.id}>{item.name} · {item.plate}</option>)}</select></label><button type="button" className="btn btn-secondary" disabled={busy || !vehicleId} onClick={() => void reserveVehicle()}>Reservar carro</button></div>}
+      {vehicleError && <p className="appointment-assets__message appointment-assets__message--error" role="alert">{vehicleError}</p>}
+      {vehicleNotice && <p className="appointment-assets__message" role="status">{vehicleNotice}</p>}
+      {linkedVehicle ? <div className="appointment-assets__vehicle"><strong>{linkedVehicle.name} · {linkedVehicle.plate}</strong><span>{linkedVehicle.active_usage ? 'Em uso' : 'Reservado para a equipe'}</span></div> : <p>Nenhum carro vinculado a este atendimento.</p>}
+      {canOperate && !linkedVehicle && <div className="appointment-assets__inline-form"><label>Carro disponível<select value={vehicleId} onChange={event => setVehicleId(event.target.value)}><option value="">Selecione o carro</option>{availableVehicles.map(item => <option key={item.id} value={item.id}>{item.name} · {item.plate}</option>)}</select></label><button type="button" className="btn btn-secondary" disabled={busy || !vehicleId} onClick={() => void reserveVehicle()}>Reservar carro</button>{availableVehicles.length === 0 && <p className="appointment-assets__hint">Nenhum carro está livre para este horário. Confira as reservas ou a frota.</p>}</div>}
       {linkedVehicle && !linkedVehicle.active_usage && canWithdrawVehicle && <>{!showVehicleForm ? <button type="button" className="btn btn-secondary" onClick={() => setShowVehicleForm(true)}>Registrar retirada do carro</button> : <form className="appointment-assets__vehicle-form" onSubmit={checkoutVehicle}><label>KM atual<input type="number" min="0" step="0.1" required value={km} onChange={event => setKm(event.target.value)} /></label><label className="appointment-assets__file"><Camera size={16} />Foto do hodômetro<input type="file" accept="image/jpeg,image/png,image/webp" required onChange={event => setPhoto(event.target.files?.[0] || null)} /></label><label>Tipo de deslocamento<select value={usageType} onChange={event => setUsageType(event.target.value)}><option>Empresa (Trabalho e deslocamento residência)</option><option>Particular</option></select></label><label>Status da revisão<select value={revisionStatus} onChange={event => setRevisionStatus(event.target.value)}><option>Em dia</option><option>Próxima</option><option>Pendente</option></select></label><label className="appointment-assets__check"><input type="checkbox" checked={cleanlinessOk} onChange={event => setCleanlinessOk(event.target.checked)} />Veículo limpo</label><label className="appointment-assets__check"><input type="checkbox" checked={fluidsChecked} onChange={event => setFluidsChecked(event.target.checked)} />Água e óleo verificados</label><label className="appointment-assets__check"><input type="checkbox" checked={hasDamage} onChange={event => setHasDamage(event.target.checked)} />Há danos ou avarias na retirada</label><label>Observações{hasDamage ? ' sobre as avarias' : ''}<textarea rows={2} required={hasDamage} value={notes} onChange={event => setNotes(event.target.value)} /></label><div className="appointment-assets__form-actions"><button type="button" className="btn btn-secondary" disabled={busy} onClick={() => setShowVehicleForm(false)}>Cancelar</button><button type="submit" className="btn btn-primary" disabled={busy || !photo || (hasDamage && !notes.trim())}>{busy ? 'Registrando…' : 'Confirmar retirada'}</button></div></form>}</>}
-      {!linkedVehicle && !isManager && <p className="appointment-assets__hint">O supervisor precisa reservar o carro nesta agenda antes da retirada.</p>}
+      {!linkedVehicle && !canOperate && <p className="appointment-assets__hint">A equipe escalada ou a gestão pode reservar o carro nesta agenda.</p>}
     </section>
   </div>;
 }
