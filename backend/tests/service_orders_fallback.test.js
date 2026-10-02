@@ -11,12 +11,15 @@ const pdfDirectory = path.join(backendDirectory, 'data', 'service-orders');
 function createSupabaseDouble() {
   const records = new Map();
   const upserts = [];
+  let unavailable = false;
 
   return {
     records,
     upserts,
+    setUnavailable(value) { unavailable = value; },
     client: {
       from(table) {
+        if (unavailable) throw new Error('Supabase indisponível no teste.');
         assert.equal(table, 'service_orders');
         return {
           select() {
@@ -142,7 +145,9 @@ async function startIsolatedApp() {
   });
   const address = server.address();
   const baseUrl = `http://127.0.0.1:${address.port}`;
-  const token = AuthService.generateSessionToken({ id: 'admin-test', role: 'admin', name: 'Teste Admin' });
+  // The bootstrap administrator is server-verified without a profile query.
+  // Other identities require the separate operational Supabase client.
+  const token = AuthService.generateSessionToken({ id: '0', role: 'admin', name: 'Teste Admin' });
 
   return {
     baseUrl,
@@ -217,6 +222,45 @@ test('service-order PDF fallback and historical downloads', async t => {
       1,
       'download must reuse the generated PDF instead of regenerating it'
     );
+  });
+
+  await t.test('streams a local-only PDF without Drive or Supabase and removes the temporary file', async () => {
+    const databaseCallsBefore = fixture.supabaseDouble.upserts.length;
+    const driveCallsBefore = fixture.pythonDouble.calls.filter(call => call.script === 'service_order_drive.py').length;
+    fixture.supabaseDouble.setUnavailable(true);
+
+    let response;
+    try {
+      response = await fetch(`${fixture.baseUrl}/api/service-orders/generate-local`, {
+        method: 'POST',
+        headers: {
+          ...authorization(fixture.token),
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          form_data: {
+            Cliente: 'Hospital Sem Sincronização',
+            Nome_Tecnico: 'Teste Admin',
+            Serie: 'SN-LOCAL',
+            Data: '28/08/2026',
+            Pecas: []
+          }
+        })
+      });
+    } finally {
+      fixture.supabaseDouble.setUnavailable(false);
+    }
+
+    const bytes = Buffer.from(await response.arrayBuffer());
+    assert.equal(response.status, 200);
+    assert.match(response.headers.get('content-type') || '', /^application\/pdf\b/i);
+    assert.match(response.headers.get('content-disposition') || '', /attachment/i);
+    assert.equal(bytes.subarray(0, 5).toString('ascii'), '%PDF-');
+    assert.equal(fixture.supabaseDouble.upserts.length, databaseCallsBefore);
+    assert.equal(fixture.pythonDouble.calls.filter(call => call.script === 'service_order_drive.py').length, driveCallsBefore);
+
+    const localCall = fixture.pythonDouble.calls.filter(call => call.script === 'service_order_pdf.py').at(-1);
+    assert.equal(fs.existsSync(path.resolve(String(localCall.args[1]))), false, 'temporary PDF must be removed after response');
   });
 
   await t.test('does not regenerate an old PDF missing from Drive', async () => {

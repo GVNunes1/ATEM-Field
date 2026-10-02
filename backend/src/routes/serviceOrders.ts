@@ -1,6 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 import { Router, Response } from 'express';
 import { execFile } from 'child_process';
+import { randomUUID } from 'crypto';
 import { existsSync } from 'fs';
 import { mkdir, readFile, unlink, writeFile } from 'fs/promises';
 import path from 'path';
@@ -208,8 +209,8 @@ async function generateLocalPdf(orderId: string, filename: string, formData: Rec
   const inputPath = path.join(serviceOrderPdfDirectory, `${safeFileSegment(orderId)}.json`);
   const outputPath = localPdfPath(filename);
 
-  await writeFile(inputPath, JSON.stringify(formData), 'utf8');
   try {
+    await writeFile(inputPath, JSON.stringify(formData), 'utf8');
     await runPythonService('service_order_pdf.py', [inputPath, outputPath]);
     if (!existsSync(outputPath)) throw new Error('O gerador PAT01-F2 não produziu o arquivo PDF.');
     return outputPath;
@@ -219,6 +220,50 @@ async function generateLocalPdf(orderId: string, filename: string, formData: Rec
 }
 
 router.use(requireAuthentication);
+
+// Local downloads must not depend on Google Drive, Supabase, or a later request
+// to the backend's ephemeral filesystem. The PDF is returned in this response.
+router.post('/generate-local', async (req: AuthenticatedRequest, res: Response) => {
+  const rawForm = req.body?.form_data;
+  if (!rawForm || typeof rawForm !== 'object' || Array.isArray(rawForm)) {
+    res.status(400).json({ success: false, error: 'Os dados da ordem de serviço são inválidos.' });
+    return;
+  }
+
+  const formData: Record<string, any> = { ...rawForm };
+  if (!String(formData.Cliente || '').trim()) {
+    res.status(400).json({ success: false, error: 'Informe o cliente da ordem de serviço.' });
+    return;
+  }
+  if (req.user?.role === 'technician') formData.Nome_Tecnico = req.user.name;
+  if (!String(formData.Nome_Tecnico || '').trim()) {
+    res.status(400).json({ success: false, error: 'Informe o técnico responsável.' });
+    return;
+  }
+
+  let pdfPath: string | undefined;
+  try {
+    const signed = Boolean(formData.Assinatura_Tecnico || formData.Assinatura_Cliente);
+    const orderReference = originalOrderReference(formData);
+    formData.Atendimento = orderReference;
+    const uniqueId = randomUUID();
+    const filename = `${signed ? 'SIGNED_OS' : 'OS'}_${orderReference}_${timestampForFilename()}_${uniqueId.slice(0, 8)}.pdf`;
+    pdfPath = localPdfPath(filename);
+    await generateLocalPdf(uniqueId, filename, formData);
+    const pdf = await readFile(pdfPath);
+    if (pdf.subarray(0, 5).toString('ascii') !== '%PDF-') {
+      throw new Error('O gerador PAT01-F2 não produziu um PDF válido.');
+    }
+    res.set('Cache-Control', 'private, no-store');
+    res.type('application/pdf');
+    res.attachment(filename);
+    res.send(pdf);
+  } catch (error) {
+    orderError(res, error, 'Não foi possível gerar o PDF para download local.');
+  } finally {
+    if (pdfPath) await unlink(pdfPath).catch(() => undefined);
+  }
+});
 
 router.get('/', async (req: AuthenticatedRequest, res: Response) => {
   try {

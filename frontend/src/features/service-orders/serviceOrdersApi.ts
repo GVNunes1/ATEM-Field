@@ -1,4 +1,4 @@
-import { apiUrl, safeFetchJson } from '../../lib/api';
+import { apiUrl, authenticatedFetch, safeFetchJson } from '../../lib/api';
 import { EquipmentRecord, ServiceOrder, ServiceOrderFormData } from './types';
 
 export async function listServiceOrders(): Promise<ServiceOrder[]> {
@@ -42,6 +42,15 @@ export async function deleteServiceOrder(id: string): Promise<void> {
   if (!data.success) throw new Error(data.error || 'Não foi possível excluir a ordem de serviço.');
 }
 
+export async function generateLocalServiceOrder(formData: ServiceOrderFormData): Promise<void> {
+  const response = await authenticatedFetch(apiUrl('/api/service-orders/generate-local'), {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ form_data: formData })
+  });
+  await savePdfResponse(response, 'Ordem_de_servico.pdf');
+}
+
 function openExternalPdf(url: string): void {
   const anchor = document.createElement('a');
   anchor.href = url;
@@ -59,15 +68,11 @@ export async function downloadServiceOrderPdf(id: string, suggestedFilename?: st
     return;
   }
 
-  const headers = new Headers();
-  try {
-    const token = localStorage.getItem('atem.auth.token');
-    if (token) headers.set('Authorization', `Bearer ${token}`);
-  } catch {
-    // The request will return an authentication error if storage is unavailable.
-  }
+  const response = await authenticatedFetch(apiUrl(`/api/service-orders/${encodeURIComponent(id)}/pdf`));
+  await savePdfResponse(response, suggestedFilename || `${id}.pdf`);
+}
 
-  const response = await fetch(apiUrl(`/api/service-orders/${encodeURIComponent(id)}/pdf`), { headers });
+async function savePdfResponse(response: Response, suggestedFilename: string): Promise<void> {
   if (!response.ok) {
     let message = 'Não foi possível baixar o PDF da ordem de serviço.';
     try {
@@ -79,10 +84,14 @@ export async function downloadServiceOrderPdf(id: string, suggestedFilename?: st
     throw new Error(message);
   }
 
+  if (!/^application\/pdf\b/i.test(response.headers.get('content-type') || '')) {
+    throw new Error('A API não retornou um PDF válido. Verifique a conexão com o backend.');
+  }
+
   const disposition = response.headers.get('content-disposition') || '';
   const encodedName = disposition.match(/filename\*=UTF-8''([^;]+)/i)?.[1];
   const simpleName = disposition.match(/filename="?([^";]+)"?/i)?.[1];
-  const filename = encodedName ? decodeURIComponent(encodedName) : simpleName || suggestedFilename || `${id}.pdf`;
+  const filename = encodedName ? decodeURIComponent(encodedName) : simpleName || suggestedFilename;
   const objectUrl = URL.createObjectURL(await response.blob());
   const anchor = document.createElement('a');
   anchor.href = objectUrl;

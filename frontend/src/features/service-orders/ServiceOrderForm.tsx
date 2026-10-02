@@ -17,7 +17,7 @@ import {
   X
 } from 'lucide-react';
 import { AuthUser } from '../../types/auth';
-import { downloadServiceOrderPdf, findEquipment, generateServiceOrder } from './serviceOrdersApi';
+import { downloadServiceOrderPdf, findEquipment, generateLocalServiceOrder, generateServiceOrder } from './serviceOrdersApi';
 import { SignaturePad } from './SignaturePad';
 import { ServiceOrder, ServiceOrderFormData, ServiceOrderPart, ServiceOrderToastType } from './types';
 
@@ -192,6 +192,7 @@ export function ServiceOrderForm({ currentUser, initialOrder, onBack, notify }: 
   const [equipmentResult, setEquipmentResult] = useState<'found' | 'missing' | ''>('');
   const [generatedOrder, setGeneratedOrder] = useState<ServiceOrder | null>(null);
   const [generatedDriveWarning, setGeneratedDriveWarning] = useState('');
+  const [localOnlyNotice, setLocalOnlyNotice] = useState('');
   const [dirty, setDirty] = useState(false);
   const [validationError, setValidationError] = useState('');
 
@@ -262,6 +263,7 @@ export function ServiceOrderForm({ currentUser, initialOrder, onBack, notify }: 
     setEquipmentResult('');
     setGeneratedOrder(null);
     setGeneratedDriveWarning('');
+    setLocalOnlyNotice('');
     setDirty(false);
     try { localStorage.removeItem(draftKey); } catch { /* Ignore storage errors. */ }
     notify('Formulário limpo.', 'info');
@@ -272,20 +274,48 @@ export function ServiceOrderForm({ currentUser, initialOrder, onBack, notify }: 
     onBack();
   };
 
-  const submit = async (event: React.FormEvent) => {
-    event.preventDefault();
+  const validateRequiredFields = (): boolean => {
     if (!formData.Cliente.trim()) {
       setValidationError('Informe o cliente antes de gerar a OS.');
       document.getElementById('os-client')?.focus();
-      return;
+      return false;
     }
     if (!formData.Nome_Tecnico.trim()) {
       setValidationError('Informe o técnico responsável antes de gerar a OS.');
       document.getElementById('os-technician')?.focus();
-      return;
+      return false;
     }
-
     setValidationError('');
+    return true;
+  };
+
+  const downloadLocalOnly = async (saveFailure?: string) => {
+    if (!validateRequiredFields()) return;
+    setGenerating(true);
+    setGeneratedOrder(null);
+    setGeneratedDriveWarning('');
+    try {
+      await generateLocalServiceOrder(formData);
+      const notice = saveFailure
+        ? `PDF baixado localmente. A OS não foi salva no histórico nem no Drive. Falha no registro: ${saveFailure}`
+        : 'PDF baixado localmente. A OS não foi salva no histórico nem no Drive.';
+      setLocalOnlyNotice(notice);
+      notify(notice, 'info');
+    } catch (error) {
+      const localError = error instanceof Error ? error.message : 'Não foi possível gerar o PDF local.';
+      notify(saveFailure ? `Falha ao salvar: ${saveFailure}. Falha no download local: ${localError}` : localError, 'error');
+    } finally {
+      setGenerating(false);
+    }
+  };
+
+  const submit = async (event: React.FormEvent) => {
+    event.preventDefault();
+    if (!validateRequiredFields()) return;
+
+    setLocalOnlyNotice('');
+    setGeneratedOrder(null);
+    setGeneratedDriveWarning('');
     setGenerating(true);
     notify('Gerando o PDF e registrando a ordem de serviço…', 'info');
     try {
@@ -310,7 +340,10 @@ export function ServiceOrderForm({ currentUser, initialOrder, onBack, notify }: 
         notify(downloadError instanceof Error ? downloadError.message : 'A OS foi gerada, mas o download não iniciou.', 'error');
       }
     } catch (error) {
-      notify(error instanceof Error ? error.message : 'Erro inesperado ao gerar a ordem de serviço.', 'error');
+      const saveFailure = error instanceof Error ? error.message : 'Erro inesperado ao salvar a ordem de serviço.';
+      // A failed Drive/Supabase registration must not prevent the technician from
+      // taking the finished PDF with them. The form and draft remain available.
+      await downloadLocalOnly(saveFailure);
     } finally {
       setGenerating(false);
     }
@@ -438,11 +471,21 @@ export function ServiceOrderForm({ currentUser, initialOrder, onBack, notify }: 
 
         <div className="os-form-actions">
           <button type="button" className="os-button os-button--danger-quiet" onClick={clearForm}><RotateCcw size={17} /> Limpar formulário</button>
+          <button type="button" className="os-button os-button--secondary os-button--large" disabled={generating} onClick={() => void downloadLocalOnly()}>
+            <Download size={18} /> Baixar somente PDF
+          </button>
           <button type="submit" className="os-button os-button--primary os-button--large" disabled={generating}>
             {generating ? <LoaderCircle className="spin" size={19} /> : <FileCheck2 size={19} />}
             {generating ? 'Gerando PDF…' : formData.Assinatura_Tecnico || formData.Assinatura_Cliente ? 'Gerar e salvar como assinada' : initialOrder ? 'Atualizar PDF da OS' : 'Gerar PDF e salvar OS'}
           </button>
         </div>
+
+        {localOnlyNotice && (
+          <div className="os-download-success os-download-success--pending" role="status">
+            <AlertTriangle size={20} />
+            <span><strong>Download local concluído.</strong> {localOnlyNotice}</span>
+          </div>
+        )}
 
         {generatedOrder && (
           <div className={`os-download-success${generatedDriveWarning ? ' os-download-success--pending' : ''}`} role="status">

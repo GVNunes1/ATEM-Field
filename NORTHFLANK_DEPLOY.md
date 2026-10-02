@@ -75,6 +75,8 @@ O ATEM Field usa o mesmo template HTML/Jinja e o mesmo fluxo Chromium do ATEM OS
 
 Quando o upload termina, o arquivo local é removido e a tabela `service_orders` guarda o link definitivo do Drive. Se o Drive estiver indisponível, a OS ainda é registrada sem uma URL remota falsa, o PDF local é preservado e o usuário recebe imediatamente um download autenticado pelo navegador, junto com o aviso de que o envio ficou pendente. Esse arquivo de contingência permanece somente na instância ativa; ele não substitui o arquivamento definitivo no Drive.
 
+Se o Supabase das OS estiver indisponível, o formulário oferece **Baixar somente PDF**. Essa operação gera e entrega o PDF na própria resposta autenticada, sem consultar Supabase nem Drive. O arquivo baixado não é arquivado no histórico ou no Drive; o usuário deve guardá-lo e registrar a OS novamente quando a integração voltar. A tentativa normal de salvar também oferece esse download local como contingência quando falha.
+
 Ao baixar uma OS histórica que já possui link do Drive, o sistema sempre abre esse arquivo original, mesmo que exista uma cópia local residual. Se o original não for encontrado, o sistema retorna um aviso e nunca recria silenciosamente outro PDF.
 
 O renderizador considera o documento pronto assim que encontra um PDF completo e estável, sem aguardar o Chromium encerrar sozinho. O timeout interno padrão é de 45 segundos e pode ser ajustado, quando necessário, com `PDF_RENDER_TIMEOUT_SECONDS` entre 5 e 75 segundos.
