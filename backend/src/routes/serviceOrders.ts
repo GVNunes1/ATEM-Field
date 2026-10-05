@@ -1,4 +1,4 @@
-import { createClient } from '@supabase/supabase-js';
+import { supabaseAdmin as osSupabase } from '../services/supabase';
 import { Router, Response } from 'express';
 import { execFile } from 'child_process';
 import { randomUUID } from 'crypto';
@@ -14,16 +14,7 @@ import {
 const router = Router();
 const execFileAsync = promisify(execFile);
 
-const osSupabaseUrl = process.env.OS_SUPABASE_URL || 'https://oiaykixldlfhlfzsuhfv.supabase.co';
-const osSupabaseKey = process.env.OS_SUPABASE_ANON_KEY || 'sb_publishable_QN_vMYvBLHfmso9xanU4gg_K_SLcFxm';
 const serviceOrderPdfDirectory = path.resolve(process.cwd(), 'data', 'service-orders');
-
-const osSupabase = createClient(osSupabaseUrl, osSupabaseKey, {
-  auth: {
-    autoRefreshToken: false,
-    persistSession: false
-  }
-});
 
 type ServiceOrderRecord = {
   id: string;
@@ -37,6 +28,7 @@ type ServiceOrderRecord = {
   form_data?: Record<string, unknown> | null;
   pdf_filename?: string | null;
   pdf_url?: string | null;
+  drive_file_id?: string | null;
   created_at?: string | null;
   updated_at?: string | null;
 };
@@ -366,6 +358,11 @@ router.post('/generate', async (req: AuthenticatedRequest, res: Response) => {
         res.status(403).json({ success: false, error: 'Você não possui permissão para editar esta ordem de serviço.' });
         return;
       }
+      const recovery = originalOrder?.form_data?._recovery as { partial_form?: boolean } | undefined;
+      if (recovery?.partial_form) {
+        res.status(409).json({ success: false, error: 'Esta OS foi recuperada de um PDF e possui dados parciais. Preserve o original e crie uma nova OS para registrar alterações.' });
+        return;
+      }
     }
 
     const signed = Boolean(formData.Assinatura_Tecnico || formData.Assinatura_Cliente);
@@ -406,6 +403,7 @@ router.post('/generate', async (req: AuthenticatedRequest, res: Response) => {
         form_data: formData,
         pdf_filename: generatedFilename,
         pdf_url: uploadedFile?.web_view_url || null,
+        drive_file_id: uploadedFile?.file_id || null,
         updated_at: new Date().toISOString()
       };
 

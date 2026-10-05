@@ -41,8 +41,6 @@ ENCRYPTION_MASTER_KEY
 TECHNICIAN_PORTAL_SECRET
 GOOGLE_CALENDAR_CREDENTIALS_JSON
 GOOGLE_CALENDAR_TOKEN_JSON
-OS_SUPABASE_URL
-OS_SUPABASE_ANON_KEY
 GOOGLE_DRIVE_OAUTH_TOKEN_JSON_BASE64
 SUPPORT_LLM_API_URL (opcional)
 SUPPORT_LLM_API_KEY (opcional)
@@ -67,6 +65,8 @@ No PowerShell, gere o valor sem modificar o arquivo original:
 ```
 
 ## PDFs das ordens de serviço
+
+As tabelas `service_orders` e `equipments` ficam no Supabase principal do ATEM Field, usando `SUPABASE_URL` e `SUPABASE_SERVICE_ROLE_KEY` exclusivamente no backend. As variáveis legadas `OS_SUPABASE_*` não são mais utilizadas. A migration `20261005121150_restore_service_order_database.sql` habilita RLS e bloqueia acesso direto dos clientes; as permissões de usuários continuam verificadas pela API.
 
 O ATEM Field usa o mesmo template HTML/Jinja e o mesmo fluxo Chromium do ATEM OS para produzir o formulário Multmed PAT01-F2. Após a geração, o PDF é enviado imediatamente às pastas originais do Google Drive:
 

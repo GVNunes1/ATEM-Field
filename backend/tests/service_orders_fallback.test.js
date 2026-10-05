@@ -114,15 +114,15 @@ async function startIsolatedApp() {
 
   const supabaseDouble = createSupabaseDouble();
   const pythonDouble = createPythonDouble();
-  const supabasePath = require.resolve('@supabase/supabase-js');
-  require(supabasePath);
+  const supabasePath = require.resolve('../dist/services/supabase');
   const cachedSupabaseModule = require.cache[supabasePath];
-  const originalSupabaseExports = cachedSupabaseModule.exports;
   const originalExecFile = childProcess.execFile;
 
-  cachedSupabaseModule.exports = {
-    ...originalSupabaseExports,
-    createClient: () => supabaseDouble.client
+  require.cache[supabasePath] = {
+    id: supabasePath,
+    filename: supabasePath,
+    loaded: true,
+    exports: { supabaseAdmin: supabaseDouble.client }
   };
   childProcess.execFile = pythonDouble.execFileDouble;
 
@@ -130,7 +130,8 @@ async function startIsolatedApp() {
   delete require.cache[routePath];
   const serviceOrdersRouter = require(routePath).default;
 
-  cachedSupabaseModule.exports = originalSupabaseExports;
+  if (cachedSupabaseModule) require.cache[supabasePath] = cachedSupabaseModule;
+  else delete require.cache[supabasePath];
   childProcess.execFile = originalExecFile;
 
   const express = require('express');
@@ -296,6 +297,23 @@ test('service-order PDF fallback and historical downloads', async t => {
       true,
       'historical download must look for the original Drive file'
     );
+  });
+
+  await t.test('rejects overwriting a recovered partial form before rendering or deleting originals', async () => {
+    const id = 'drive_recovered_original';
+    fixture.supabaseDouble.records.set(id, {
+      id, status: 'unsigned', technician_name: 'Teste Admin',
+      form_data: { _recovery: { partial_form: true } }
+    });
+    const callsBefore = fixture.pythonDouble.calls.length;
+    const response = await fetch(`${fixture.baseUrl}/api/service-orders/generate`, {
+      method: 'POST', headers: { ...authorization(fixture.token), 'Content-Type': 'application/json' },
+      body: JSON.stringify({ form_data: { Cliente: 'Cliente', Nome_Tecnico: 'Teste Admin', _original_id: id } })
+    });
+    assert.equal(response.status, 409);
+    assert.match((await response.json()).error, /recuperada/i);
+    assert.equal(fixture.pythonDouble.calls.length, callsBefore);
+    assert.equal(fixture.supabaseDouble.records.has(id), true);
   });
 
   await t.test('redirects an old order to its existing Drive original without regenerating', async () => {
