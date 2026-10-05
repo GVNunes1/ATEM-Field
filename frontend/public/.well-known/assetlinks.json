@@ -1,0 +1,12 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "br.com.multmed.atemfield",
+      "sha256_cert_fingerprints": [
+        "91:88:48:9C:57:47:EA:5C:40:6C:54:5E:3D:74:6E:A7:20:8A:9F:DE:C8:DE:42:B7:23:BA:9A:D8:76:14:59:9E"
+      ]
+    }
+  }
+]

@@ -18,6 +18,13 @@ frontend/test-results/
 __pycache__/
 *.py[cod]
 
+# Android builds and private release signing material
+android-app/.gradle/
+android-app/**/build/
+android-app/local.properties
+android-app/.signing/
+output/android/
+
 # Local Supabase CLI state
 supabase/.temp/
 .agents/mcp_config.json

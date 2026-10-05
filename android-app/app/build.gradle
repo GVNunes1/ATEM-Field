@@ -1,0 +1,77 @@
+plugins {
+    id 'com.android.application'
+}
+
+def releaseSecrets = [
+    keystore: providers.environmentVariable('ATEM_ANDROID_KEYSTORE').orNull,
+    storePassword: providers.environmentVariable('ATEM_ANDROID_STORE_PASSWORD').orNull,
+    keyPassword: providers.environmentVariable('ATEM_ANDROID_KEY_PASSWORD').orNull
+]
+def canSignRelease = releaseSecrets.values().every { it != null && !it.isEmpty() }
+def releaseRequested = gradle.startParameter.taskNames.any {
+    it.toLowerCase(java.util.Locale.ROOT).contains('release')
+}
+if (releaseRequested && !canSignRelease) {
+    throw new GradleException('A assinatura release exige ATEM_ANDROID_KEYSTORE, ATEM_ANDROID_STORE_PASSWORD e ATEM_ANDROID_KEY_PASSWORD. Use o script de build com a chave privada permanente; não há assinatura debug automática.')
+}
+if (canSignRelease && !file(releaseSecrets.keystore).isFile()) {
+    throw new GradleException('O arquivo de assinatura release informado não existe.')
+}
+
+android {
+    namespace 'br.com.multmed.atemfield'
+    compileSdk 36
+
+    defaultConfig {
+        applicationId 'br.com.multmed.atemfield'
+        minSdk 23
+        targetSdk 35
+        versionCode 1
+        versionName '1.0.0'
+    }
+
+    signingConfigs {
+        if (canSignRelease) {
+            release {
+                storeFile file(releaseSecrets.keystore)
+                storePassword releaseSecrets.storePassword
+                keyAlias 'atem-field'
+                keyPassword releaseSecrets.keyPassword
+            }
+        }
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            if (canSignRelease) {
+                signingConfig signingConfigs.release
+            }
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+
+    lint {
+        abortOnError true
+        checkReleaseBuilds true
+    }
+}
+
+// Also reject unsigned releases reached indirectly through tasks such as "assemble".
+tasks.configureEach {
+    if (name == 'packageRelease' || name == 'bundleRelease') {
+        doFirst {
+            if (!canSignRelease) {
+                throw new GradleException('Não é permitido gerar uma versão release sem a chave privada permanente.')
+            }
+        }
+    }
+}
+
+dependencies {
+    implementation 'com.google.androidbrowserhelper:androidbrowserhelper:2.7.3'
+}
