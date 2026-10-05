@@ -43,6 +43,14 @@ O catálogo antigo de equipamentos não está nos PDFs integralmente: reconstrui
 - Testes isolados de geração/download continuam cobrindo funcionamento sem Drive/banco e preservação de PDFs históricos.
 - Prévia com credencial de produção bloqueada antes de importar, por HTTP 404.
 
-## Pendência
+## Resultado da importação — 05/10/2026
 
-A prévia está sendo realizada com o manifesto de 100 links copiados das duas pastas pelo navegador. A credencial de produção ainda não consegue listar/enviar arquivos nessas pastas; a reconstrução por download público não corrige a integração OAuth. Não inferir que uma consulta vazia na API prova pasta vazia.
+100 PDFs identificados nas duas pastas pelo navegador; 91 registros recuperados (45 assinados e 46 não assinados). Nove cópias binariamente idênticas foram ignoradas, sem excluir nenhum arquivo no Drive. A importação terminou sem erros. Todos os registros importados possuem link para o PDF original.
+
+Sete registros precisam de revisão: seis sem nome de técnico extraível e um sem data no formato reconhecido. Os demais campos permanecem conforme o texto do PDF, sem inferir nomes ou assinaturas. Relatórios detalhados ficam apenas em `backend/data/os-recovery-*.json`, ignorados pelo Git.
+
+A API foi publicada no Northflank com o commit `f3ab5bd`; build e deploy concluídos, health saudável e endpoint de histórico recusando requisições sem login (HTTP 401). Os testes automatizados de OS (6) e recuperação (5) passaram. A geração e o template de PDF não foram alterados.
+
+## Pendência independente
+
+A credencial de produção ainda não consegue listar/enviar arquivos nessas pastas; a reconstrução por download público não corrige a integração OAuth. Não inferir que uma consulta vazia na API prova pasta vazia. Novas OS podem ser salvas no Supabase atual e baixadas localmente enquanto o upload ao Drive permanece pendente.

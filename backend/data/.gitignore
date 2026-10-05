@@ -1,0 +1,2 @@
+# Private operational recovery audits (contain OS customer/technician metadata).
+os-recovery-*.json
