@@ -2,6 +2,17 @@
 
 Aplicativo Android instalável que abre o ATEM Field em uma Trusted Web Activity (TWA), usando o navegador compatível do aparelho. O site e o backend permanecem os mesmos: `https://atem-field.vercel.app/`. Não há WebView nem ponte JavaScript para funções nativas, banco ou credenciais incluídos no APK. O PDF do relatório de campo e o gerador de OS não foram alterados.
 
+## APK entregue em 05/10/2026
+
+- Arquivo local: `output/android/ATEM-Field-1.0.0.apk` (4.48 MiB), relativo à raiz do projeto.
+- SHA-256 do APK: `5AB6223164D116B5284CBB79533FAAD21C44DD29EB393036A3A9B6DE7CB75EE6`.
+- Build release e lint concluídos: zero erros e quatro avisos não bloqueantes (label redundante, nova versão de Gradle disponível, ícone temático monocromático ausente e pasta de densidade do bitmap).
+- Assinatura RSA 3072 verificada por `apksigner`, incluindo esquemas v1 e v2. O manifesto compilado confirma pacote, versão 1.0.0, Android mínimo 6.0 e destino API 35.
+- `https://atem-field.vercel.app/.well-known/assetlinks.json` publicado como JSON, por HTTPS e sem redirecionamento. API oficial Google Digital Asset Links retornou `linked: true` para o certificado deste APK.
+- Instalação e navegação em aparelho físico ainda pendentes: `adb devices` não encontrou dispositivos conectados.
+
+Para instalar, transfira o APK para o Android, abra-o e autorize a instalação desse arquivo pela aplicação usada para abri-lo, caso o Android solicite. Depois, abra ATEM Field e entre com seu usuário habitual. Não é uma publicação na Play Store. Use Chrome atualizado e conexão à internet.
+
 ## Uso e requisitos
 
 - Android 6.0 ou superior (API 23).
@@ -17,6 +28,8 @@ Ferramentas fixadas: JDK 17, Gradle 8.11.1, Android Gradle Plugin 8.10.1, Androi
 Dependência principal: `com.google.androidbrowserhelper:androidbrowserhelper:2.7.3`, versão estável do projeto oficial Google Chrome. A API 36 é necessária pelas dependências atuais dessa versão; não foram forçados downgrades de bibliotecas transitivas.
 
 Defina `JAVA_HOME` e `ANDROID_HOME` para as instalações locais. Use o Gradle Wrapper deste diretório:
+
+Em Linux/macOS, execute o wrapper com `sh ./gradlew` (ou torne-o executável com `chmod +x gradlew`). O script automático e a proteção DPAPI abaixo são específicos do Windows.
 
 Neste computador, as ferramentas portáteis estão em `.codex/tmp/android-tools`. Para compilar a versão assinada, use `powershell -File android-app/build-apk.ps1` na raiz. Na primeira compilação, acrescente `-InitializeSigning`; a chave já existente nunca será substituída. O script compila, executa o lint Android, valida a assinatura e entrega o APK em `output/android`.
 
