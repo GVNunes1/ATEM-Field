@@ -71,14 +71,14 @@ Milestone 2 and Milestone 3 fulfill all specifications in `ORIGINAL_REQUEST.md` 
 
 ## 5. Verification Method
 
-To independently verify these results:
+To independently verify these results, first configure `SUPABASE_SERVICE_ROLE_KEY` in the server process environment using `backend/.env.example` as the variable-name reference. Retrieve the privileged credential from secure secret storage; never paste its value into this report. Run the query from `backend/`, where the Supabase dependency is installed:
 
 ```cmd
 # 1. Run independent table count query
-node -e "const { createClient } = require('@supabase/supabase-js'); const s = createClient(process.env.SUPABASE_URL || 'https://aorclbawxpjgrbdrcith.supabase.co', process.env.SUPABASE_SERVICE_ROLE_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFvcmNsYmF3eHBqZ3JiZHJjaXRoIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4NjUwNzE1OSwiZXhwIjoyMTAyMDgzMTU5fQ.Z6TA6Ad-nZ2UIBnHfjY_Z7V9T3rILP0iS9MYYH2omwY'); (async () => { for (const t of ['appointments', 'technicians', 'equipment_categories', 'test_templates', 'analyzers', 'appointment_equipments', 'appointment_technicians']) { const { count } = await s.from(t).select('*', { count: 'exact', head: true }); console.log(t + ': ' + count); } })();"
+node -e "const { createClient } = require('@supabase/supabase-js'); const key = process.env.SUPABASE_SERVICE_ROLE_KEY; if (!key || !key.trim()) throw new Error('SUPABASE_SERVICE_ROLE_KEY is required'); const s = createClient(process.env.SUPABASE_URL || 'https://aorclbawxpjgrbdrcith.supabase.co', key); (async () => { for (const t of ['appointments', 'technicians', 'equipment_categories', 'test_templates', 'analyzers', 'appointment_equipments', 'appointment_technicians']) { const { count } = await s.from(t).select('*', { count: 'exact', head: true }); console.log(t + ': ' + count); } })();"
 
 # 2. Run TypeScript build verification
-cd backend && npm.cmd run build
+npm.cmd run build
 ```
 
 **Expected Results**:

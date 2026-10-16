@@ -7,11 +7,11 @@ if (!['localhost', '127.0.0.1'].includes(new URL(baseUrl).hostname)) throw new E
 const artifacts = path.join(__dirname, '..', 'test-results', 'modal-overlays');
 fs.mkdirSync(artifacts, { recursive: true });
 const today = new Date().toLocaleDateString('sv-SE');
-const technicians=Array.from({length:46},(_,i)=>({id:i+1,name:i===0?'EQAT':`Técnico ${String(i+1).padStart(2,'0')}`,role:'Técnico de Campo',status:'Ativo',pin:'1234',phone:'11900001234'}));
+const technicians=Array.from({length:46},(_,i)=>({id:i+1,name:i===0?'EQAT':`Técnico ${String(i+1).padStart(2,'0')}`,role:'Técnico de Campo',status:'Ativo',has_pin:true,phone:'11900001234'}));
 const analyzers=[{id:301,name:'Analisador de teste',asset_tag:'QA-001',serial_number:'QA-SERIAL',type:'Analisador',status:'Disponível',calibration_expiry:'2027-06-01'}];
 const appointments=[{id:201,title:'Manutenção',client_name:'Cliente de teste',appointment_date:today,appointment_time:'10:00',technician_id:1,technician_ids:[1],technician_names:'EQAT',status:'Agendado',equipments:[],reservations:[]}];
 const reservations=[{id:401,analyzer_id:301,asset_tag:'QA-001',analyzer_name:'Analisador de teste',technician_id:1,technician_name:'EQAT',appointment_id:201,client_name:'Cliente de teste',status:'Reservado',reserved_date:today}];
-const fixture={success:true,technicians,appointments,analyzers,reservations,credentials:[{id:1,username:'qa',display_name:'EQAT',role:'technician',pin:'1234'}],categories:[],recentReservations:[],stats:{},portal_url:'https://example.test/portal-tecnico#access=fixture'};
+const fixture={success:true,technicians,appointments,analyzers,reservations,credentials:[{id:1,username:'qa',display_name:'EQAT',role:'technician',has_pin:true}],categories:[],recentReservations:[],stats:{},portal_url:'https://example.test/portal-tecnico#access=fixture'};
 let writes=0; const errors=[]; let checks=0;
 
 (async()=>{
@@ -83,6 +83,7 @@ let writes=0; const errors=[]; let checks=0;
   console.log('PASS',width,'Ajuda ATEM');
   await go('/totem');await page.locator('.tablet-tech-card').filter({hasText:'EQAT'}).click();await verify('PIN do totem');
   for(const digit of ['1','2','3','4']) await page.locator('.field-modal-layer').getByRole('button',{name:digit,exact:true}).click();
+  await page.getByRole('dialog',{name:'PIN do técnico'}).getByRole('button',{name:'Entrar',exact:true}).click();
   await page.locator('.field-modal-layer').waitFor({state:'hidden'});
   await page.getByRole('button',{name:/Reservar Padrões|Alterar Padrões/}).first().click();await verify('Reserva do totem');await close();
   await page.getByRole('button',{name:'Retirar para Chamado',exact:true}).click();await verify('Chamado do totem');await close();

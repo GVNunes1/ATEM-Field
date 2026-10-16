@@ -400,6 +400,7 @@ export type Database = {
           name: string
           phone: string | null
           pin: string | null
+          auth_version: number
           role: string
           status: string
           telegram_id: string | null
@@ -412,6 +413,7 @@ export type Database = {
           name: string
           phone?: string | null
           pin?: string | null
+          auth_version?: number
           role?: string
           status?: string
           telegram_id?: string | null
@@ -424,6 +426,7 @@ export type Database = {
           name?: string
           phone?: string | null
           pin?: string | null
+          auth_version?: number
           role?: string
           status?: string
           telegram_id?: string | null

@@ -106,7 +106,7 @@ app.get('/auth/callback', async (c) => {
   const error = c.req.query('error');
 
   if (error) {
-    return c.html(`<h2>Erro na Autenticação: ${error}</h2>`, 400);
+    return c.html('<h2>Falha na autenticação OAuth. Tente novamente.</h2>', 400);
   }
 
   if (!code || !state) {
@@ -153,8 +153,8 @@ app.get('/auth/callback', async (c) => {
       </body>
       </html>
     `);
-  } catch (err: any) {
-    return c.html(`<h2>Erro no processamento OAuth: ${err?.message || 'Falha desconhecida'}</h2>`, 500);
+  } catch {
+    return c.html('<h2>Falha no processamento OAuth. Tente novamente.</h2>', 500);
   }
 });
 

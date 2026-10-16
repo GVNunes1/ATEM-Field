@@ -4,8 +4,6 @@ import {
   ArrowRightLeft,
   Check,
   CheckCircle2,
-  Eye,
-  EyeOff,
   KeyRound,
   Link2,
   Lock,
@@ -39,15 +37,18 @@ interface Technician {
   role: string;
   avatar_url?: string | null;
   status: string;
-  pin?: string | null;
+  has_pin?: boolean;
 }
 
-interface TechnicianForm {
+interface TechnicianProfile {
   name: string;
   phone: string;
   email: string;
   role: string;
   status: string;
+}
+
+interface TechnicianForm extends TechnicianProfile {
   pin: string;
 }
 
@@ -57,7 +58,7 @@ interface AppCredential {
   technician_id: number | null;
   username: string;
   display_name: string;
-  pin: string;
+  has_pin: boolean;
   role: string;
   status: string;
   created_at: string;
@@ -70,7 +71,7 @@ const defaultForm: TechnicianForm = {
   email: '',
   role: 'Técnico Especialista em Assistência Técnica',
   status: 'Ativo',
-  pin: '3247'
+  pin: ''
 };
 
 function hasValue(value: unknown) {
@@ -111,7 +112,7 @@ function similarityScore(sourceName: string, targetName: string) {
   return score;
 }
 
-function profileFromTechnicians(source: Technician, target: Technician): TechnicianForm {
+function profileFromTechnicians(source: Technician, target: Technician): TechnicianProfile {
   const preferred = (targetValue: string | null | undefined, sourceValue: string | null | undefined) => {
     if (hasValue(targetValue)) return String(targetValue);
     if (hasValue(sourceValue)) return String(sourceValue);
@@ -123,8 +124,7 @@ function profileFromTechnicians(source: Technician, target: Technician): Technic
     phone: preferred(target.phone, source.phone),
     email: preferred(target.email, source.email),
     role: preferred(target.role, source.role) || 'Técnico de Campo',
-    status: target.status === 'Inativo' && source.status !== 'Inativo' ? 'Ativo' : target.status,
-    pin: target.pin || source.pin || '3247'
+    status: target.status === 'Inativo' && source.status !== 'Inativo' ? 'Ativo' : target.status
   };
 }
 
@@ -152,7 +152,7 @@ export function TechniciansView({ technicians, onRefresh }: TechniciansViewProps
   const [mergeSource, setMergeSource] = useState<Technician | null>(null);
   const [mergeTargetId, setMergeTargetId] = useState<number | null>(null);
   const [mergeSearch, setMergeSearch] = useState('');
-  const [mergeProfile, setMergeProfile] = useState<TechnicianForm>(defaultForm);
+  const [mergeProfile, setMergeProfile] = useState<TechnicianProfile>(defaultForm);
   const [mergeConfirmed, setMergeConfirmed] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<Technician | null>(null);
   const [modalError, setModalError] = useState('');
@@ -170,22 +170,10 @@ export function TechniciansView({ technicians, onRefresh }: TechniciansViewProps
   const [newCredForm, setNewCredForm] = useState({
     display_name: '',
     username: '',
-    pin: '3247',
+    pin: '',
     role: 'Técnico de Campo',
     user_type: 'technician'
   });
-
-  // Visibilidade de PINs (ocultos por padrão)
-  const [revealedPins, setRevealedPins] = useState<Record<string | number, boolean>>({});
-  const [revealedModalPins, setRevealedModalPins] = useState<Record<string | number, boolean>>({});
-
-  const togglePinVisibility = (techId: string | number) => {
-    setRevealedPins(prev => ({ ...prev, [techId]: !prev[techId] }));
-  };
-
-  const toggleModalPinVisibility = (credId: string | number) => {
-    setRevealedModalPins(prev => ({ ...prev, [credId]: !prev[credId] }));
-  };
 
   const activeCount = technicians.filter(tech => tech.status !== 'Inativo').length;
   const phoneCount = technicians.filter(tech => hasValue(tech.phone)).length;
@@ -206,7 +194,12 @@ export function TechniciansView({ technicians, onRefresh }: TechniciansViewProps
   };
 
   const handleUpdateCredPin = async (credId: number, pin: string) => {
+    if (!/^\d{4,8}$/.test(pin.trim())) {
+      setModalError('Defina um novo PIN de 4 a 8 dígitos.');
+      return;
+    }
     setSaving(true);
+    setModalError('');
     try {
       const response = await authenticatedFetch(apiUrl(`/api/credentials/${credId}`), {
         method: 'PATCH',
@@ -217,6 +210,7 @@ export function TechniciansView({ technicians, onRefresh }: TechniciansViewProps
       if (!response.ok || !data.success) throw new Error(data.error || 'Erro ao alterar PIN.');
       setNotice('PIN atualizado no banco de dados com sucesso!');
       setEditingCred(null);
+      setCredPinInput('');
       fetchCredentials();
       onRefresh();
     } catch (err: any) {
@@ -228,6 +222,10 @@ export function TechniciansView({ technicians, onRefresh }: TechniciansViewProps
 
   const handleCreateCred = async (e: FormEvent) => {
     e.preventDefault();
+    if (!/^\d{4,8}$/.test(newCredForm.pin.trim())) {
+      setModalError('Defina um PIN de 4 a 8 dígitos.');
+      return;
+    }
     setSaving(true);
     setModalError('');
     try {
@@ -238,12 +236,12 @@ export function TechniciansView({ technicians, onRefresh }: TechniciansViewProps
       });
       const data = await readApiResponse(response);
       if (!response.ok || !data.success) throw new Error(data.error || 'Erro ao criar credencial.');
-      setNotice(`Usuário ${newCredForm.display_name} criado no banco com PIN ${newCredForm.pin}!`);
+      setNotice(`Acesso de ${newCredForm.display_name} criado com sucesso.`);
       setShowNewCredModal(false);
       setNewCredForm({
         display_name: '',
         username: '',
-        pin: '3247',
+        pin: '',
         role: 'Técnico de Campo',
         user_type: 'technician'
       });
@@ -324,7 +322,7 @@ export function TechniciansView({ technicians, onRefresh }: TechniciansViewProps
       email: technician.email || '',
       role: technician.role || 'Técnico de Campo',
       status: technician.status || 'Ativo',
-      pin: technician.pin || '3247'
+      pin: ''
     });
     setEditingTechnician(technician);
     setOpenMenuId(null);
@@ -358,15 +356,21 @@ export function TechniciansView({ technicians, onRefresh }: TechniciansViewProps
 
   const handleSave = async (event: FormEvent) => {
     event.preventDefault();
+    const isEditing = modalMode === 'edit' && editingTechnician;
+    const { pin: enteredPin, ...profile } = formData;
+    const pin = enteredPin.trim();
+    if ((!isEditing || pin) && !/^\d{4,8}$/.test(pin)) {
+      setModalError('Defina um PIN de 4 a 8 dígitos.');
+      return;
+    }
     setSaving(true);
     setModalError('');
     try {
-      const isEditing = modalMode === 'edit' && editingTechnician;
       const targetUrl = isEditing ? apiUrl(`/api/technicians/${editingTechnician.id}`) : apiUrl('/api/technicians');
       const response = await authenticatedFetch(targetUrl, {
         method: isEditing ? 'PATCH' : 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData)
+        body: JSON.stringify(pin ? { ...profile, pin } : profile)
       });
       const data = await readApiResponse(response);
       if (!response.ok || !data.success) throw new Error(data.error || 'Não foi possível salvar o técnico.');
@@ -391,7 +395,10 @@ export function TechniciansView({ technicians, onRefresh }: TechniciansViewProps
       const response = await authenticatedFetch(apiUrl(`/api/technicians/${mergeSource.id}/merge`), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ target_id: mergeTarget.id, profile: mergeProfile })
+        body: JSON.stringify({ target_id: mergeTarget.id, profile: {
+          name: mergeProfile.name, phone: mergeProfile.phone, email: mergeProfile.email,
+          role: mergeProfile.role, status: mergeProfile.status
+        } })
       });
       const data = await readApiResponse(response);
       if (!response.ok || !data.success) throw new Error(data.error || 'Não foi possível mesclar os cadastros.');
@@ -425,7 +432,7 @@ export function TechniciansView({ technicians, onRefresh }: TechniciansViewProps
     }
   };
 
-  const pinCount = useMemo(() => technicians.filter(tech => Boolean(tech.pin)).length, [technicians]);
+  const pinCount = useMemo(() => technicians.filter(tech => tech.has_pin).length, [technicians]);
 
   return (
     <div className="technicians-view field-dashboard" onClick={() => openMenuId !== null && setOpenMenuId(null)}>
@@ -438,7 +445,7 @@ export function TechniciansView({ technicians, onRefresh }: TechniciansViewProps
         <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
           <button
             type="button"
-            onClick={() => { setShowPinManager(true); fetchCredentials(); }}
+            onClick={() => { setModalError(''); setShowPinManager(true); fetchCredentials(); }}
             className="btn btn-secondary"
             style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}
           >
@@ -548,7 +555,6 @@ export function TechniciansView({ technicians, onRefresh }: TechniciansViewProps
             const phoneConfigured = hasValue(tech.phone);
             const emailConfigured = hasValue(tech.email);
             const isActive = tech.status !== 'Inativo';
-            const techPin = tech.pin || '3247';
 
             return (
               <article key={tech.id} className={`technician-card ${isActive ? '' : 'technician-card--inactive'}`}>
@@ -605,21 +611,12 @@ export function TechniciansView({ technicians, onRefresh }: TechniciansViewProps
                     <span className="technician-pin-icon"><Lock size={15} /></span>
                     <div>
                       <span style={{ fontSize: '0.68rem', color: '#64748b', display: 'block', fontWeight: 600 }}>PIN de Acesso</span>
-                      <strong className="technician-pin-val">
-                        {revealedPins[tech.id] ? techPin : '••••'}
+                      <strong className="technician-pin-val technician-pin-status">
+                        {tech.has_pin ? 'Configurado' : 'Não configurado'}
                       </strong>
                     </div>
                   </div>
                   <div className="technician-pin-actions">
-                    <button
-                      type="button"
-                      className="pin-eye-btn"
-                      onClick={() => togglePinVisibility(tech.id)}
-                      title={revealedPins[tech.id] ? "Ocultar PIN" : "Visualizar PIN"}
-                      aria-label={revealedPins[tech.id] ? "Ocultar PIN" : "Visualizar PIN"}
-                    >
-                      {revealedPins[tech.id] ? <EyeOff size={16} /> : <Eye size={16} />}
-                    </button>
                     <button
                       type="button"
                       className="btn btn-secondary btn-sm"
@@ -701,15 +698,19 @@ export function TechniciansView({ technicians, onRefresh }: TechniciansViewProps
               </label>
 
               <label className="form-field">
-                <span>PIN de Acesso (Login / Totem) *</span>
+                <span>{modalMode === 'edit' ? 'Novo PIN de acesso (opcional)' : 'PIN de acesso (Login / Totem) *'}</span>
                 <input
-                  required
+                  required={modalMode === 'create'}
+                  type="password"
+                  autoComplete="new-password"
+                  inputMode="numeric"
+                  minLength={4}
                   maxLength={8}
                   className="input-field"
                   style={{ letterSpacing: '3px', fontWeight: 700 }}
                   value={formData.pin}
                   onChange={event => setFormData({ ...formData, pin: event.target.value.replace(/\D/g, '') })}
-                  placeholder="3247"
+                  placeholder={modalMode === 'edit' ? 'Deixe vazio para manter o PIN atual' : 'Defina de 4 a 8 dígitos'}
                 />
               </label>
 
@@ -766,13 +767,15 @@ export function TechniciansView({ technicians, onRefresh }: TechniciansViewProps
               </span>
               <button
                 type="button"
-                onClick={() => setShowNewCredModal(true)}
+                onClick={() => { setModalError(''); setShowNewCredModal(true); }}
                 className="btn btn-primary btn-sm"
                 style={{ gap: '6px' }}
               >
                 <Plus size={15} /> Novo Usuário / PIN
               </button>
             </div>
+
+            {modalError && <div className="form-error" role="alert"><ShieldAlert size={17} />{modalError}</div>}
 
             {loadingCreds ? (
               <p style={{ textAlign: 'center', padding: '20px', color: '#64748b' }}>Carregando dados do banco…</p>
@@ -781,6 +784,7 @@ export function TechniciansView({ technicians, onRefresh }: TechniciansViewProps
                 {credentials.map(cred => (
                   <div
                     key={cred.id}
+                    className="credential-status-row"
                     style={{
                       background: cred.username === 'admin' ? '#eff6ff' : '#f8fafc',
                       border: `1px solid ${cred.username === 'admin' ? '#bfdbfe' : '#e2e8f0'}`,
@@ -813,7 +817,9 @@ export function TechniciansView({ technicians, onRefresh }: TechniciansViewProps
                       {editingCred?.id === cred.id ? (
                         <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                           <input
-                            type="text"
+                            type="password"
+                            autoComplete="new-password"
+                            inputMode="numeric"
                             maxLength={8}
                             value={credPinInput}
                             onChange={e => setCredPinInput(e.target.value.replace(/\D/g, ''))}
@@ -831,6 +837,8 @@ export function TechniciansView({ technicians, onRefresh }: TechniciansViewProps
                           <button
                             type="button"
                             className="btn btn-primary btn-sm"
+                            aria-label="Salvar novo PIN"
+                            disabled={saving || !/^\d{4,8}$/.test(credPinInput)}
                             style={{ padding: '4px 8px' }}
                             onClick={() => handleUpdateCredPin(cred.id, credPinInput)}
                           >
@@ -852,26 +860,16 @@ export function TechniciansView({ technicians, onRefresh }: TechniciansViewProps
                             border: '1px solid #cbd5e1',
                             padding: '4px 10px',
                             borderRadius: '6px',
-                            fontWeight: 700,
-                            letterSpacing: '2.5px',
-                            fontSize: '0.95rem',
-                            fontFamily: 'monospace'
+                            fontWeight: 500,
+                            fontSize: '0.75rem'
                           }}>
-                            {revealedModalPins[cred.id] ? cred.pin : '••••'}
+                            {cred.has_pin ? 'PIN configurado' : 'PIN não configurado'}
                           </div>
-                          <button
-                            type="button"
-                            className="pin-eye-btn"
-                            onClick={() => toggleModalPinVisibility(cred.id)}
-                            title={revealedModalPins[cred.id] ? "Ocultar PIN" : "Visualizar PIN"}
-                          >
-                            {revealedModalPins[cred.id] ? <EyeOff size={16} /> : <Eye size={16} />}
-                          </button>
                           <button
                             type="button"
                             className="btn btn-secondary btn-sm"
                             style={{ padding: '4px 8px', fontSize: '0.75rem' }}
-                            onClick={() => { setEditingCred(cred); setCredPinInput(cred.pin); }}
+                            onClick={() => { setEditingCred(cred); setCredPinInput(''); setModalError(''); }}
                           >
                             Editar
                           </button>
@@ -915,6 +913,8 @@ export function TechniciansView({ technicians, onRefresh }: TechniciansViewProps
               <button className="icon-button" type="button" onClick={() => setShowNewCredModal(false)} aria-label="Fechar modal"><X size={19} /></button>
             </div>
 
+            {modalError && <div className="form-error" role="alert"><ShieldAlert size={17} />{modalError}</div>}
+
             <form onSubmit={handleCreateCred} className="technician-form">
               <label className="form-field form-field--full">
                 <span>Nome do Profissional / Usuário *</span>
@@ -946,12 +946,16 @@ export function TechniciansView({ technicians, onRefresh }: TechniciansViewProps
                 <span>PIN de Login (4 a 8 dígitos) *</span>
                 <input
                   required
+                  type="password"
+                  autoComplete="new-password"
+                  inputMode="numeric"
+                  minLength={4}
                   maxLength={8}
                   className="input-field"
                   style={{ letterSpacing: '3px', fontWeight: 700 }}
                   value={newCredForm.pin}
                   onChange={e => setNewCredForm({ ...newCredForm, pin: e.target.value.replace(/\D/g, '') })}
-                  placeholder="3247"
+                  placeholder="Defina de 4 a 8 dígitos"
                 />
               </label>
 

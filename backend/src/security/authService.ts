@@ -24,6 +24,7 @@ export interface AuthenticatedUserPayload {
   name: string;
   phone?: string | null;
   email?: string | null;
+  auth_version?: number;
   iat?: number;
   exp?: number;
 }
@@ -54,6 +55,7 @@ export class AuthService {
     plainText: string,
     storedHash: string | null | undefined
   ): Promise<boolean> {
+    if (typeof plainText !== 'string' || Buffer.byteLength(plainText, 'utf8') > 72) return false;
     const hashToCompare = storedHash || DUMMY_BCRYPT_HASH;
     const isMatch = await CryptoService.verifySecret(plainText, hashToCompare);
     return storedHash ? isMatch : false;
@@ -63,7 +65,7 @@ export class AuthService {
    * Emite token JWT assinado para sessões de administradores e técnicos autenticados.
    */
   public static generateSessionToken(
-    user: { id: number | string; role: 'admin' | 'technician' | 'manager' | 'supervisor' | string; name: string; phone?: string | null; email?: string | null },
+    user: { id: number | string; role: 'admin' | 'technician' | 'manager' | 'supervisor' | string; name: string; phone?: string | null; email?: string | null; auth_version?: number },
     expiresIn = '12h'
   ): string {
     return jwt.sign(
@@ -72,7 +74,8 @@ export class AuthService {
         role: user.role,
         name: user.name,
         phone: user.phone || null,
-        email: user.email || null
+        email: user.email || null,
+        auth_version: user.auth_version ?? 0
       },
       getJwtSecret(),
       {
@@ -132,13 +135,17 @@ export async function requireAuthentication(
     if (!(payload.role === 'admin' && payload.sub === '0')) {
       const { supabaseAdmin } = await import('../services/supabase');
       const { data: profile, error } = await supabaseAdmin.from('technicians')
-        .select('id, name, role, status').eq('id', payload.sub).maybeSingle();
+        .select('id, name, role, status, auth_version').eq('id', payload.sub).maybeSingle();
       if (error) {
         res.status(503).json({ success: false, error: 'Não foi possível verificar as permissões. Tente novamente.' });
         return;
       }
       if (!profile || String(profile.status || '').toLowerCase() !== 'ativo') {
         res.status(401).json({ success: false, error: 'Usuário inativo ou indisponível. Contate o administrador.' });
+        return;
+      }
+      if ((payload.auth_version ?? 0) !== (profile.auth_version ?? 0)) {
+        res.status(401).json({ success: false, error: 'Sessão revogada. Faça login novamente.' });
         return;
       }
       payload.role = roleFromSpecialty(profile.role);

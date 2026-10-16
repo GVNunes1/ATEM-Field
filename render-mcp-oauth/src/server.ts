@@ -110,7 +110,7 @@ app.get('/auth/callback', async (req: Request, res: Response) => {
   const error = req.query.error as string;
 
   if (error) {
-    res.status(400).send(`<h2>Erro OAuth: ${error}</h2>`);
+    res.status(400).send('<h2>Falha na autenticação OAuth. Tente novamente.</h2>');
     return;
   }
 
@@ -152,8 +152,8 @@ app.get('/auth/callback', async (req: Request, res: Response) => {
       </body>
       </html>
     `);
-  } catch (err: any) {
-    res.status(500).send(`<h2>Erro no Callback OAuth: ${err?.message || 'Erro desconhecido'}</h2>`);
+  } catch {
+    res.status(500).send('<h2>Falha no processamento OAuth. Tente novamente.</h2>');
   }
 });
 

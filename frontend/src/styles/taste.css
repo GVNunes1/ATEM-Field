@@ -568,3 +568,15 @@
     .agenda-calendar-sync__chevron { transition: none; }
   }
 }
+@media screen {
+  .technician-pin-status {
+    font-family: inherit;
+    font-size: .75rem;
+    font-weight: 600;
+    letter-spacing: normal;
+  }
+
+  .credential-status-row {
+    flex-wrap: wrap;
+  }
+}

@@ -4,6 +4,8 @@ import { createCalendarAppointment, deleteCalendarAppointment, getCalendarAppoin
 import { getGoogleCalendarSyncStatus, runGoogleCalendarSync } from '../services/googleCalendarSync';
 import { schedulingRoles } from '../security/roles';
 
+import { publicCalendarAppointment } from '../security/publicData';
+
 export const calendarRouter = Router();
 
 calendarRouter.get('/calendar/calendars', requireAuthentication, async (_req: AuthenticatedRequest, res: Response) => {
@@ -94,13 +96,4 @@ calendarRouter.delete('/appointments/:id', requireAuthentication, requireRole(['
   }
 });
 
-// Raw Google payloads can contain guest emails and meeting credentials. Keep
-// those server-side; the conflict dialog needs only the compared display fields.
-export function publicCalendarAppointment(appointment: any) {
-  const { google_event, google_etag, google_sync_conflict, ...result } = appointment;
-  if (google_sync_conflict) {
-    const { summary, location, start, end, status } = google_sync_conflict;
-    result.google_sync_conflict = { summary, location, start, end, status };
-  } else result.google_sync_conflict = null;
-  return result;
-}
+export { publicCalendarAppointment } from '../security/publicData';

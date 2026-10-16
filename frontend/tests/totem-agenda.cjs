@@ -41,6 +41,7 @@ const appointments = [
     await page.goto(`${baseUrl}/totem`);
     await page.locator('.tablet-tech-card').filter({ hasText: 'Beatriz Técnica' }).click();
     for (const digit of '2468') await page.getByRole('dialog', { name: 'PIN do técnico' }).getByRole('button', { name: digit, exact: true }).click();
+    await page.getByRole('dialog', { name: 'PIN do técnico' }).getByRole('button', { name: 'Entrar', exact: true }).click();
     await page.getByText('Hospital Alfa').waitFor();
     assert.equal(logins, 1, 'Totem authenticates through the backend');
     assert.equal(await page.getByText('Hospital de Carlos').count(), 0, 'Only the selected technician’s appointments appear');

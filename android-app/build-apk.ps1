@@ -84,8 +84,10 @@ try {
     $env:ATEM_ANDROID_KEY_PASSWORD = $env:ATEM_ANDROID_STORE_PASSWORD
     $env:ATEM_ANDROID_KEYSTORE = $keyStore
 
-    & (Join-Path $PSScriptRoot 'gradlew.bat') --no-daemon --console=plain :app:assembleRelease :app:lintRelease
-    if ($LASTEXITCODE -ne 0) { throw 'A compilação ou verificação Android falhou.' }
+    & (Join-Path $PSScriptRoot 'gradlew.bat') --no-daemon --console=plain --max-workers=1 `
+        '-Dorg.gradle.jvmargs=-Xmx1024m -Dfile.encoding=UTF-8' `
+        :app:testDebugUnitTest :app:assembleRelease :app:lintRelease
+    if ($LASTEXITCODE -ne 0) { throw 'Os testes, a compilação ou a verificação Android falharam.' }
     $builtApk = Join-Path $PSScriptRoot 'app/build/outputs/apk/release/app-release.apk'
     $apkSigner = Join-Path $SdkPath 'build-tools/35.0.0/apksigner.bat'
     & $apkSigner verify --verbose --print-certs $builtApk

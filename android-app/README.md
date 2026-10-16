@@ -2,14 +2,30 @@
 
 Aplicativo Android instalável que abre o ATEM Field em uma Trusted Web Activity (TWA), usando o navegador compatível do aparelho. O site e o backend permanecem os mesmos: `https://atem-field.vercel.app/`. Não há WebView nem ponte JavaScript para funções nativas, banco ou credenciais incluídos no APK. O PDF do relatório de campo e o gerador de OS não foram alterados.
 
-## APK entregue em 05/10/2026
+## Atualização 1.0.1 — correção da abertura
+
+A versão 1.0.0 podia fechar imediatamente na abertura em Android API 25 ou superior. O Android Browser Helper 2.7.3 ativa/desativa `ManageDataLauncherActivity` durante a inicialização, mas essa Activity não estava declarada no manifesto do aplicativo. O Android rejeita a referência ao componente ausente.
+
+A versão 1.0.1 (`versionCode 2`) declara essa Activity interna, a URL fixa de gerenciamento e `application.manageSpaceActivity`. Mantém a mesma chave, pacote, domínio, tema e arquitetura TWA. Instale sobre a versão anterior, sem desinstalá-la. O site, o backend, a Agenda e os PDFs não foram modificados.
+
+Quatro testes de regressão verificam o manifesto mesclado: registro da Activity, acesso externo bloqueado, URL de gerenciamento, associação do aplicativo e caminho de desativação do atalho. Todos falharam antes da correção e passaram depois, no SDK 28. Esses testes não substituem a validação no aparelho: o PackageManager simulado pelo Robolectric não reproduz a exceção nativa de um componente ausente, por isso o registro também é verificado explicitamente.
+
+- Arquivo: `output/android/ATEM-Field-1.0.1.apk`, relativo à raiz do projeto; 4.693.790 bytes (4.48 MiB).
+- SHA-256: `1E63E486A42B6A4EFF6DDDCB08ED503D379A92F3C4148518631CEF6955FBF227`.
+- Testes: 4 aprovados, zero falhas e zero testes ignorados. Build release e lint concluídos, zero erros e os mesmos quatro avisos não bloqueantes da versão inicial.
+- Assinatura v1/v2 válida; certificado SHA-256 idêntico ao APK anterior e ao `assetlinks.json` publicado. Manifesto binário do APK confirma versão 1.0.1/code 2, componente registrado e `exported=false`.
+- Abertura no aparelho ainda precisa ser confirmada pelo usuário. Nenhum dispositivo foi encontrado por `adb devices` nesta máquina.
+
+Referências da correção: [inicialização da TWA](https://github.com/GoogleChrome/android-browser-helper/blob/android-browser-helper-2.7.3/androidbrowserhelper/src/main/java/com/google/androidbrowserhelper/trusted/LauncherActivity.java), [gerenciamento de dados](https://github.com/GoogleChrome/android-browser-helper/blob/android-browser-helper-2.7.3/androidbrowserhelper/src/main/java/com/google/androidbrowserhelper/trusted/ManageDataLauncherActivity.java) e [manifesto do exemplo oficial](https://github.com/GoogleChrome/android-browser-helper/blob/android-browser-helper-2.7.3/demos/twa-basic/src/main/AndroidManifest.xml).
+
+## APK inicial 1.0.0 (substituído)
 
 - Arquivo local: `output/android/ATEM-Field-1.0.0.apk` (4.48 MiB), relativo à raiz do projeto.
 - SHA-256 do APK: `5AB6223164D116B5284CBB79533FAAD21C44DD29EB393036A3A9B6DE7CB75EE6`.
 - Build release e lint concluídos: zero erros e quatro avisos não bloqueantes (label redundante, nova versão de Gradle disponível, ícone temático monocromático ausente e pasta de densidade do bitmap).
 - Assinatura RSA 3072 verificada por `apksigner`, incluindo esquemas v1 e v2. O manifesto compilado confirma pacote, versão 1.0.0, Android mínimo 6.0 e destino API 35.
 - `https://atem-field.vercel.app/.well-known/assetlinks.json` publicado como JSON, por HTTPS e sem redirecionamento. API oficial Google Digital Asset Links retornou `linked: true` para o certificado deste APK.
-- Instalação e navegação em aparelho físico ainda pendentes: `adb devices` não encontrou dispositivos conectados.
+- O usuário instalou esta versão e relatou fechamento imediato na abertura. Use a atualização 1.0.1 acima; não redistribua a versão 1.0.0.
 
 Para instalar, transfira o APK para o Android, abra-o e autorize a instalação desse arquivo pela aplicação usada para abri-lo, caso o Android solicite. Depois, abra ATEM Field e entre com seu usuário habitual. Não é uma publicação na Play Store. Use Chrome atualizado e conexão à internet.
 
@@ -31,10 +47,10 @@ Defina `JAVA_HOME` e `ANDROID_HOME` para as instalações locais. Use o Gradle W
 
 Em Linux/macOS, execute o wrapper com `sh ./gradlew` (ou torne-o executável com `chmod +x gradlew`). O script automático e a proteção DPAPI abaixo são específicos do Windows.
 
-Neste computador, as ferramentas portáteis estão em `.codex/tmp/android-tools`. Para compilar a versão assinada, use `powershell -File android-app/build-apk.ps1` na raiz. Na primeira compilação, acrescente `-InitializeSigning`; a chave já existente nunca será substituída. O script compila, executa o lint Android, valida a assinatura e entrega o APK em `output/android`.
+Neste computador, as ferramentas portáteis estão em `.codex/tmp/android-tools`. Para compilar a versão assinada, use `powershell -File android-app/build-apk.ps1` na raiz. Na primeira compilação, acrescente `-InitializeSigning`; a chave já existente nunca será substituída. O script executa os testes de regressão, compila, executa o lint Android, valida a assinatura e entrega o APK em `output/android`. O processo é sequencial e limita os workers e a memória para este computador.
 
 ```powershell
-.\gradlew.bat :app:lintDebug :app:assembleDebug
+.\gradlew.bat :app:testDebugUnitTest :app:lintDebug :app:assembleDebug
 ```
 
 Para release, o processo de build deve fornecer **somente ao ambiente do processo**:
@@ -44,10 +60,14 @@ Para release, o processo de build deve fornecer **somente ao ambiente do process
 - `ATEM_ANDROID_KEY_PASSWORD`: senha da chave com alias `atem-field`.
 
 ```powershell
-.\gradlew.bat :app:lintRelease :app:assembleRelease
+.\gradlew.bat :app:testDebugUnitTest :app:lintRelease :app:assembleRelease
 ```
 
-A saída padrão fica em `app/build/outputs/apk/release/app-release.apk`. Sem os dados de assinatura, o build release falha; não há fallback silencioso para assinatura debug. O `applicationId` é `br.com.multmed.atemfield`; a versão inicial é 1.0.0 (`versionCode 1`). Para distribuir uma atualização, aumente `versionCode` e use a mesma chave.
+A saída padrão fica em `app/build/outputs/apk/release/app-release.apk`. Sem os dados de assinatura, o build release falha; não há fallback silencioso para assinatura debug. O `applicationId` é `br.com.multmed.atemfield`; a versão atual é 1.0.1 (`versionCode 2`). Para distribuir uma atualização, aumente `versionCode` e use a mesma chave.
+
+## Skill de desenvolvimento Android
+
+A skill [compose-expert](https://github.com/aldefy/compose-skill), versão 2.4.0, foi instalada no Codex. As instruções e o playbook de falhas foram consultados, e a verificação de aplicabilidade confirmou que este módulo usa Java + TWA, não Jetpack Compose. Foi seguida a orientação de manter a correção mínima e verificável; não foram adicionadas dependências Compose nem reescritas as telas web. Os padrões específicos de Compose deverão ser usados quando houver uma implementação de UI nativa Compose.
 
 ## Assinatura permanente e associação do site
 

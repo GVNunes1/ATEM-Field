@@ -1,4 +1,12 @@
-# Modal regression checks
+# Frontend regression checks
+
+## Authentication boundary regression checks
+
+With a local Vite server running, run `node tests/auth-boundaries.cjs`. The same optional `TEST_BASE_URL` and `CHROMIUM_PATH` variables apply. Every API request is intercepted using synthetic credentials and all remote requests are blocked.
+
+Coverage at desktop and mobile with reduced motion: PIN configured status, explicit PIN creation/reset, blank edit preservation, credential-free merges and notices; kiosk route aliases, direct loads, navigation/popstate/exit, stale data and authentication responses, and fresh technician session login/end. No live writes or field-report/PDF calls occur.
+
+## Modal regression checks
 
 Run `npm install` and `npx playwright install chromium`, then start `npm run dev` in a separate terminal. Run `npm run test:modals` against the local server.
 

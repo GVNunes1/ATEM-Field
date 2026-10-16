@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Navigation } from './components/Navigation';
 import { DashboardView } from './pages/DashboardView';
 import { InventoryView } from './pages/InventoryView';
@@ -25,8 +25,19 @@ const noCacheFetchOptions: RequestInit = {
   headers: { 'Cache-Control': 'no-cache' }
 };
 
+function normalizeTab(tab: string): string {
+  return ['totem', 'tablet', 'kiosk'].includes(tab.toLowerCase()) ? 'totem' : tab;
+}
+
+function clearStoredSession() {
+  try {
+    localStorage.removeItem('atem.auth.user');
+    localStorage.removeItem('atem.auth.token');
+  } catch { /* Storage can be unavailable. */ }
+}
+
 function getInitialTab(): string {
-  const path = window.location.pathname.toLowerCase().replace(/^\/+/, '');
+  const path = window.location.pathname.toLowerCase().replace(/^\/+|\/+$/g, '');
   if (path === 'perfil' || path === 'profile' || path.startsWith('perfil/') || path.startsWith('profile/')) return 'profile';
   if (path === 'totem' || path === 'tablet' || path === 'kiosk') return 'totem';
   if (path === 'templates' || path === 'checklist') return 'templates';
@@ -39,7 +50,7 @@ function getInitialTab(): string {
   if (path === 'workflow' || path === 'fluxo') return 'workflow';
   const urlParams = new URLSearchParams(window.location.search);
   const tabParam = urlParams.get('tab');
-  if (tabParam) return tabParam;
+  if (tabParam) return normalizeTab(tabParam);
   return 'dashboard';
 }
 
@@ -54,6 +65,10 @@ function getPublicPage(): PublicPage | null {
 export function App() {
   const publicPage = getPublicPage();
   const [currentUser, setCurrentUser] = useState<AuthUser | null>(() => {
+    if (getInitialTab() === 'totem') {
+      clearStoredSession();
+      return null;
+    }
     try {
       const saved = localStorage.getItem('atem.auth.user');
       const token = localStorage.getItem('atem.auth.token');
@@ -64,14 +79,20 @@ export function App() {
   });
 
   const [activeTab, setActiveTab] = useState(getInitialTab);
+  const activeTabRef = useRef(activeTab);
+  const currentUserRef = useRef(currentUser);
+  const sessionEpoch = useRef(0);
+  const [renderedEpoch, setRenderedEpoch] = useState(0);
+  const [sessionResetKey, setSessionResetKey] = useState(0);
   const sessionUserId = currentUser?.id;
   useEffect(() => {
     if (sessionUserId === undefined) return;
     let alive = true;
+    const epoch = sessionEpoch.current;
     const refreshAccess = async () => {
       try {
         const result = await safeFetchJson('/api/auth/session', { cache: 'no-store' });
-        if (alive && result.success && result.user?.role) setCurrentUser(previous => {
+        if (alive && epoch === sessionEpoch.current && result.success && result.user?.role) setCurrentUser(previous => {
           if (!previous || String(previous.id) !== String(result.user.id)) return previous;
           const updated = { ...previous, ...result.user };
           localStorage.setItem('atem.auth.user', JSON.stringify(updated));
@@ -100,6 +121,9 @@ export function App() {
   const [agendaRefreshError, setAgendaRefreshError] = useState('');
 
   const handleLoginSuccess = (user: AuthUser, token: string) => {
+    sessionEpoch.current += 1;
+    setRenderedEpoch(sessionEpoch.current);
+    currentUserRef.current = user;
     setCurrentUser(user);
     try {
       localStorage.setItem('atem.auth.user', JSON.stringify(user));
@@ -110,21 +134,44 @@ export function App() {
   };
 
   const handleLogout = useCallback(() => {
+    sessionEpoch.current += 1;
+    setRenderedEpoch(sessionEpoch.current);
+    currentUserRef.current = null;
+    clearStoredSession();
     setCurrentUser(null);
     setSupportOpen(false);
-    try {
-      localStorage.removeItem('atem.auth.user');
-      localStorage.removeItem('atem.auth.token');
-    } catch {
-      // Ignore
-    }
+    setStats(null);
+    setRecentReservations([]);
+    setAnalyzers([]);
+    setAppointments([]);
+    setOperationalInsights({ available: false, readiness: [], alerts: [] });
+    setFocusedAppointmentId(null);
+    setCategories([]);
+    setTechnicians([]);
+    setSelectedAppointmentForReservation(null);
+    setLoadError('');
+    setAgendaRefreshError('');
+    setLastUpdated(null);
+    setRefreshing(false);
+    setLoading(true);
+    setSessionResetKey(previous => previous + 1);
   }, []);
 
   const openSupport = useCallback(() => setSupportOpen(true), []);
   const closeSupport = useCallback(() => setSupportOpen(false), []);
 
-  const handleTabChange = (tab: string) => {
-    setActiveTab(tab);
+  const transitionTab = useCallback((tab: string) => {
+    const nextTab = normalizeTab(tab);
+    if (nextTab !== activeTabRef.current && (nextTab === 'totem' || activeTabRef.current === 'totem')) {
+      handleLogout();
+    }
+    activeTabRef.current = nextTab;
+    setActiveTab(nextTab);
+  }, [handleLogout]);
+
+  const handleTabChange = (requestedTab: string) => {
+    const tab = normalizeTab(requestedTab);
+    transitionTab(tab);
     try {
       if (tab === 'totem' || tab === 'tablet') {
         window.history.pushState({}, '', '/totem');
@@ -166,23 +213,27 @@ export function App() {
 
   useEffect(() => {
     const onPopState = () => {
-      setActiveTab(getInitialTab());
+      transitionTab(getInitialTab());
     };
     window.addEventListener('popstate', onPopState);
     return () => window.removeEventListener('popstate', onPopState);
-  }, []);
+  }, [transitionTab]);
 
   const fetchAllData = useCallback(async () => {
+    const epoch = sessionEpoch.current;
+    const authenticated = Boolean(currentUserRef.current);
     try {
       setLoadError('');
       const [statsData, analyzersData, apptsData, catsData, techsData, insightsData] = await Promise.all([
         safeFetchJson('/api/dashboard/stats', noCacheFetchOptions).catch(() => ({ success: false })),
         safeFetchJson('/api/analyzers', noCacheFetchOptions).catch(() => ({ success: false })),
-        safeFetchJson('/api/appointments', noCacheFetchOptions).catch(() => ({ success: false })),
+        authenticated ? safeFetchJson('/api/appointments', noCacheFetchOptions).catch(() => ({ success: false })) : Promise.resolve({ success: true, appointments: [] }),
         safeFetchJson('/api/categories', noCacheFetchOptions).catch(() => ({ success: false })),
         safeFetchJson('/api/technicians', noCacheFetchOptions).catch(() => ({ success: false })),
-        safeFetchJson('/api/appointments/operational-insights', noCacheFetchOptions).catch(() => ({ success: false }))
+        authenticated ? safeFetchJson('/api/appointments/operational-insights', noCacheFetchOptions).catch(() => ({ success: false })) : Promise.resolve({ success: false })
       ]);
+
+      if (epoch !== sessionEpoch.current) return;
 
       if (statsData?.success) {
         setStats(statsData.stats);
@@ -208,18 +259,21 @@ export function App() {
         setLastUpdated(new Date());
       }
     } catch (err: any) {
-      setLoadError(err.message || 'Falha ao carregar dados operacionais.');
+      if (epoch === sessionEpoch.current) setLoadError(err.message || 'Falha ao carregar dados operacionais.');
     } finally {
-      setLoading(false);
+      if (epoch === sessionEpoch.current) setLoading(false);
     }
   }, []);
 
   const refreshLiveInventory = useCallback(async () => {
+    const epoch = sessionEpoch.current;
     try {
       const [analyzersData, statsData] = await Promise.all([
         safeFetchJson('/api/analyzers', noCacheFetchOptions).catch(() => null),
         safeFetchJson('/api/dashboard/stats', noCacheFetchOptions).catch(() => null)
       ]);
+
+      if (epoch !== sessionEpoch.current) return;
 
       if (analyzersData?.success) {
         setAnalyzers(analyzersData.analyzers || []);
@@ -244,7 +298,7 @@ export function App() {
       return;
     }
     void fetchAllData();
-  }, [fetchAllData, publicPage, currentUser?.id]);
+  }, [fetchAllData, publicPage, currentUser?.id, sessionResetKey]);
 
   useEffect(() => {
     if (publicPage) return;
@@ -259,14 +313,15 @@ export function App() {
   useEffect(() => {
     if (publicPage || !currentUser || activeTab !== 'dashboard') return;
     let alive = true;
+    const epoch = sessionEpoch.current;
     const refreshInsights = async () => {
       try {
         const result = await safeFetchJson('/api/appointments/operational-insights', noCacheFetchOptions);
-        if (alive) setOperationalInsights(result?.success
+        if (alive && epoch === sessionEpoch.current) setOperationalInsights(result?.success
           ? { available: true, readiness: result.readiness || [], alerts: result.alerts || [] }
           : { available: false, readiness: [], alerts: [] });
       } catch {
-        if (alive) setOperationalInsights({ available: false, readiness: [], alerts: [] });
+        if (alive && epoch === sessionEpoch.current) setOperationalInsights({ available: false, readiness: [], alerts: [] });
       }
     };
     void refreshInsights();
@@ -278,6 +333,7 @@ export function App() {
   useEffect(() => {
     if (publicPage || !currentUser || !['appointments', 'workflow', 'totem'].includes(activeTab)) return;
     let alive = true;
+    const epoch = sessionEpoch.current;
     const refreshAppointments = async () => {
       try {
         const [result, insightResult] = await Promise.all([
@@ -285,7 +341,7 @@ export function App() {
           safeFetchJson('/api/appointments/operational-insights', noCacheFetchOptions).catch(() => null)
         ]);
         if (!result?.success) throw new Error(result?.error || 'Não foi possível atualizar a agenda.');
-        if (alive) {
+        if (alive && epoch === sessionEpoch.current) {
           setAppointments(result.appointments || []);
           setOperationalInsights(insightResult?.success
             ? { available: true, readiness: insightResult.readiness || [], alerts: insightResult.alerts || [] }
@@ -293,7 +349,7 @@ export function App() {
           setAgendaRefreshError('');
         }
       } catch (error) {
-        if (alive) setAgendaRefreshError(error instanceof Error ? error.message : 'A agenda não pôde ser atualizada. Verifique a conexão.');
+        if (alive && epoch === sessionEpoch.current) setAgendaRefreshError(error instanceof Error ? error.message : 'A agenda não pôde ser atualizada. Verifique a conexão.');
       }
     };
     const onVisible = () => { if (document.visibilityState === 'visible') void refreshAppointments(); };
@@ -317,12 +373,15 @@ export function App() {
   if (activeTab === 'totem') {
     return (
       <TabletKioskView
+        key={sessionResetKey}
         technicians={technicians}
         appointments={appointments}
         analyzers={analyzers}
         onRefresh={fetchAllData}
         agendaSyncError={agendaRefreshError}
-        onAuthenticated={handleLoginSuccess}
+        onAuthenticated={(user, token) => {
+          if (activeTabRef.current === 'totem' && renderedEpoch === sessionEpoch.current) handleLoginSuccess(user, token);
+        }}
         onSessionEnd={handleLogout}
         onExitKiosk={() => handleTabChange('dashboard')}
       />
@@ -334,7 +393,9 @@ export function App() {
     return (
       <LoginView
         technicians={technicians}
-        onLoginSuccess={handleLoginSuccess}
+        onLoginSuccess={(user, token) => {
+          if (activeTabRef.current !== 'totem' && renderedEpoch === sessionEpoch.current) handleLoginSuccess(user, token);
+        }}
       />
     );
   }

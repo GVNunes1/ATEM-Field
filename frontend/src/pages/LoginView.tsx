@@ -32,7 +32,7 @@ export const LoginView: React.FC<LoginViewProps> = ({ technicians, onLoginSucces
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedUserId) { setError('Selecione seu usuário.'); return; }
-    if (selectedUserId === 'admin' && !pin.trim()) { setError('Digite o PIN de administrador.'); return; }
+    if (!pin.trim()) { setError('Digite seu PIN ou senha.'); return; }
     setLoading(true);
     setError('');
 
@@ -42,7 +42,7 @@ export const LoginView: React.FC<LoginViewProps> = ({ technicians, onLoginSucces
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(selectedUserId === 'admin'
           ? { type: 'admin', pin: pin.trim() }
-          : { type: 'technician', technician_id: Number(selectedUserId), pin: pin.trim() || '1234' })
+          : { type: 'technician', technician_id: Number(selectedUserId), pin: pin.trim() })
       });
 
       if (data.success && data.user && data.token) {
@@ -109,6 +109,7 @@ export const LoginView: React.FC<LoginViewProps> = ({ technicians, onLoginSucces
                 <Lock size={18} className="login-input-icon" />
                 <input
                   id="user-pin-input"
+                  required
                   type="password"
                   autoComplete="current-password"
                   placeholder={selectedUserId === 'admin' ? 'Digite o PIN de administrador' : 'Digite seu PIN'}
@@ -116,10 +117,10 @@ export const LoginView: React.FC<LoginViewProps> = ({ technicians, onLoginSucces
                   onChange={e => setPin(e.target.value)}
                 />
               </div>
-              <small className="login-field-hint">{selectedUserId === 'admin' ? 'Informe o PIN de administrador.' : 'Caso ainda não tenha alterado, use o PIN padrão do seu perfil.'}</small>
+              <small className="login-field-hint">{selectedUserId === 'admin' ? 'Informe o PIN de administrador.' : 'Informe o PIN definido para seu perfil.'}</small>
             </div>
 
-            <button type="submit" disabled={loading || !selectedUserId || (selectedUserId === 'admin' && !pin.trim())} className="login-submit-btn admin">
+            <button type="submit" disabled={loading || !selectedUserId || !pin.trim()} className="login-submit-btn admin">
               {loading ? <LoaderCircle className="spin" size={18} /> : <KeyRound size={18} />}
               <span>{loading ? 'Autenticando…' : 'Entrar'}</span>
             </button>

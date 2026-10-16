@@ -27,11 +27,24 @@ import {
   TechnicianPortalAuthError
 } from '../services/telegramDashboard';
 import { syncOfficialTechniciansDatabase } from '../scripts/syncOfficialTechnicians';
-import { AuthService, CryptoService, requireAuthentication, requireRole, isManagementRole, requireManagement } from '../security/authService';
-import { calendarRouter, publicCalendarAppointment } from './calendar';
+import { AuthService, requireAuthentication, requireRole, isManagementRole, requireManagement } from '../security/authService';
+import { calendarRouter } from './calendar';
+import { credentialFreeProfile, publicCalendarAppointment, publicReservation, publicAnalyzer } from '../security/publicData';
+import { hashLoginPin } from '../security/loginPins';
 import { canReceiveWorkflowStage, canTransitionWorkflow, missingWorkflowFields, roleFromSpecialty, schedulingRoles } from '../security/roles';
 
 const router = Router();
+// Public access is explicit. All other API routes require a live server profile.
+const publicReads = new Set(['/technicians', '/categories', '/analyzers', '/dashboard/stats', '/reservations']);
+router.use((req, res, next) => {
+  const routePath = req.path.replace(/\/$/, '') || '/';
+  const portal = (req.method === 'GET' && routePath === '/technician-portal')
+    || (req.method === 'POST' && (routePath === '/technician-portal/reservations'
+      || /^\/technician-portal\/reservations\/\d+\/(checkin|reschedule)$/.test(routePath)));
+  const login = req.method === 'POST' && ['/auth/login', '/auth/admin-login'].includes(routePath);
+  if (portal || login || (req.method === 'GET' && publicReads.has(routePath) && !req.headers.authorization)) return next();
+  return requireAuthentication(req, res, next);
+});
 router.use(calendarRouter);
 const technicianMergeLocks = new Set<number>();
 
@@ -268,7 +281,7 @@ router.get('/dashboard/stats', async (req: Request, res: Response) => {
         activeTechnicians: activeTechnicians || 0,
         pendingReservations: pendingReservations || 0
       },
-      recentReservations
+      recentReservations: (req as any).user ? recentReservations : []
     });
   } catch (err: any) {
     res.status(500).json({ success: false, error: err.message });
@@ -507,19 +520,10 @@ router.post('/sync/get-google-auth-url-legacy-disabled', (req: Request, res: Res
 router.get('/technicians', async (req: Request, res: Response) => {
   try {
     const technicians = await fetchAllFromTable('technicians', 'id');
-    let isAdmin = false;
-    let signedIn = false;
-    try {
-      const payload = AuthService.verifySessionToken(String(req.headers.authorization || '').replace(/^Bearer /, ''));
-      signedIn = true;
-      isAdmin = payload.role === 'admin' && payload.sub === '0';
-    } catch { /* The login chooser only needs public directory fields. */ }
-    res.json({ success: true, technicians: technicians.map((technician: any) => {
-      if (isAdmin) return technician;
-      if (!signedIn) return { id: technician.id, name: technician.name, role: technician.role, status: technician.status, avatar_url: technician.avatar_url };
-      const { pin, ...profile } = technician;
-      return profile;
-    }) });
+    const signedIn = Boolean((req as any).user);
+    res.json({ success: true, technicians: technicians.map((technician: any) => signedIn
+      ? credentialFreeProfile(technician)
+      : { id: technician.id, name: technician.name, role: technician.role, status: technician.status, avatar_url: technician.avatar_url }) });
   } catch (err: any) {
     res.status(500).json({ success: false, error: err.message });
   }
@@ -537,6 +541,7 @@ router.post('/technicians/sync-official', requireAuthentication, requireRole(['a
 router.post('/technicians', requireAuthentication, requireRole(['admin']), async (req: Request, res: Response) => {
   try {
     const { name, phone, telegram_id, email, role, avatar_url } = req.body;
+    const pinHash = await hashLoginPin(req.body.pin);
 
     if (!name || !phone) {
       return res.status(400).json({ success: false, error: 'Nome e Telefone são obrigatórios.' });
@@ -551,7 +556,8 @@ router.post('/technicians', requireAuthentication, requireRole(['admin']), async
         email: email || null,
         role: role || 'Técnico de Campo',
         avatar_url: avatar_url || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=250&q=80',
-        status: 'Ativo'
+        status: 'Ativo',
+        pin: pinHash
       })
       .select('id')
       .single();
@@ -560,7 +566,7 @@ router.post('/technicians', requireAuthentication, requireRole(['admin']), async
 
     res.json({ success: true, id: data.id });
   } catch (err: any) {
-    res.status(500).json({ success: false, error: err.message });
+    res.status(err.statusCode || 500).json({ success: false, error: err.message });
   }
 });
 
@@ -590,6 +596,7 @@ router.patch('/technicians/:id', requireAuthentication, requireRole(['admin']), 
       role?: string;
       avatar_url?: string | null;
       status?: string;
+      pin?: string;
     } = {};
     for (const field of allowedFields) {
       if (!Object.prototype.hasOwnProperty.call(req.body, field)) continue;
@@ -613,6 +620,8 @@ router.patch('/technicians/:id', requireAuthentication, requireRole(['admin']), 
         if (field === 'avatar_url') update.avatar_url = normalizedOptionalValue(req.body.avatar_url);
       }
     }
+
+    if (Object.prototype.hasOwnProperty.call(req.body, 'pin')) update.pin = await hashLoginPin(req.body.pin);
 
     if (!Object.keys(update).length) {
       return res.status(400).json({ success: false, error: 'Nenhum campo válido foi informado.' });
@@ -640,9 +649,9 @@ router.patch('/technicians/:id', requireAuthentication, requireRole(['admin']), 
       await refreshAppointmentTechnicianSummary(appointmentIds);
     }
 
-    res.json({ success: true, technician });
+    res.json({ success: true, technician: credentialFreeProfile(technician) });
   } catch (err: any) {
-    const status = err.code === '23505' ? 409 : 500;
+    const status = err.code === '23505' ? 409 : err.statusCode || 500;
     const error = err.code === '23505'
       ? 'Este ID do Telegram já pertence a outro técnico.'
       : err.message;
@@ -837,7 +846,7 @@ router.post('/technicians/:sourceId/merge', requireAuthentication, requireRole([
 
     res.json({
       success: true,
-      technician: updatedTarget,
+      technician: credentialFreeProfile(updatedTarget),
       merged: { source_id: sourceId, target_id: targetId },
       moved: {
         appointments: appointmentsResult.data?.length || 0,
@@ -884,7 +893,7 @@ router.get('/categories', async (req: Request, res: Response) => {
   }
 });
 
-router.post('/categories/templates', async (req: Request, res: Response) => {
+router.post('/categories/templates', requireManagement, async (req: Request, res: Response) => {
   try {
     const { category_id, analyzer_type, required_parameters } = req.body;
 
@@ -961,8 +970,8 @@ router.get('/analyzers', async (req: Request, res: Response) => {
         };
       }
       return {
-        ...an,
-        current_reservation: resInfo
+        ...((req as any).user ? an : publicAnalyzer(an)),
+        current_reservation: (req as any).user ? resInfo : activeRes ? publicReservation(activeRes) : null
       };
     });
 
@@ -1183,7 +1192,7 @@ router.post('/analyzers/sync-excel', requireAuthentication, requireRole(['admin'
   }
 });
 
-router.post('/analyzers', async (req: Request, res: Response) => {
+router.post('/analyzers', requireManagement, async (req: Request, res: Response) => {
   try {
     const { asset_tag, name, type, serial_number, brand_model, calibration_date, calibration_expiry, current_location, notes } = req.body;
 
@@ -1229,7 +1238,7 @@ router.post('/analyzers', async (req: Request, res: Response) => {
   }
 });
 
-router.patch('/analyzers/:id', async (req: Request, res: Response) => {
+router.patch('/analyzers/:id', requireManagement, async (req: Request, res: Response) => {
   try {
     const analyzerId = Number(req.params.id);
     const { asset_tag, name, type, serial_number, brand_model, status, calibration_date, calibration_expiry, current_location, notes } = req.body;
@@ -1260,7 +1269,7 @@ router.patch('/analyzers/:id', async (req: Request, res: Response) => {
   }
 });
 
-router.delete('/analyzers/:id', async (req: Request, res: Response) => {
+router.delete('/analyzers/:id', requireManagement, async (req: Request, res: Response) => {
   try {
     const analyzerId = Number(req.params.id);
 
@@ -1471,6 +1480,10 @@ router.post('/appointments', (req: Request, res: Response, next) => {
 router.get('/appointments/:id/checklist', async (req: Request, res: Response) => {
   try {
     const apptId = Number(req.params.id);
+    const actor = (req as any).user;
+    if (actor.role === 'technician' && !(await getAppointmentTeamIds(apptId)).includes(Number(actor.sub))) {
+      return res.status(403).json({ success: false, error: 'Atendimento não atribuído a este técnico.' });
+    }
 
     const { data: appt, error: apptErr } = await supabaseAdmin
       .from('appointments')
@@ -1496,7 +1509,7 @@ router.get('/appointments/:id/checklist', async (req: Request, res: Response) =>
     if (isNonTechnicalAppointment(appt)) {
       return res.json({
         success: true,
-        appointment: { ...appt, technician_name: techName },
+        appointment: { ...publicCalendarAppointment(appt), technician_name: techName },
         equipments: [],
         testTemplates: [],
         requiredAnalyzerTypes: [],
@@ -1580,7 +1593,7 @@ router.get('/appointments/:id/checklist', async (req: Request, res: Response) =>
 
     res.json({
       success: true,
-      appointment: { ...appt, technician_name: techName },
+      appointment: { ...publicCalendarAppointment(appt), technician_name: techName },
       equipments,
       testTemplates,
       requiredAnalyzerTypes,
@@ -1762,7 +1775,7 @@ router.patch('/appointments/:id/workflow', requireAuthentication, requireRole([.
       .maybeSingle();
     if (updateError) throw updateError;
     if (!updated) return res.status(409).json({ success: false, error: 'O atendimento mudou. Atualize o Workflow antes de avançar.' });
-    res.json({ success: true, appointment: updated });
+    res.json({ success: true, appointment: publicCalendarAppointment(updated) });
   } catch (err: any) {
     res.status(500).json({ success: false, error: err.message });
   }
@@ -1776,7 +1789,9 @@ router.get('/reservations', async (req: Request, res: Response) => {
     let query = supabaseAdmin.from('reservations').select('*');
 
     const analyzerIdParam = req.query.analyzer_id ? Number(req.query.analyzer_id) : null;
-    const technicianIdParam = req.query.technician_id ? Number(req.query.technician_id) : null;
+    const actor = (req as any).user;
+    const technicianIdParam = actor?.role === 'technician' ? Number(actor.sub)
+      : req.query.technician_id ? Number(req.query.technician_id) : null;
 
     if (analyzerIdParam && !isNaN(analyzerIdParam)) {
       query = query.eq('analyzer_id', analyzerIdParam);
@@ -1787,6 +1802,7 @@ router.get('/reservations', async (req: Request, res: Response) => {
 
     const { data: reservationsData, error: fetchErr } = await query;
     if (fetchErr) throw fetchErr;
+    if (!(req as any).user) return res.json({ success: true, reservations: (reservationsData || []).map(publicReservation) });
 
     const reservations = (reservationsData || []).sort((a: any, b: any) => {
       const dateA = a.checkout_at || a.reserved_date || '';
@@ -2325,7 +2341,7 @@ router.post('/reservations', requireAuthentication, requireRole(['admin', 'manag
     // Chamado pode ser solicitado/retirado por QUALQUER técnico.
     if (isSpecialOp) {
       const isEqat = tech?.name?.trim().toUpperCase() === 'EQAT';
-      const isAdmin = tech?.role === 'admin' || (req as any).user?.role === 'admin' || req.headers['x-admin-token'];
+      const isAdmin = (req as any).user?.role === 'admin';
       if (!isEqat && !isAdmin) {
         return res.status(403).json({
           success: false,
@@ -2397,7 +2413,7 @@ router.post('/reservations', requireAuthentication, requireRole(['admin', 'manag
     // Se a EQAT solicitar Calibração/Empréstimo, fica 'Aguardando Aprovação' até o Administrador aprovar.
     // Se for Chamado ou Atendimento, entra como 'Reservado' ou 'Em Uso' (se direct_checkout).
     // Se o Administrador criar, entra aprovado.
-    const isCreatedByAdmin = req.headers['x-admin-token'] || (req as any).user?.role === 'admin' || tech?.role === 'admin';
+    const isCreatedByAdmin = (req as any).user?.role === 'admin';
     const isEqat = tech?.name?.trim().toUpperCase() === 'EQAT';
 
     let initialStatus = 'Reservado';
@@ -2511,7 +2527,7 @@ router.post('/reservations', requireAuthentication, requireRole(['admin', 'manag
 });
 
 // APROVAÇÃO DE SAÍDA PELO ADMINISTRADOR
-router.post('/reservations/:id/approve', async (req: Request, res: Response) => {
+router.post('/reservations/:id/approve', requireManagement, async (req: Request, res: Response) => {
   try {
     const resId = Number(req.params.id);
 
@@ -2706,7 +2722,7 @@ router.post('/reservations/:id/checkin', requireAuthentication, requireRole(['ad
   }
 });
 
-router.patch('/reservations/:id', async (req: Request, res: Response) => {
+router.patch('/reservations/:id', requireManagement, async (req: Request, res: Response) => {
   try {
     const resId = Number(req.params.id);
     const { technician_id, reserved_date, status, analyzer_id, appointment_id, notes } = req.body;
@@ -2745,7 +2761,7 @@ router.patch('/reservations/:id', async (req: Request, res: Response) => {
   }
 });
 
-router.delete('/reservations/:id', async (req: Request, res: Response) => {
+router.delete('/reservations/:id', requireManagement, async (req: Request, res: Response) => {
   try {
     const resId = Number(req.params.id);
 
@@ -2797,11 +2813,7 @@ router.post('/auth/admin-login', async (req: Request, res: Response) => {
       .eq('username', 'admin')
       .maybeSingle();
 
-    const developmentFallbackPins = process.env.NODE_ENV === 'production'
-      ? []
-      : ['3247', '6233', 'atem2026', 'admin'];
-    const validPins = [adminCred?.pin, ...developmentFallbackPins].filter(Boolean);
-    const isValid = validPins.some(p => CryptoService.timingSafeCompare(input, p!));
+    const isValid = await AuthService.verifyUserCredentials(input, adminCred?.pin);
 
     if (isValid) {
       const user = {
@@ -2839,11 +2851,7 @@ router.post('/auth/login', async (req: Request, res: Response) => {
         .eq('username', 'admin')
         .maybeSingle();
 
-      const developmentFallbackPins = process.env.NODE_ENV === 'production'
-        ? []
-        : ['3247', '6233', 'atem2026', 'admin'];
-      const validAdminPins = [adminCred?.pin, ...developmentFallbackPins].filter(Boolean);
-      const isValid = validAdminPins.some(p => CryptoService.timingSafeCompare(inputPin, p!));
+      const isValid = await AuthService.verifyUserCredentials(inputPin, adminCred?.pin);
 
       if (isValid) {
         const user = {
@@ -2884,17 +2892,7 @@ router.post('/auth/login', async (req: Request, res: Response) => {
         return res.status(401).json({ success: false, error: 'Credenciais inválidas. Verifique os dados informados.' });
       }
 
-      // Em produção, aceite somente o PIN cadastrado ou os últimos quatro
-      // dígitos do telefone. Os atalhos abaixo existem apenas para o ambiente
-      // local legado e não devem ser usados em uma implantação pública.
-      const last4Phone = technician.phone ? String(technician.phone).replace(/\D/g, '').slice(-4) : '';
-      const developmentFallbackPins = process.env.NODE_ENV === 'production'
-        ? []
-        : ['3247', '1234', '6233', '0000', 'atem'];
-      const validTechPins = [technician.pin, ...developmentFallbackPins, last4Phone].filter(Boolean);
-
-      const isValid = validTechPins.some(p => CryptoService.timingSafeCompare(inputPin, p!))
-        || (process.env.NODE_ENV !== 'production' && !inputPin && process.env.ALLOW_EMPTY_TECH_PIN === 'true');
+      const isValid = await AuthService.verifyUserCredentials(inputPin, technician.pin);
 
       if (isValid) {
         const user = {
@@ -2906,7 +2904,7 @@ router.post('/auth/login', async (req: Request, res: Response) => {
           avatar_url: technician.avatar_url
         };
 
-        const token = AuthService.generateSessionToken(user, '12h');
+        const token = AuthService.generateSessionToken({ ...user, auth_version: technician.auth_version }, '12h');
 
         return res.json({
           success: true,
@@ -2939,7 +2937,7 @@ router.get('/credentials', requireAuthentication, requireRole(['admin']), async 
       .select('*')
       .order('id', { ascending: true });
     if (error) throw error;
-    res.json({ success: true, credentials: data || [] });
+    res.json({ success: true, credentials: (data || []).map(credentialFreeProfile) });
   } catch (err: any) {
     res.status(500).json({ success: false, error: err.message });
   }
@@ -2952,7 +2950,7 @@ router.post('/credentials', requireAuthentication, requireRole(['admin']), async
       return res.status(400).json({ success: false, error: 'Nome e PIN são obrigatórios.' });
     }
 
-    const cleanPin = String(pin).trim();
+    const cleanPin = await hashLoginPin(pin);
     const cleanUser = username ? String(username).trim().toLowerCase() : `user_${Date.now()}`;
     const cleanType = user_type || role || 'technician';
 
@@ -2968,9 +2966,8 @@ router.post('/credentials', requireAuthentication, requireRole(['admin']), async
         })
         .select('id')
         .single();
-      if (!techErr && tech) {
-        techId = tech.id;
-      }
+      if (techErr) throw techErr;
+      techId = tech.id;
     }
 
     const { data, error } = await supabaseAdmin
@@ -2988,9 +2985,9 @@ router.post('/credentials', requireAuthentication, requireRole(['admin']), async
       .single();
 
     if (error) throw error;
-    res.json({ success: true, credential: data });
+    res.json({ success: true, credential: credentialFreeProfile(data) });
   } catch (err: any) {
-    res.status(500).json({ success: false, error: err.message });
+    res.status(err.statusCode || 500).json({ success: false, error: err.message });
   }
 });
 
@@ -2999,7 +2996,7 @@ router.patch('/credentials/:id', requireAuthentication, requireRole(['admin']), 
     const credId = Number(req.params.id);
     const { pin, display_name, role, status } = req.body;
     const updates: any = { updated_at: new Date().toISOString() };
-    if (pin !== undefined) updates.pin = String(pin).trim();
+    if (pin !== undefined) updates.pin = await hashLoginPin(pin);
     if (display_name !== undefined) updates.display_name = String(display_name).trim();
     if (role !== undefined) updates.role = role;
     if (status !== undefined) updates.status = status;
@@ -3016,21 +3013,22 @@ router.patch('/credentials/:id', requireAuthentication, requireRole(['admin']), 
     // Se for técnico, sincronizar também na tabela technicians
     if (updated.technician_id) {
       const techUpdates: any = {};
-      if (pin !== undefined) techUpdates.pin = String(pin).trim();
+      if (pin !== undefined) techUpdates.pin = updates.pin;
       if (display_name !== undefined) techUpdates.name = String(display_name).trim();
       if (status !== undefined) techUpdates.status = status;
 
       if (Object.keys(techUpdates).length > 0) {
-        await supabaseAdmin
+        const { error: syncError } = await supabaseAdmin
           .from('technicians')
           .update(techUpdates)
           .eq('id', updated.technician_id);
+        if (syncError) throw syncError;
       }
     }
 
-    res.json({ success: true, credential: updated });
+    res.json({ success: true, credential: credentialFreeProfile(updated) });
   } catch (err: any) {
-    res.status(500).json({ success: false, error: err.message });
+    res.status(err.statusCode || 500).json({ success: false, error: err.message });
   }
 });
 
@@ -3047,10 +3045,7 @@ router.delete('/credentials/:id', requireAuthentication, requireRole(['admin']),
       return res.status(400).json({ success: false, error: 'O Administrador Master não pode ser excluído.' });
     }
 
-    const { error } = await supabaseAdmin
-      .from('app_credentials')
-      .delete()
-      .eq('id', credId);
+    const { error } = await supabaseAdmin.rpc('revoke_app_credential', { credential_id: credId });
 
     if (error) throw error;
     res.json({ success: true, message: 'Credencial excluída com sucesso.' });
@@ -3079,9 +3074,13 @@ router.get('/technicians/:id/portal-link', async (req: Request, res: Response) =
   try {
     const technicianId = parsePositiveId(req.params.id);
     if (!technicianId) return res.status(400).json({ success: false, error: 'ID do técnico inválido.' });
+    const actor = (req as any).user;
+    if (!isManagementRole(actor.role) && Number(actor.sub) !== technicianId) {
+      return res.status(403).json({ success: false, error: 'Acesso permitido somente ao próprio técnico ou à gestão.' });
+    }
     const { data: technician, error } = await supabaseAdmin
       .from('technicians')
-      .select('id, name, phone, status')
+      .select('id, name, phone, status, auth_version')
       .eq('id', technicianId)
       .maybeSingle();
     if (error) throw error;
@@ -3090,8 +3089,8 @@ router.get('/technicians/:id/portal-link', async (req: Request, res: Response) =
     res.set('Cache-Control', 'no-store');
     res.json({
       success: true,
-      technician,
-      portal_url: createTechnicianPortalUrl(technician.id),
+      technician: { id: technician.id, name: technician.name, phone: technician.phone, status: technician.status },
+      portal_url: createTechnicianPortalUrl(technician.id, technician.auth_version),
       expires_in_hours: Number(process.env.TECHNICIAN_PORTAL_LINK_TTL_HOURS || 72)
     });
   } catch (error) {
@@ -3169,7 +3168,7 @@ router.post('/technician-portal/reservations/:id/reschedule', async (req: Reques
   }
 });
 
-router.get('/notifications/logs', async (req: Request, res: Response) => {
+router.get('/notifications/logs', requireManagement, async (req: Request, res: Response) => {
   try {
     const { data: logs, error } = await supabaseAdmin
       .from('notification_logs')

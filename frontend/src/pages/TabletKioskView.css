@@ -1096,6 +1096,18 @@
   transition: all 0.15s ease;
 }
 
+@media screen {
+  .tablet-pin-dots {
+    gap: 10px;
+  }
+
+  .tablet-pin-submit-btn {
+    width: 100%;
+    min-height: 44px;
+    margin-bottom: 10px;
+  }
+}
+
 .tablet-pin-cancel-btn:hover {
   background: #f1f5f9;
   color: #0f172a;

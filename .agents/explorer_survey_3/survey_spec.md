@@ -25,7 +25,7 @@ The objective of this specification is to define the full database schema, migra
 - **`SUPABASE_PROJECT_REF`**: `aorclbawxpjgrbdrcith`
 - **`SUPABASE_URL`**: `https://aorclbawxpjgrbdrcith.supabase.co`
 - **`SUPABASE_ANON_KEY`**: `eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFvcmNsYmF3eHBqZ3JiZHJjaXRoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY1MDcxNTksImV4cCI6MjEwMjA4MzE1OX0._3WJuER1vaXRzX4C5euYpcYD2KbQqOC9cfruWxzJ6Hc`
-- **`SUPABASE_SERVICE_ROLE_KEY`**: `eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFvcmNsYmF3eHBqZ3JiZHJjaXRoIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4NjUwNzE1OSwiZXhwIjoyMTAyMDgzMTU5fQ.Z6TA6Ad-nZ2UIBnHfjY_Z7V9T3rILP0iS9MYYH2omwY`
+- **`SUPABASE_SERVICE_ROLE_KEY`**: Required server-only credential, supplied through the process environment or ignored `backend/.env`. Use `backend/.env.example` for setup; retrieve the value from secure secret storage and never copy it into documentation or frontend configuration.
 
 ### MCP Integration (`.mcp.json`)
 - Supabase MCP Endpoint: `https://mcp.supabase.com/mcp?project_ref=aorclbawxpjgrbdrcith&features=docs,account,database,debugging,development,functions,branching`

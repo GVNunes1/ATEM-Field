@@ -36,6 +36,9 @@ if (!['localhost', '127.0.0.1'].includes(new URL(baseUrl).hostname)) throw new E
     await page.getByRole('button', { name: 'Entrar', exact: true }).click();
     await page.getByRole('alert').getByText('PIN de teste incorreto').waitFor();
     await select.selectOption('4');
+    assert.equal(await page.getByRole('button', { name: 'Entrar', exact: true }).isDisabled(), true, 'Technician login requires an explicit PIN');
+    await page.locator('.login-form').evaluate(form => form.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true })));
+    assert.equal(attempts.length, 1, 'Blank technician login sends no substituted default PIN');
     await page.getByLabel('PIN / Senha').fill('fixture-tech');
     await page.getByRole('button', { name: 'Entrar', exact: true }).click();
     assert.deepEqual(attempts, [

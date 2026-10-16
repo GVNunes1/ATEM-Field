@@ -431,7 +431,7 @@ export const TabletKioskView: React.FC<TabletKioskViewProps> = ({
   // VALIDAÇÃO DE PIN DO TÉCNICO NO TOTEM
   // =========================================================================
   const handleValidatePin = async (pinToTest: string) => {
-    if (!pinPromptTech || pinChecking) return;
+    if (!pinPromptTech || pinChecking || !/^\d{4,8}$/.test(pinToTest)) return;
     setPinChecking(true);
     try {
       const result = await safeFetchJson('/api/auth/login', {
@@ -456,13 +456,10 @@ export const TabletKioskView: React.FC<TabletKioskViewProps> = ({
   };
 
   const handleNumpadPress = (digit: string) => {
-    if (enteredPin.length >= 4) return;
+    if (pinChecking || enteredPin.length >= 8) return;
     const newPin = enteredPin + digit;
     setEnteredPin(newPin);
     setPinError('');
-    if (newPin.length === 4) {
-      setTimeout(() => void handleValidatePin(newPin), 150);
-    }
   };
 
   const handleNumpadBackspace = () => {
@@ -513,7 +510,7 @@ export const TabletKioskView: React.FC<TabletKioskViewProps> = ({
           <div className="tablet-welcome-hero">
             <span className="field-overline" style={{ display: 'block', textAlign: 'center', marginBottom: '8px' }}>Autoatendimento em campo</span>
             <h2>Toque no seu nome para acessar</h2>
-            <p>Selecione seu perfil e digite seu PIN de 4 dígitos para gerenciar sua agenda, reservar padrões ou registrar saídas e devoluções.</p>
+            <p>Selecione seu perfil e digite seu PIN de 4 a 8 dígitos para gerenciar sua agenda, reservar padrões ou registrar saídas e devoluções.</p>
 
             <div className="tablet-search-bar">
               <Search size={22} />
@@ -589,12 +586,12 @@ export const TabletKioskView: React.FC<TabletKioskViewProps> = ({
                   <span>{pinPromptTech.name.slice(0, 2).toUpperCase()}</span>
                 </div>
                 <h3>Olá, {pinPromptTech.name}!</h3>
-                <p>Digite seu PIN de 4 dígitos para liberar o acesso</p>
+                <p>Digite seu PIN de 4 a 8 dígitos para liberar o acesso</p>
               </div>
 
-              {/* Indicador de 4 dígitos */}
-              <div className="tablet-pin-dots">
-                {[0, 1, 2, 3].map(idx => (
+              {/* Os indicadores mostram apenas a quantidade de dígitos. */}
+              <div className="tablet-pin-dots" role="status" aria-label={`${enteredPin.length} dígitos informados`}>
+                {[0, 1, 2, 3, 4, 5, 6, 7].map(idx => (
                   <span
                     key={idx}
                     className={`tablet-pin-dot ${idx < enteredPin.length ? 'filled' : ''}`}
@@ -644,6 +641,15 @@ export const TabletKioskView: React.FC<TabletKioskViewProps> = ({
                   Limpar
                 </button>
               </div>
+
+              <button
+                type="button"
+                className="btn btn-primary tablet-pin-submit-btn"
+                disabled={pinChecking || enteredPin.length < 4}
+                onClick={() => void handleValidatePin(enteredPin)}
+              >
+                {pinChecking ? 'Autenticando…' : 'Entrar'}
+              </button>
 
               {/* Botão Cancelar */}
               <button

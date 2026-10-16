@@ -3,7 +3,10 @@ const { createClient } = require(path.resolve(__dirname, '../../backend/node_mod
 const fs = require('fs');
 
 const SUPABASE_URL = 'https://aorclbawxpjgrbdrcith.supabase.co';
-const SERVICE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFvcmNsYmF3eHBqZ3JiZHJjaXRoIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4NjUwNzE1OSwiZXhwIjoyMTAyMDgzMTU5fQ.Z6TA6Ad-nZ2UIBnHfjY_Z7V9T3rILP0iS9MYYH2omwY';
+const SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+if (!SERVICE_KEY || !SERVICE_KEY.trim()) {
+  throw new Error('SUPABASE_SERVICE_ROLE_KEY is required. Set it in the process environment before running this script.');
+}
 
 const supabase = createClient(SUPABASE_URL, SERVICE_KEY);
 

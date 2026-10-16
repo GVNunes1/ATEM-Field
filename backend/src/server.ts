@@ -5,6 +5,8 @@ import { initDatabase } from './db/database';
 import apiRouter from './routes/api';
 import serviceOrdersRouter from './routes/serviceOrders';
 import supportRouter from './routes/support';
+import { migrateLoginPins } from './security/loginPins';
+import { supabaseAdmin } from './services/supabase';
 import { setupGoogleCalendarSync } from './services/googleCalendarSync';
 
 const app = express();
@@ -45,7 +47,7 @@ app.use(express.json({ limit: '8mb' }));
 
 // Initialize DB & Crons
 initDatabase();
-setupGoogleCalendarSync();
+
 
 // API Routes
 app.use('/api/service-orders', serviceOrdersRouter);
@@ -77,14 +79,20 @@ app.get('*', (req, res) => {
   });
 });
 
-const server = app.listen(PORT, '0.0.0.0', () => {
-  console.log(`🚀 Servidor Backend Quick Turing rodando em http://localhost:${PORT}`);
-  console.log(`📡 Endpoints API disponíveis em http://localhost:${PORT}/api`);
-});
-
-function shutdown() {
-  server.close(() => process.exit(0));
+async function startServer() {
+  // Complete the one-time PIN upgrade before cron jobs or HTTP can use them.
+  await migrateLoginPins(supabaseAdmin);
+  setupGoogleCalendarSync();
+  const server = app.listen(PORT, '0.0.0.0', () => {
+    console.log(`🚀 Servidor Backend Quick Turing rodando em http://localhost:${PORT}`);
+    console.log(`📡 Endpoints API disponíveis em http://localhost:${PORT}/api`);
+  });
+  const shutdown = () => server.close(() => process.exit(0));
+  process.once('SIGINT', shutdown);
+  process.once('SIGTERM', shutdown);
 }
 
-process.once('SIGINT', shutdown);
-process.once('SIGTERM', shutdown);
+startServer().catch(() => {
+  console.error('Falha ao proteger os PINs. O servidor não será iniciado; confira a conexão e os registros de credenciais.');
+  process.exitCode = 1;
+});

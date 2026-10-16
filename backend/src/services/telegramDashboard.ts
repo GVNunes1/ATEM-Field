@@ -1,3 +1,4 @@
+import { publicCalendarAppointment, portalProfile } from '../security/publicData';
 import { createHash, createHmac, timingSafeEqual } from 'crypto';
 import { networkInterfaces } from 'os';
 import { supabaseAdmin } from './supabase';
@@ -9,9 +10,10 @@ const reservationLocks = new Set<string>();
 const reservationMutationLocks = new Set<number>();
 
 interface TechnicianPortalAccessClaims {
-  version: 2;
+  version: 2 | 3;
   technicianId: number;
   expiresAt: number;
+  authVersion?: number;
 }
 
 export class TechnicianPortalAuthError extends Error {
@@ -38,12 +40,14 @@ function safeEqual(left: string, right: string) {
   return leftBuffer.length === rightBuffer.length && timingSafeEqual(leftBuffer, rightBuffer);
 }
 
-export function createTechnicianPortalAccess(technicianId: number) {
+export function createTechnicianPortalAccess(technicianId: number, authVersion = 0) {
+  if (!Number.isSafeInteger(authVersion) || authVersion < 0) throw new Error('Versão de acesso inválida.');
   const configuredHours = Number(process.env.TECHNICIAN_PORTAL_LINK_TTL_HOURS || 72);
   const ttlHours = Number.isFinite(configuredHours) ? Math.min(Math.max(configuredHours, 1), 168) : 72;
   const claims: TechnicianPortalAccessClaims = {
-    version: 2,
+    version: 3,
     technicianId,
+    authVersion,
     expiresAt: Math.floor(Date.now() / 1000) + ttlHours * 60 * 60
   };
   const encodedPayload = Buffer.from(JSON.stringify(claims)).toString('base64url');
@@ -61,7 +65,8 @@ function verifyTechnicianPortalAccess(accessToken: string): TechnicianPortalAcce
   } catch {
     throw new TechnicianPortalAuthError('Link de acesso inválido. Solicite um novo link ao supervisor.');
   }
-  if (claims.version !== 2 || !Number.isInteger(claims.technicianId) || claims.technicianId <= 0 || !Number.isInteger(claims.expiresAt)) {
+  if (![2, 3].includes(claims.version) || !Number.isInteger(claims.technicianId) || claims.technicianId <= 0 || !Number.isInteger(claims.expiresAt)
+    || (claims.version === 3 && (!Number.isSafeInteger(claims.authVersion) || Number(claims.authVersion) < 0))) {
     throw new TechnicianPortalAuthError('Link de acesso inválido. Solicite um novo link ao supervisor.');
   }
   if (claims.expiresAt <= Math.floor(Date.now() / 1000)) {
@@ -75,12 +80,14 @@ export async function resolveTechnicianPortalTechnician(accessToken: string) {
   const claims = verifyTechnicianPortalAccess(accessToken);
   const { data: technician, error } = await supabaseAdmin
     .from('technicians')
-    .select('*')
+    .select('id, name, role, status, avatar_url, auth_version')
     .eq('id', claims.technicianId)
     .eq('status', 'Ativo')
     .maybeSingle();
   if (error) throw error;
   if (!technician) throw new TechnicianPortalAuthError('O cadastro deste técnico não está ativo.', 403);
+  const tokenVersion = claims.version === 2 ? 0 : claims.authVersion;
+  if (tokenVersion !== (technician.auth_version ?? 0)) throw new TechnicianPortalAuthError('Este acesso foi revogado. Solicite um novo link.', 401);
   return technician;
 }
 
@@ -99,8 +106,8 @@ export function getTechnicianPortalBaseUrl() {
   return `http://127.0.0.1:${process.env.PORT || 3001}`;
 }
 
-export function createTechnicianPortalUrl(technicianId: number) {
-  const accessToken = createTechnicianPortalAccess(technicianId);
+export function createTechnicianPortalUrl(technicianId: number, authVersion = 0) {
+  const accessToken = createTechnicianPortalAccess(technicianId, authVersion);
   return `${getTechnicianPortalBaseUrl()}/portal-tecnico#access=${encodeURIComponent(accessToken)}`;
 }
 
@@ -179,7 +186,7 @@ export async function getTechnicianPortalData(technician: any, days = 45) {
   const appointments = await fetchAppointmentsForTechnician(technician.id, fromDate, toDate);
   if (!appointments.length) {
     return {
-      technician,
+      technician: portalProfile(technician),
       fromDate,
       toDate,
       appointments: [],
@@ -225,7 +232,7 @@ export async function getTechnicianPortalData(technician: any, days = 45) {
 
     if (!isTechnical) {
       return {
-        ...appointment,
+        ...publicCalendarAppointment(appointment),
         isTechnicalService: false,
         equipments: appointmentEquipments,
         testTemplates: [],
@@ -304,7 +311,7 @@ export async function getTechnicianPortalData(technician: any, days = 45) {
     const mandatoryRequirements = analyzerRequirements.filter(item => item.isMandatory);
 
     return {
-      ...appointment,
+      ...publicCalendarAppointment(appointment),
       equipments: appointmentEquipments,
       testTemplates: appointmentTemplates,
       analyzerRequirements,
@@ -352,7 +359,7 @@ export async function getTechnicianPortalData(technician: any, days = 45) {
   }));
 
   return {
-    technician,
+    technician: portalProfile(technician),
     fromDate,
     toDate,
     appointments: appointmentsWithReschedule,

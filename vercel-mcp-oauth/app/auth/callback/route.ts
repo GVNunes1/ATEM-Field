@@ -13,7 +13,7 @@ export async function GET(request: NextRequest) {
   const error = url.searchParams.get('error');
 
   if (error) {
-    return new NextResponse(`<h2>Erro na Autenticação: ${error}</h2>`, {
+    return new NextResponse('<h2>Falha na autenticação OAuth. Tente novamente.</h2>', {
       status: 400,
       headers: { 'Content-Type': 'text/html; charset=utf-8' },
     });
@@ -66,8 +66,8 @@ export async function GET(request: NextRequest) {
       status: 200,
       headers: { 'Content-Type': 'text/html; charset=utf-8' },
     });
-  } catch (err: any) {
-    return new NextResponse(`<h2>Erro OAuth: ${err?.message || 'Falha desconhecida'}</h2>`, {
+  } catch {
+    return new NextResponse('<h2>Falha no processamento OAuth. Tente novamente.</h2>', {
       status: 500,
       headers: { 'Content-Type': 'text/html; charset=utf-8' },
     });
