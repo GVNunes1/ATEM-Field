@@ -228,7 +228,12 @@ export function ServiceOrderForm({ currentUser, initialOrder, onBack, notify }: 
 
   const lookupEquipment = async () => {
     const serial = stringValue(formData.Serie).trim();
-    if (serial.length < 2) return;
+    if (serial.length < 2) {
+      if (serial.length > 0) {
+        notify('Digite ao menos 2 caracteres do número de série para pesquisar.', 'info');
+      }
+      return;
+    }
     setSearchingEquipment(true);
     setEquipmentResult('');
     try {
@@ -276,12 +281,12 @@ export function ServiceOrderForm({ currentUser, initialOrder, onBack, notify }: 
 
   const validateRequiredFields = (): boolean => {
     if (!formData.Cliente.trim()) {
-      setValidationError('Informe o cliente antes de gerar a OS.');
+      setValidationError('Informe o cliente antes de salvar a OS no sistema. Para gerar a OS em branco ou preenchimento a mão, use "Baixar somente PDF".');
       document.getElementById('os-client')?.focus();
       return false;
     }
     if (!formData.Nome_Tecnico.trim()) {
-      setValidationError('Informe o técnico responsável antes de gerar a OS.');
+      setValidationError('Informe o técnico responsável antes de salvar a OS.');
       document.getElementById('os-technician')?.focus();
       return false;
     }
@@ -290,15 +295,14 @@ export function ServiceOrderForm({ currentUser, initialOrder, onBack, notify }: 
   };
 
   const downloadLocalOnly = async (saveFailure?: string) => {
-    if (!validateRequiredFields()) return;
     setGenerating(true);
     setGeneratedOrder(null);
     setGeneratedDriveWarning('');
     try {
       await generateLocalServiceOrder(formData);
       const notice = saveFailure
-        ? `PDF baixado localmente. A OS não foi salva no histórico nem no Drive. Falha no registro: ${saveFailure}`
-        : 'PDF baixado localmente. A OS não foi salva no histórico nem no Drive.';
+        ? `PDF baixado localmente. A OS não foi salva no histórico nem no Drive. Motivo: ${saveFailure}`
+        : 'PDF baixado localmente para impressão e preenchimento a mão.';
       setLocalOnlyNotice(notice);
       notify(notice, 'info');
     } catch (error) {
@@ -359,7 +363,7 @@ export function ServiceOrderForm({ currentUser, initialOrder, onBack, notify }: 
   };
 
   return (
-    <form className="os-form-page" onSubmit={submit}>
+    <form className="os-form-page" onSubmit={submit} noValidate>
       <div className="os-form-toolbar">
         <button type="button" className="os-button os-button--quiet" onClick={backSafely}>
           <ArrowLeft size={17} /> Voltar às ordens
@@ -471,8 +475,14 @@ export function ServiceOrderForm({ currentUser, initialOrder, onBack, notify }: 
 
         <div className="os-form-actions">
           <button type="button" className="os-button os-button--danger-quiet" onClick={clearForm}><RotateCcw size={17} /> Limpar formulário</button>
-          <button type="button" className="os-button os-button--secondary os-button--large" disabled={generating} onClick={() => void downloadLocalOnly()}>
-            <Download size={18} /> Baixar somente PDF
+          <button
+            type="button"
+            className="os-button os-button--secondary os-button--large"
+            disabled={generating}
+            onClick={() => void downloadLocalOnly()}
+            title="Gera e baixa o PDF localmente na hora (permite campos em branco para levar e preencher a mão)"
+          >
+            <Download size={18} /> Baixar somente PDF (preencher a mão)
           </button>
           <button type="submit" className="os-button os-button--primary os-button--large" disabled={generating}>
             {generating ? <LoaderCircle className="spin" size={19} /> : <FileCheck2 size={19} />}

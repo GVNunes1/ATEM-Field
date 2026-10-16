@@ -10,16 +10,55 @@ const pdfDirectory = path.join(backendDirectory, 'data', 'service-orders');
 
 function createSupabaseDouble() {
   const records = new Map();
+  const equipmentRecords = new Map();
   const upserts = [];
   let unavailable = false;
 
   return {
     records,
+    equipmentRecords,
     upserts,
     setUnavailable(value) { unavailable = value; },
     client: {
       from(table) {
         if (unavailable) throw new Error('Supabase indisponível no teste.');
+        if (table === 'equipments') {
+          return {
+            select() {
+              return {
+                ilike(_column, pattern) {
+                  return {
+                    async limit(n) {
+                      const clean = String(pattern || '').replace(/[%_\\]/g, '').toLowerCase();
+                      const matches = [];
+                      for (const eq of equipmentRecords.values()) {
+                        if (String(eq.serial_number || '').toLowerCase().includes(clean)) {
+                          matches.push(eq);
+                          if (matches.length >= n) break;
+                        }
+                      }
+                      return { data: matches, error: null };
+                    }
+                  };
+                }
+              };
+            },
+            upsert: async (eq) => {
+              equipmentRecords.set(String(eq.serial_number), eq);
+              return { error: null };
+            }
+          };
+        }
+        if (table === 'appointment_equipments' || table === 'appointments' || table === 'equipment_categories') {
+          return {
+            select() {
+              return {
+                ilike() { return { limit() { return Promise.resolve({ data: [], error: null }); } }; },
+                eq() { return { maybeSingle() { return Promise.resolve({ data: null, error: null }); } }; }
+              };
+            }
+          };
+        }
         assert.equal(table, 'service_orders');
         return {
           select() {
@@ -28,6 +67,21 @@ function createSupabaseDouble() {
                 return {
                   async maybeSingle() {
                     return { data: records.get(String(id)) || null, error: null };
+                  }
+                };
+              },
+              ilike(_column, pattern) {
+                return {
+                  async limit(n) {
+                    const clean = String(pattern || '').replace(/[%_\\]/g, '').toLowerCase();
+                    const matches = [];
+                    for (const so of records.values()) {
+                      if (String(so.serial_number || '').toLowerCase().includes(clean)) {
+                        matches.push(so);
+                        if (matches.length >= n) break;
+                      }
+                    }
+                    return { data: matches, error: null };
                   }
                 };
               },
@@ -346,5 +400,90 @@ test('service-order PDF fallback and historical downloads', async t => {
       renderCallsBeforeDownload,
       'Drive redirect must not invoke the PDF generator'
     );
+  });
+
+  await t.test('searches equipment catalog without 500 when missing, and returns match when present', async () => {
+    // 1. Missing serial returns 200 with equipment: null (never 500)
+    const missingRes = await fetch(`${fixture.baseUrl}/api/service-orders/equipment?serial=NONEXISTENT_SERIAL`, {
+      headers: authorization(fixture.token)
+    });
+    assert.equal(missingRes.status, 200);
+    const missingBody = await missingRes.json();
+    assert.equal(missingBody.success, true);
+    assert.equal(missingBody.equipment, null);
+
+    // 2. Existing serial match
+    fixture.supabaseDouble.equipmentRecords.set('SN-PHILIPS-999', {
+      id: 'eq-1',
+      serial_number: 'SN-PHILIPS-999',
+      equipment: 'Ultrassom EPIQ 7',
+      brand: 'Philips',
+      model: 'EPIQ 7',
+      tag: 'TAG-1234',
+      client: 'Hospital Central'
+    });
+
+    const matchRes = await fetch(`${fixture.baseUrl}/api/service-orders/equipment?serial=PHILIPS-999`, {
+      headers: authorization(fixture.token)
+    });
+    assert.equal(matchRes.status, 200);
+    const matchBody = await matchRes.json();
+    assert.equal(matchBody.success, true);
+    assert.equal(matchBody.equipment.serial_number, 'SN-PHILIPS-999');
+    assert.equal(matchBody.equipment.client, 'Hospital Central');
+  });
+
+  await t.test('generates and streams a blank/handwritten local order via /generate-local', async () => {
+    const response = await fetch(`${fixture.baseUrl}/api/service-orders/generate-local`, {
+      method: 'POST',
+      headers: {
+        ...authorization(fixture.token),
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        form_data: {
+          Atendimento: 'OS-MANUAL-001',
+          Data: '16/10/2026'
+          // Intentionally blank Cliente and signatures for manual/handwritten use
+        }
+      })
+    });
+
+    assert.equal(response.status, 200);
+    assert.match(response.headers.get('content-type') || '', /^application\/pdf\b/i);
+    const bytes = Buffer.from(await response.arrayBuffer());
+    assert.equal(bytes.subarray(0, 5).toString('ascii'), '%PDF-');
+  });
+
+  await t.test('generates unsigned OS without client, gracefully handling Drive upload failure', async () => {
+    const response = await fetch(`${fixture.baseUrl}/api/service-orders/generate`, {
+      method: 'POST',
+      headers: {
+        ...authorization(fixture.token),
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        form_data: {
+          Serie: 'SN-MANUAL-FIELD',
+          Data: '16/10/2026'
+        }
+      })
+    });
+
+    assert.equal(response.status, 200);
+    const body = await response.json();
+    assert.equal(body.success, true);
+    assert.equal(body.drive_uploaded, false);
+    assert.match(body.warning, /Google Drive ficou pendente/i);
+    assert.equal(body.order.status, 'unsigned');
+
+    // PDF is preserved locally and downloadable via GET /:id/pdf
+    const pdfRes = await fetch(`${fixture.baseUrl}${body.download_url}`, {
+      headers: authorization(fixture.token)
+    });
+    assert.equal(pdfRes.status, 200);
+    assert.match(pdfRes.headers.get('content-type') || '', /^application\/pdf\b/i);
+    const pdfBytes = Buffer.from(await pdfRes.arrayBuffer());
+    assert.equal(pdfBytes.subarray(0, 5).toString('ascii'), '%PDF-');
   });
 });

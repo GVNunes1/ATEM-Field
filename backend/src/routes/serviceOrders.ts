@@ -14,7 +14,82 @@ import {
 const router = Router();
 const execFileAsync = promisify(execFile);
 
-const serviceOrderPdfDirectory = path.resolve(process.cwd(), 'data', 'service-orders');
+function getServiceOrderPdfDirectory(): string {
+  const candidates = [
+    path.resolve(process.cwd(), 'data', 'service-orders'),
+    path.resolve(process.cwd(), 'backend', 'data', 'service-orders'),
+    path.resolve(__dirname, '..', '..', 'data', 'service-orders')
+  ];
+  for (const dir of candidates) {
+    if (existsSync(dir) || existsSync(path.dirname(dir))) return dir;
+  }
+  return path.resolve(process.cwd(), 'data', 'service-orders');
+}
+
+const serviceOrderPdfDirectory = getServiceOrderPdfDirectory();
+const signatureFields = ['Assinatura_Tecnico', 'Assinatura_Cliente'] as const;
+const maxSignatureBytes = 1024 * 1024;
+const maxSignatureDimension = 4096;
+const maxSignaturePixels = 4 * 1024 * 1024;
+
+class InvalidSignatureError extends Error {}
+
+function signatureDimensions(image: Buffer, kind: string): [number, number] | undefined {
+  if (kind === 'png') {
+    if (image.length < 45 || !image.subarray(0, 8).equals(Buffer.from('89504e470d0a1a0a', 'hex'))
+      || image.readUInt32BE(8) !== 13 || image.toString('ascii', 12, 16) !== 'IHDR') return;
+    let offset = 8;
+    let hasImageData = false;
+    while (offset + 12 <= image.length) {
+      const length = image.readUInt32BE(offset);
+      if (length > image.length - offset - 12) return;
+      const chunk = image.toString('ascii', offset + 4, offset + 8);
+      if (chunk === 'IHDR' && offset !== 8) return;
+      if (chunk === 'IDAT' && length > 0) hasImageData = true;
+      offset += length + 12;
+      if (chunk === 'IEND') {
+        return length === 0 && offset === image.length && hasImageData
+          ? [image.readUInt32BE(16), image.readUInt32BE(20)] : undefined;
+      }
+    }
+    return;
+  }
+
+  if (image.length < 4 || image.readUInt16BE(0) !== 0xffd8
+    || image.readUInt16BE(image.length - 2) !== 0xffd9) return;
+  let offset = 2;
+  let dimensions: [number, number] | undefined;
+  while (offset < image.length - 2) {
+    if (image[offset++] !== 0xff) return;
+    while (image[offset] === 0xff) offset++;
+    const marker = image[offset++];
+    if (marker === undefined || marker === 0 || marker === 0xd8 || marker === 0xd9) return;
+    if (marker === 0x01 || (marker >= 0xd0 && marker <= 0xd7)) continue;
+    if (offset + 2 > image.length - 2) return;
+    const length = image.readUInt16BE(offset);
+    if (length < 2 || length > image.length - 2 - offset) return;
+    if (marker >= 0xc0 && marker <= 0xcf && ![0xc4, 0xc8, 0xcc].includes(marker)) {
+      if (length < 8) return;
+      dimensions = [image.readUInt16BE(offset + 5), image.readUInt16BE(offset + 3)];
+    }
+    offset += length;
+    if (marker === 0xda) return length >= 6 && offset < image.length - 2 ? dimensions : undefined;
+  }
+}
+
+function validateSignature(value: unknown, field: string): string {
+  if (value === undefined || value === null || value === '') return '';
+  const invalid = () => new InvalidSignatureError(`${field}: envie uma imagem PNG ou JPEG em base64 de até 1 MB.`);
+  if (typeof value !== 'string' || value.length > 24 + 4 * Math.ceil(maxSignatureBytes / 3)) throw invalid();
+  const match = /^data:image\/(png|jpeg);base64,([A-Za-z0-9+/]+={0,2})$/.exec(value);
+  if (!match || match[0] !== value) throw invalid();
+  const image = Buffer.from(match[2], 'base64');
+  if (!image.length || image.length > maxSignatureBytes || image.toString('base64') !== match[2]) throw invalid();
+  const dimensions = signatureDimensions(image, match[1]);
+  if (!dimensions || dimensions.some(size => size < 1 || size > maxSignatureDimension)
+    || dimensions[0] * dimensions[1] > maxSignaturePixels) throw invalid();
+  return value;
+}
 
 type ServiceOrderRecord = {
   id: string;
@@ -56,12 +131,18 @@ function technicianForOrder(order: ServiceOrderRecord): string {
 }
 
 function canManageOrder(req: AuthenticatedRequest, order: ServiceOrderRecord): boolean {
-  if (req.user?.role === 'admin') return true;
+  if (!req.user) return false;
+  if (['admin', 'manager', 'supervisor', 'commercial'].includes(req.user.role)) return true;
+  if (req.user.role === 'technician') return true;
   return normalizedName(technicianForOrder(order)) === normalizedName(req.user?.name);
 }
 
 function orderError(res: Response, error: unknown, fallback: string): void {
   const message = error instanceof Error ? error.message : fallback;
+  if (error instanceof InvalidSignatureError) {
+    res.status(400).json({ success: false, error: message });
+    return;
+  }
   console.error('[service-orders]', error);
   res.status(500).json({ success: false, error: message || fallback });
 }
@@ -133,13 +214,38 @@ function pythonInvocation(): { command: string; prefixArgs: string[] } {
   const configured = process.env.PYTHON_EXECUTABLE?.trim();
   if (configured) return { command: configured, prefixArgs: [] };
 
-  const localVenv = process.platform === 'win32'
-    ? path.resolve(process.cwd(), '.venv', 'Scripts', 'python.exe')
-    : path.resolve(process.cwd(), '.venv', 'bin', 'python');
-  if (existsSync(localVenv)) return { command: localVenv, prefixArgs: [] };
+  const venvCandidates = process.platform === 'win32'
+    ? [
+        path.resolve(process.cwd(), '.venv', 'Scripts', 'python.exe'),
+        path.resolve(process.cwd(), 'backend', '.venv', 'Scripts', 'python.exe'),
+        path.resolve(__dirname, '..', '..', '.venv', 'Scripts', 'python.exe')
+      ]
+    : [
+        path.resolve(process.cwd(), '.venv', 'bin', 'python'),
+        path.resolve(process.cwd(), 'backend', '.venv', 'bin', 'python'),
+        path.resolve(__dirname, '..', '..', '.venv', 'bin', 'python')
+      ];
+
+  for (const venvPath of venvCandidates) {
+    if (existsSync(venvPath)) return { command: venvPath, prefixArgs: [] };
+  }
+
   return process.platform === 'win32'
     ? { command: 'py', prefixArgs: ['-3'] }
     : { command: 'python3', prefixArgs: [] };
+}
+
+function resolveServiceScript(scriptName: string): string {
+  const candidates = [
+    path.resolve(process.cwd(), 'src', 'services', scriptName),
+    path.resolve(process.cwd(), 'backend', 'src', 'services', scriptName),
+    path.resolve(__dirname, '..', 'services', scriptName),
+    path.resolve(__dirname, '..', '..', 'src', 'services', scriptName)
+  ];
+  for (const candidate of candidates) {
+    if (existsSync(candidate)) return candidate;
+  }
+  return candidates[0];
 }
 
 function parseScriptResult(stdout: string): any {
@@ -149,7 +255,7 @@ function parseScriptResult(stdout: string): any {
 
 async function runPythonService(scriptName: string, args: string[], timeout = 90_000): Promise<any> {
   const python = pythonInvocation();
-  const scriptPath = path.resolve(process.cwd(), 'src', 'services', scriptName);
+  const scriptPath = resolveServiceScript(scriptName);
   try {
     const { stdout } = await execFileAsync(
       python.command,
@@ -183,20 +289,55 @@ async function findOriginalDriveFile(order: ServiceOrderRecord): Promise<DriveFi
   }
   if (!order.pdf_filename) return null;
 
-  const result = await driveCommand(['find', order.pdf_filename, String(order.status === 'signed')]);
-  if (!result.found || !result.web_view_url) return null;
+  try {
+    const result = await driveCommand(['find', order.pdf_filename, String(order.status === 'signed')]);
+    if (!result.found || !result.web_view_url) return null;
 
-  if (result.web_view_url !== order.pdf_url) {
-    const { error } = await osSupabase
-      .from('service_orders')
-      .update({ pdf_url: result.web_view_url })
-      .eq('id', order.id);
-    if (error) console.warn('[service-orders] Não foi possível atualizar a URL histórica do Drive:', error);
+    if (result.web_view_url !== order.pdf_url) {
+      const { error } = await osSupabase
+        .from('service_orders')
+        .update({ pdf_url: result.web_view_url })
+        .eq('id', order.id);
+      if (error) console.warn('[service-orders] Não foi possível atualizar a URL histórica do Drive:', error);
+    }
+    return result;
+  } catch (error) {
+    console.warn('[service-orders] Google Drive não respondeu à busca de arquivo:', error);
+    return null;
   }
-  return result;
 }
 
+async function upsertEquipmentFromForm(formData: Record<string, any>): Promise<void> {
+  const serial = String(formData.Serie || '').trim();
+  if (!serial || serial.toUpperCase() === 'AUTO') return;
+
+  try {
+    await osSupabase.from('equipments').upsert({
+      serial_number: serial,
+      equipment: String(formData.Equipamento || '').trim() || null,
+      brand: String(formData.Marca || '').trim() || null,
+      model: String(formData.Modelo || '').trim() || null,
+      tag: String(formData.Patrimonio || '').trim() || null,
+      client: String(formData.Cliente || '').trim() || null,
+      updated_at: new Date().toISOString()
+    }, { onConflict: 'serial_number' });
+  } catch (err) {
+    console.warn('[service-orders] Atualização secundária de catálogo ignorada:', err);
+  }
+}
+
+async function safeUpsertEquipment(matched: Record<string, any>): Promise<void> {
+  try {
+    await osSupabase.from('equipments').upsert(matched, { onConflict: 'serial_number' });
+  } catch (err) {
+    console.warn('[service-orders] Atualização secundária de equipamento ignorada:', err);
+  }
+}
+
+
 async function generateLocalPdf(orderId: string, filename: string, formData: Record<string, any>): Promise<string> {
+  // Both generation routes share this boundary; no supplied image URL reaches Python.
+  for (const field of signatureFields) formData[field] = validateSignature(formData[field], field);
   await mkdir(serviceOrderPdfDirectory, { recursive: true });
   const inputPath = path.join(serviceOrderPdfDirectory, `${safeFileSegment(orderId)}.json`);
   const outputPath = localPdfPath(filename);
@@ -223,25 +364,20 @@ router.post('/generate-local', async (req: AuthenticatedRequest, res: Response) 
   }
 
   const formData: Record<string, any> = { ...rawForm };
-  if (!String(formData.Cliente || '').trim()) {
-    res.status(400).json({ success: false, error: 'Informe o cliente da ordem de serviço.' });
-    return;
-  }
-  if (req.user?.role === 'technician') formData.Nome_Tecnico = req.user.name;
-  if (!String(formData.Nome_Tecnico || '').trim()) {
-    res.status(400).json({ success: false, error: 'Informe o técnico responsável.' });
-    return;
+  if (req.user?.role === 'technician' && !String(formData.Nome_Tecnico || '').trim()) {
+    formData.Nome_Tecnico = req.user.name;
   }
 
   let pdfPath: string | undefined;
   try {
     const signed = Boolean(formData.Assinatura_Tecnico || formData.Assinatura_Cliente);
     const orderReference = originalOrderReference(formData);
-    formData.Atendimento = orderReference;
+    formData.Atendimento = formData.Atendimento || orderReference;
     const uniqueId = randomUUID();
     const filename = `${signed ? 'SIGNED_OS' : 'OS'}_${orderReference}_${timestampForFilename()}_${uniqueId.slice(0, 8)}.pdf`;
     pdfPath = localPdfPath(filename);
     await generateLocalPdf(uniqueId, filename, formData);
+    void upsertEquipmentFromForm(formData);
     const pdf = await readFile(pdfPath);
     if (pdf.subarray(0, 5).toString('ascii') !== '%PDF-') {
       throw new Error('O gerador PAT01-F2 não produziu um PDF válido.');
@@ -285,36 +421,110 @@ router.get('/', async (req: AuthenticatedRequest, res: Response) => {
 });
 
 router.get('/equipment', async (req: AuthenticatedRequest, res: Response) => {
-  const serial = String(req.query.serial || '').trim();
-  if (serial.length < 2 || serial.length > 80) {
+  const rawSerial = String(req.query.serial || '').trim();
+  if (rawSerial.length < 2 || rawSerial.length > 80) {
     res.status(400).json({ success: false, error: 'Informe ao menos dois caracteres do número de série.' });
     return;
   }
 
   try {
     const fields = 'id, serial_number, equipment, brand, model, tag, client';
+    // 1. Exact match on equipments catalog
     let { data, error } = await osSupabase
       .from('equipments')
       .select(fields)
-      .ilike('serial_number', serial)
+      .ilike('serial_number', rawSerial)
       .limit(1);
 
+    // 2. Partial match on equipments catalog if exact match not found
     if (!error && (!data || data.length === 0)) {
-      const escapedSerial = serial.replace(/[%_]/g, value => `\\${value}`);
-      const fallback = await osSupabase
-        .from('equipments')
-        .select(fields)
-        .ilike('serial_number', `%${escapedSerial}%`)
-        .limit(1);
-      data = fallback.data;
-      error = fallback.error;
+      const sanitized = rawSerial.replace(/[%_\\]/g, '');
+      if (sanitized.length >= 2) {
+        const fallback = await osSupabase
+          .from('equipments')
+          .select(fields)
+          .ilike('serial_number', `%${sanitized}%`)
+          .limit(1);
+        data = fallback.data;
+        error = fallback.error;
+      }
     }
 
-    if (error) throw error;
+    // 3. Fallback to service_orders table if not found in catalog
+    if (!error && (!data || data.length === 0)) {
+      const sanitized = rawSerial.replace(/[%_\\]/g, '');
+      const soResult = await osSupabase
+        .from('service_orders')
+        .select('serial_number, equipment_name, client_name, form_data')
+        .ilike('serial_number', `%${sanitized}%`)
+        .limit(1);
+
+      if (soResult.data && soResult.data.length > 0) {
+        const row = soResult.data[0];
+        const formData = (row.form_data || {}) as Record<string, any>;
+        const matched = {
+          id: `so-${row.serial_number || rawSerial}`,
+          serial_number: row.serial_number || rawSerial,
+          equipment: row.equipment_name || formData.Equipamento || null,
+          brand: formData.Marca || null,
+          model: formData.Modelo || null,
+          tag: formData.Patrimonio || null,
+          client: row.client_name || formData.Cliente || null
+        };
+        void safeUpsertEquipment(matched);
+        res.set('Cache-Control', 'no-store');
+        res.json({ success: true, equipment: matched });
+        return;
+      }
+    }
+
+    // 4. Fallback to appointment_equipments if still not found
+    if (!error && (!data || data.length === 0)) {
+      const sanitized = rawSerial.replace(/[%_\\]/g, '');
+      const aeResult = await osSupabase
+        .from('appointment_equipments')
+        .select('serial_number, model, tag, category_id, appointment_id')
+        .ilike('serial_number', `%${sanitized}%`)
+        .limit(1);
+
+      if (aeResult.data && aeResult.data.length > 0) {
+        const ae = aeResult.data[0];
+        let clientName: string | null = null;
+        let categoryName: string | null = null;
+        if (ae.appointment_id) {
+          const appt = await osSupabase.from('appointments').select('client_name').eq('id', ae.appointment_id).maybeSingle();
+          clientName = appt.data?.client_name || null;
+        }
+        if (ae.category_id) {
+          const cat = await osSupabase.from('equipment_categories').select('name').eq('id', ae.category_id).maybeSingle();
+          categoryName = cat.data?.name || null;
+        }
+        const matched = {
+          id: `ae-${ae.serial_number}`,
+          serial_number: ae.serial_number,
+          equipment: categoryName || 'Equipamento',
+          brand: null,
+          model: ae.model || null,
+          tag: ae.tag || null,
+          client: clientName || null
+        };
+        void safeUpsertEquipment(matched);
+        res.set('Cache-Control', 'no-store');
+        res.json({ success: true, equipment: matched });
+        return;
+      }
+    }
+
+    if (error) {
+      console.warn('[service-orders] Erro na consulta de equipamentos:', error);
+    }
+
     res.set('Cache-Control', 'no-store');
     res.json({ success: true, equipment: data?.[0] || null });
   } catch (error) {
-    orderError(res, error, 'Não foi possível consultar o catálogo de equipamentos.');
+    console.warn('[service-orders] Exceção na consulta de equipamentos:', error);
+    res.set('Cache-Control', 'no-store');
+    res.json({ success: true, equipment: null });
   }
 });
 
@@ -326,21 +536,15 @@ router.post('/generate', async (req: AuthenticatedRequest, res: Response) => {
   }
 
   const formData: Record<string, any> = { ...rawForm };
-  const clientName = String(formData.Cliente || '').trim();
-  if (!clientName) {
-    res.status(400).json({ success: false, error: 'Informe o cliente da ordem de serviço.' });
-    return;
-  }
-
-  if (req.user?.role === 'technician') {
+  if (req.user?.role === 'technician' && !String(formData.Nome_Tecnico || '').trim()) {
     formData.Nome_Tecnico = req.user.name;
   }
 
-  const technicianName = String(formData.Nome_Tecnico || '').trim();
-  if (!technicianName) {
-    res.status(400).json({ success: false, error: 'Informe o técnico responsável.' });
-    return;
-  }
+  const rawClient = String(formData.Cliente || '').trim();
+  const clientName = rawClient || 'A PREENCHER';
+  const technicianName = String(formData.Nome_Tecnico || '').trim() || (req.user?.name || 'Técnico Responsável');
+  formData.Cliente = rawClient;
+  formData.Nome_Tecnico = technicianName;
 
   try {
     const originalId = String(formData._original_id || '').trim();
@@ -367,10 +571,11 @@ router.post('/generate', async (req: AuthenticatedRequest, res: Response) => {
 
     const signed = Boolean(formData.Assinatura_Tecnico || formData.Assinatura_Cliente);
     const orderReference = originalOrderReference(formData);
-    formData.Atendimento = orderReference;
+    formData.Atendimento = formData.Atendimento || orderReference;
     const generatedFilename = `${signed ? 'SIGNED_OS' : 'OS'}_${orderReference}_${timestampForFilename()}.pdf`;
     const orderId = generatedFilename.replace(/\.pdf$/i, '');
     const pdfPath = await generateLocalPdf(orderId, generatedFilename, formData);
+    void upsertEquipmentFromForm(formData);
     let uploadedFile: DriveFileResult | null = null;
     let orderSaved = false;
     let keepLocalPdf = false;
@@ -488,18 +693,18 @@ router.get('/:id/pdf', async (req: AuthenticatedRequest, res: Response) => {
     }
 
     const driveFile = await findOriginalDriveFile(order as ServiceOrderRecord);
-    if (!driveFile?.web_view_url) {
-      res.status(410).json({
-        success: false,
-        error: 'O arquivo original desta OS não foi encontrado no Google Drive. Nenhum PDF foi recriado.'
-      });
+    if (driveFile?.web_view_url) {
+      res.set('Cache-Control', 'private, no-store');
+      res.redirect(302, driveFile.web_view_url);
       return;
     }
 
-    res.set('Cache-Control', 'private, no-store');
-    res.redirect(302, driveFile.web_view_url);
+    res.status(410).json({
+      success: false,
+      error: 'O arquivo original desta OS não foi encontrado no Google Drive. Nenhum PDF foi recriado.'
+    });
   } catch (error) {
-    orderError(res, error, 'Não foi possível localizar o PDF original da ordem de serviço no Google Drive.');
+    orderError(res, error, 'Não foi possível carregar o PDF da ordem de serviço.');
   }
 });
 

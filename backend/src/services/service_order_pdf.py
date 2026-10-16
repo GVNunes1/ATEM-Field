@@ -29,8 +29,90 @@ TEMPLATE_PATH = Path(__file__).with_name("service_order_template.html")
 DATA_IMAGE_PATTERN = re.compile(
     r"data:image/(?P<kind>[a-zA-Z0-9.+-]+);base64,(?P<data>[a-zA-Z0-9+/=\r\n]+)"
 )
+SIGNATURE_IMAGE_PATTERN = re.compile(r"data:image/(?P<kind>png|jpeg);base64,(?P<data>[A-Za-z0-9+/]+={0,2})")
+SIGNATURE_FIELDS = ("Assinatura_Tecnico", "Assinatura_Cliente")
+MAX_SIGNATURE_BYTES = 1024 * 1024
+MAX_SIGNATURE_DIMENSION = 4096
+MAX_SIGNATURE_PIXELS = 4 * 1024 * 1024
 DEFAULT_RENDER_TIMEOUT_SECONDS = 45.0
 PDF_STABILITY_INTERVAL_SECONDS = 0.15
+
+
+def signature_dimensions(image: bytes, kind: str) -> tuple[int, int] | None:
+    if kind == "png":
+        if len(image) < 45 or image[:8] != b"\x89PNG\r\n\x1a\n" or image[8:16] != b"\x00\x00\x00\rIHDR":
+            return None
+        offset = 8
+        has_image_data = False
+        while offset + 12 <= len(image):
+            length = int.from_bytes(image[offset:offset + 4], "big")
+            if length > len(image) - offset - 12:
+                return None
+            chunk = image[offset + 4:offset + 8]
+            if chunk == b"IHDR" and offset != 8:
+                return None
+            if chunk == b"IDAT" and length > 0:
+                has_image_data = True
+            offset += length + 12
+            if chunk == b"IEND":
+                return (int.from_bytes(image[16:20], "big"), int.from_bytes(image[20:24], "big")) \
+                    if length == 0 and offset == len(image) and has_image_data else None
+        return None
+
+    if len(image) < 4 or image[:2] != b"\xff\xd8" or image[-2:] != b"\xff\xd9":
+        return None
+    offset = 2
+    dimensions = None
+    while offset < len(image) - 2:
+        if image[offset] != 0xff:
+            return None
+        offset += 1
+        while offset < len(image) and image[offset] == 0xff:
+            offset += 1
+        if offset >= len(image):
+            return None
+        marker = image[offset]
+        offset += 1
+        if marker in {0, 0xd8, 0xd9}:
+            return None
+        if marker == 0x01 or 0xd0 <= marker <= 0xd7:
+            continue
+        if offset + 2 > len(image) - 2:
+            return None
+        length = int.from_bytes(image[offset:offset + 2], "big")
+        if length < 2 or length > len(image) - 2 - offset:
+            return None
+        if 0xc0 <= marker <= 0xcf and marker not in {0xc4, 0xc8, 0xcc}:
+            if length < 8:
+                return None
+            dimensions = (int.from_bytes(image[offset + 5:offset + 7], "big"),
+                          int.from_bytes(image[offset + 3:offset + 5], "big"))
+        offset += length
+        if marker == 0xda:
+            return dimensions if length >= 6 and offset < len(image) - 2 else None
+    return None
+
+
+def validate_signature(value: Any, field: str) -> str:
+    if value is None or value == "":
+        return ""
+    message = f"{field}: envie uma imagem PNG ou JPEG em base64 de até 1 MB."
+    if not isinstance(value, str) or len(value) > 24 + 4 * ((MAX_SIGNATURE_BYTES + 2) // 3):
+        raise ValueError(message)
+    match = SIGNATURE_IMAGE_PATTERN.fullmatch(value)
+    if not match:
+        raise ValueError(message)
+    try:
+        image = base64.b64decode(match["data"], validate=True)
+    except (ValueError, binascii.Error) as error:
+        raise ValueError(message) from error
+    if not image or len(image) > MAX_SIGNATURE_BYTES or base64.b64encode(image).decode("ascii") != match["data"]:
+        raise ValueError(message)
+    dimensions = signature_dimensions(image, match["kind"])
+    if not dimensions or any(size < 1 or size > MAX_SIGNATURE_DIMENSION for size in dimensions) \
+            or dimensions[0] * dimensions[1] > MAX_SIGNATURE_PIXELS:
+        raise ValueError(message)
+    return value
 
 
 def clean_parts(value: Any) -> list[dict[str, str]]:
@@ -65,6 +147,9 @@ def expand_boolean(context: dict[str, Any], source_key: str, target_prefix: str)
 
 def template_context(data: dict[str, Any]) -> dict[str, Any]:
     context = {key: value if value is not None else "" for key, value in data.items()}
+    # Direct CLI/import callers enforce the same image boundary before rendering.
+    for field in SIGNATURE_FIELDS:
+        context[field] = validate_signature(data.get(field), field)
     context["Pecas"] = clean_parts(data.get("Pecas"))
 
     # Compatibility with records produced by every ATEM OS form revision.

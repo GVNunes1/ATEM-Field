@@ -23,7 +23,8 @@ android-app/.gradle/
 android-app/**/build/
 android-app/local.properties
 android-app/.signing/
-output/android/
+output/
+tmp/
 
 # Local Supabase CLI state
 supabase/.temp/
@@ -37,6 +38,7 @@ windows-watchdog/state/
 
 # Google Calendar OAuth and incremental sync runtime
 backend/data/google-calendar-*.json
+backend/data/google-drive-token-*.json
 
 # PDFs generated on demand by the integrated service-order module
 backend/data/service-orders/
